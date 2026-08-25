@@ -1,0 +1,69 @@
+#divHeader {
+    padding: 10px 80px;
+}
+
+#divBox {
+    width: 85%;
+    margin: auto;
+    padding: 10px;
+    border: solid 1px gray;
+}
+
+#divBox table {
+    width: 1000px;
+    font-size: 21px;
+}
+
+#divBox table tr td .tableInput {
+    margin: 0 2px 0 10px;
+}
+
+.tableCharacteristics label {
+    width: 280px;
+    font-size: 18px;
+    max-width: 300px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    margin-right: 40px;
+    white-space: nowrap;
+    text-overflow: clip;
+}
+
+#divBox hr {
+    margin-left: -10px;
+    margin-right: -10px;
+    border-color: gray;
+}
+
+.divFooter {
+    width: 85%;
+    margin: auto;
+}
+
+@media print {
+    #divHeader {
+        padding: 0px;
+    }
+
+    #divHeader img {
+        display: block;
+        padding-top: 10px;
+        position: absolute;
+    }
+
+    .btn-print {
+        display: none;
+    }
+
+    .btn-return {
+        display: none;
+    }
+
+    #divBox {
+        width: 100%;
+    }
+
+    .divFooter {
+        width: 100%;
+    }
+}

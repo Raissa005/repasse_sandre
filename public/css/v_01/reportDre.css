@@ -1,0 +1,36 @@
+.td-icon-name-dre{
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.td-icon-name-dre i {
+	padding-right: 5px;
+}
+
+.cor-sim {
+	background: #fff;
+}
+
+.cor-nao {
+	background: #e8e8e8;
+}
+
+tbody tr:hover {
+	background: #d3d2d2;
+}
+
+.tr_branch {
+	background-color: #dbe5f1;
+}
+
+.tr_resume_faturamento {
+	background-color: #bdf1bd;
+}
+
+.tr_resume_despesa {
+	background-color: #fce9d9;
+}
+
+.click {
+	cursor: pointer;
+}

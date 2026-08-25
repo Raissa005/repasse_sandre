@@ -1,0 +1,361 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
+
+@media only screen and (min-width: 1441px) {
+    .a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+        width: 5.7vw;
+        height: 5.7vw;
+        font-size: 3.5vw;
+    }
+    .banner-nome {
+        font-size: 3.5vw;
+    }
+}
+
+@media only screen and (max-width: 1440px) {
+    .a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+        width: 8.0vw;
+        height: 8.0vw;
+        font-size: 4.0vw;
+    }
+    .banner-nome {
+        font-size: 4.0vw;
+    }
+}
+
+@media only screen and (max-width: 1024px) {
+    .a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+        width: 9.5vw;
+        height: 9.5vw;
+        font-size: 5.5vw;
+    }
+    .banner-nome {
+        font-size: 5.0vw;
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+        width: 12.0vw;
+        height: 12.0vw;
+        font-size: 5.5vw;
+    }
+    .banner-nome {
+        font-size: 6.0vw;
+    }
+}
+
+@media only screen and (max-width: 425px) {
+    .a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+        width: 15.0vw;
+        height: 15.0vw;
+        font-size: 8.0vw;
+    }
+    .banner-nome {
+        font-size: 8.0vw;
+    }
+}
+
+@media only screen and (max-width: 320px) {
+    .titulo-h1 {
+        font-size: 14px;
+    }
+    .a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+        width: 14.0vw;
+        height: 14.0vw;
+        font-size: 8.0vw;
+    }
+    .banner-nome {
+        font-size: 8.0vw;
+    }
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0px;
+    padding: 0px;
+    font-size: 16px;
+    background: #ffffff;
+    font-family: 'Oswald', sans-serif;
+}
+
+.box-titulo {
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 30px;
+    font-style: italic;
+}
+
+.box-titulo p {
+    margin: 0px;
+    padding: 0px;
+    font-weight: 500;
+}
+
+.box-titulo h1 {
+    margin: 0px;
+    padding: 0px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.box-titulo div {
+    height: 3px;
+    width: 100px;
+    margin: auto;
+    background: #666;
+}
+
+.bg-banner {
+    overflow: hidden;
+    position: relative;
+}
+
+.box-banner {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+.banner-nome {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+}
+
+.bg-carac {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+.bg-fotos {
+    padding-top: 50px;
+    background: #f4f4f4;
+    padding-bottom: 20px;
+}
+
+.a-fancy, .a-fancy:focus, .a-fancy:active {
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 30px;
+    transition: all 0.3s ease-in-out;
+}
+
+.a-fancy .box-img {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease-in-out;
+}
+
+.a-fancy .fa-search {
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+    color: #ffffff;
+    font-size: 18px;
+    margin-top: -9px;
+    margin-left: -9px;
+    position: absolute;
+    transition: all 0.3s ease-in-out;
+}
+
+.foto-efeito {
+    top: 50%;
+    left: 50%;
+    width: 0%;
+    height: 0%;
+    text-align: center;
+    position: absolute;
+    background: rgba(0, 0, 0, 0);
+    transition: all 0.3s ease-in-out;
+}
+
+.a-fancy:hover .box-img {
+    transform: scale(1.2);
+}
+
+.a-fancy:hover .foto-efeito {
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.a-fancy:hover .fa-search {
+    opacity: 1;
+}
+
+.bg-pagam {
+    padding-top: 50px;    
+    padding-bottom: 50px;
+}
+
+.bg-desc{
+    padding-top: 50px;    
+    background: #f4f4f4;
+    padding-bottom: 50px;
+}
+
+.text-desc {
+    width: 85%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;    
+}
+
+.bg-localizacao {
+    padding-top: 50px;
+    /* padding-bottom: 50px; */
+}
+
+.box-banner-mascara {
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.box-banner-horizontal-centralizado {
+    top: 0px;
+    left: 0px;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+}
+
+.banner-nome {
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0px 0px 2px #000;
+    font-style: italic;
+    margin-bottom: 30px;
+}
+
+.box-atalho {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+}
+
+.box-contato {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.a-atalho-icone, .a-atalho-icone:focus, .a-atalho-icone:active {
+    color: #fff;
+    border-radius: 50%;
+    margin-left: 10px;
+    margin-right: 10px;
+    border: solid 1px #fff;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    transition: all 0.3s ease-in-out;
+}
+
+/* .a-atalho-icone:hover {} */
+
+.no-mg-lt {
+    margin-left: 0px !important
+}
+
+.no-mg-rt {
+    margin-right: 0px !important;
+}
+
+.cartao-corretor {
+    display: flex;
+}
+
+.cartao-empresa {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media only screen and (max-width: 766px) {
+    .cartao-corretor {
+        justify-content: space-evenly;
+    }
+    .cartao-empresa {
+        justify-content: space-evenly;
+        margin-top: 15px;
+    }
+}
+
+.contato-corretor {
+    display: flex;
+    flex-flow: column;
+    justify-content: space-between;
+}
+
+.contato-empresa {
+    display: flex;
+    flex-flow: column;
+    justify-content: space-between;
+}
+
+.contato-nome-corretor {
+    margin-bottom: 10px;
+    margin-left: 10px;
+}
+
+.contato-nome-empresa {
+    margin-bottom: 10px;
+    margin-right: 10px;
+    text-align: right;
+}
+
+.redes-corretor {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+}
+
+.redes-empresa {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+}
+
+.logo-rodape {
+    display: flex;
+    justify-content: center;
+}
+
+.list-caract {
+    list-style-type: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+}
+
+.imagem-empresa img {
+    width: 150px;
+}

@@ -1,0 +1,25 @@
+.contract {
+    width: 100%;
+    max-width: 750px;
+    margin: 0px auto 0px auto;
+    padding: 20px;
+    text-align: justify;
+    border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.line1 {
+    border-top: 1px solid black;
+    width: 270px;
+    margin-top: 5px;
+}
+
+.text-center {
+    height: 35px;
+}
+
+@media print
+{
+    .esconder *{
+        visibility: hidden;
+    }
+}

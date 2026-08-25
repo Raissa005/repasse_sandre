@@ -1,0 +1,11 @@
+*** Iniciando a imagem ***
+http://wideimage.sourceforge.net/examples/basic/
+
+*** Comando para redimensionar a imagem ***
+http://wideimage.sourceforge.net/examples/resizing/
+
+*** Comandos para corte ***
+http://wideimage.sourceforge.net/documentation/smart-coordinates/
+
+*** Comando para salvar imagem ***
+http://wideimage.sourceforge.net/documentation/saving-images/

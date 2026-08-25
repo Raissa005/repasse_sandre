@@ -1,0 +1,12 @@
+vendor/
+bower_components/
+node_modules/
+public/img/products_imgs/*
+public/img/users/*
+.vscode
+public/img/products_imgs
+src/config/config.php
+src/libs/dompdf/lib/fonts/*
+
+#macOs
+.DS_Store

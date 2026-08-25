@@ -1,0 +1,114 @@
+.kanban-fluid {
+    width: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+
+.kanban-fluid .kanban {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.kanban-fluid .kanban .kabanColumn {
+    width: 250px;
+    margin: 0px 5px;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn {
+    width: 250px;
+    margin: 0px 5px;
+    /* padding-bottom: 3.125rem; */
+}
+
+/* Removed Kanban Scroll.
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .kanban-column {
+    padding-bottom: 3.75rem;
+    max-height: 37.5rem;
+    height: 65vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+} */
+
+.kanban-fluid .kanban .kabanColumn:first-child {
+    margin-left: 0px !important;
+}
+
+.kanban-fluid .kanban .kabanColumn:first-child .boxKabanColumn {
+    margin-left: 0px !important;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .kanban-column::-webkit-scrollbar {
+    width: 9px;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .kanban-column::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .kanban-column::-webkit-scrollbar-thumb {
+    background-color: #d4d4d4;
+    border: 1px solid #b9b9b9;
+    border-radius: 20px;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card {
+    width: 100%;
+    background-color: #f1f1f1;
+    border-left: 3px solid;
+    border-radius: 0.24rem;
+    margin-top: 1rem;
+    box-shadow: rgba(0, 0, 0, 0.2) 3px 3px 2px;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card:first-child {
+    margin-top: 0px;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-header {
+    padding: 0.31rem;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-title span img {
+    width: 1.3rem;
+    border-radius: 50%;
+    /* box-shadow: rgb(0 0 0 / 30%) 2px 2px 2px; */
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-header .card-subtitle {
+    margin: 0.312rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-body {
+    padding: 0.31rem;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-body .card-text {
+    margin: 0 auto 0.312rem auto;
+}
+
+.kanban-fluid .kanban .kabanColumn .boxKabanColumn .card .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #dddddd;
+    padding: 0.31rem;
+}
+
+#firstScroll {
+    height: 15px;
+    margin-bottom: 15px;
+}
+
+#firstDiv {
+    height: 15px;
+}

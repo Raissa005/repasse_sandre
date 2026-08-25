@@ -1,0 +1,124 @@
+.bs-stepper {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.bs-stepper::-webkit-scrollbar {
+    height: 0.5625rem;
+}
+
+.bs-stepper::-webkit-scrollbar-trackr {
+    background: #007bff;
+}
+
+.bs-stepper::-webkit-scrollbar-thumb {
+    background-color: #007bff;
+    border: 1px solid #007bff;
+    border-radius: 1.25rem;
+}
+
+.bs-stepper .bs-stepper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3125rem;
+}
+
+.bs-stepper .bs-stepper-header .step-trigger:not(:disabled):not(.disabled) {
+    cursor: pointer
+}
+
+.bs-stepper .bs-stepper-header .step .step-trigger {
+    position: relative;
+    padding: 0.625rem;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5;
+    color: #6c757d;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    background-color: transparent;
+    border: none;
+    border-radius: .25rem;
+}
+
+.bs-stepper .bs-stepper-header .step .step-trigger .bs-stepper-circle {
+    display: inline-flex;
+    align-content: center;
+    justify-content: center;
+    width: 2em;
+    height: 2em;
+    padding: .5em 0;
+    margin: .25rem;
+    line-height: 1em;
+    color: #fff;
+    background-color: #6c757d;
+    border-radius: 1em;
+}
+
+.bs-stepper .bs-stepper-header .step .step-trigger .bs-stepper-label {
+    display: inline-block;
+    margin: .25rem;
+    position: absolute;
+    bottom: -8px;
+}
+
+.bs-stepper .bs-stepper-header .line {
+    margin-left: -5px;
+    margin-right: -5px;
+    height: 3px;
+    flex: 1 0 32px;
+    min-width: 1px;
+    min-height: 1px;
+    margin: auto;
+    background-color: rgba(0, 0, 0, .12)
+}
+
+.bs-stepper .bs-stepper-header .line-active {
+    background-color: #007bff
+}
+
+.bs-stepper .bs-stepper-header .step .active .bs-stepper-circle {
+    background-color: #007bff
+}
+
+@media (max-width:520px) {
+    .bs-stepper .step-trigger {
+        -ms-flex-direction: column;
+        flex-direction: column;
+        padding: 10px
+    }
+}
+
+@media (max-width:520px) {
+    .bs-stepper-header {
+        margin: 0 -10px;
+        text-align: center
+    }
+}
+
+@media only screen and (max-width: 400px) {
+    .bs-stepper-label {
+        display: none;
+    }
+}
+
+@media (max-width:400px) {
+    .bs-stepper .line, .bs-stepper-line {
+        -ms-flex-preferred-size: 20px;
+        flex-basis: 20px
+    }
+}
+
+@media (max-width:520px) {
+    .bs-stepper-content {
+        padding: 0
+    }
+}

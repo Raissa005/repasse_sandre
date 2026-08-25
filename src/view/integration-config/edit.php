@@ -1,0 +1,46 @@
+<div class="content-wrapper">
+    <section class="content container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Editar Integração</h3>
+                    </div>
+                    <form role="form" action="<?= URL . $this->route . '/handleSubmitEditIttem/' . $integration->id?>" method="POST">
+                        <div class="box-body">
+                           <div class="row">
+                                <div class="col-md-3 col-lg-3">
+                                    <div class="form-group">
+                                        <label for="name">Nome<span class="" style="color: red;">*</span></label>
+                                        <input value="<?= isset($integration->name) ? $integration->name : ''  ?>" autocomplete="off" type="text" class="form-control" id="name" name="name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-lg-3">
+                                    <div class="form-group">
+                                        <label for="status">Status<span class="" style="color: red;">*</span></label>
+                                        <select name="status" id="status" class="form-control" required>
+                                            <option value="1" <?= ($integration->status == 1) ? "selected" : ''  ?> >Ativo</option>
+                                            <option value="0" <?= ($integration->status == 0)  ? "selected" : ''  ?> >Inativo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-lg-6">
+                                    <div class="form-group">
+                                        <label for="token">Token<span class="" style="color: red;">*</span></label>
+                                        <input id="token" value="<?= isset($integration->token) ? $integration->token : ''  ?>" autocomplete="off" type="text" class="form-control" id="token" name="token" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-footer">
+                            <a type="button" class="btn btn-warning" href="<?= URL . $this->route ?>">Voltar</a>
+                            <div class="pull-right">
+                                <button type="submit" class="btn btn-block btn-primary">Editar</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

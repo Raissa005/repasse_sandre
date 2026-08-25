@@ -1,0 +1,41 @@
+@media only print {
+
+    /* esta formatação só estará visível na tela de print */
+    h3 {
+        font-size: 20px;
+    }
+
+    .font-print {
+        font-size: 13px;
+    }
+
+    img {
+        width: 220px;
+    }
+
+    .branch-logo {
+        width: 7%;
+    }
+}
+
+.hidden-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-text {
+    font-size: 12px;
+}
+
+.va-middle {
+    vertical-align: middle;
+}
+
+.wdth-300px {
+    width: 300px;
+}
+
+.wdth-175px {
+    width: 175px;
+}
