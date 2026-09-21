@@ -12,7 +12,6 @@
  */
 // define('ENVIRONMENT', 'production');
 define('ENVIRONMENT', 'development');
-define('REAL_ESTATE', TRUE);
 
 if (ENVIRONMENT === 'development') {
     error_reporting(E_ALL);

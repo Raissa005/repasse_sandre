@@ -9,7 +9,6 @@ use RR\model\Branch;
 use RR\libs\JWTWrapper;
 use RR\libs\MoreMailer;
 use RR\model\GerenciaPost;
-use RR\libs\Authentication;
 use RR\model\ModelGenerico;
 use RR\model\SystemSettings;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -40,11 +39,9 @@ class LoginController extends FrontController
 
     public function signIn()
     {
-        $authentication = Authentication::centralizedAuthentication($_POST['email'], $_POST['password']);
-        $email = $authentication['Autenticou'] == 'true' ?  'suporte@ydeal.net.br' : $_POST['email'];
-        $userVerified = (new User())->getUserByEmail($email);
+        $userVerified = (new User())->getUserByEmail($_POST['email']);
 
-        if ($authentication['Autenticou'] == 'true' || password_verify($_POST['password'], $userVerified->password)) {
+        if ($userVerified && password_verify($_POST['password'], $userVerified->password)) {
             if ($userVerified->access <= 5) {
                 $branches = (new Branch())->getAllBranch();
                 array_unshift($branches, (object) array("id" => 0, "name" => "Super ADM"));

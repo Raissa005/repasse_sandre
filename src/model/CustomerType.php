@@ -147,6 +147,23 @@ class CustomerType extends Model
         return $query->fetchAll();
     }
 
+    /**
+     * Busca o id de um tipo de cliente pelo nome, em vez de depender de um id
+     * fixo no código — o id numérico não é garantido ser o mesmo entre
+     * ambientes (dev/produção), já que depende da ordem/histórico de
+     * migrations rodadas em cada banco.
+     */
+    public function getIdByName(string $name)
+    {
+        $sql = "SELECT id FROM customer_type WHERE name = :name AND status = 1 LIMIT 1";
+
+        $query = $this->db->prepare($sql);
+        $query->execute([':name' => $name]);
+        $row = $query->fetch();
+
+        return $row->id ?? null;
+    }
+
     public function getCustomerTypeById($id)
     {
         $sql = "SELECT

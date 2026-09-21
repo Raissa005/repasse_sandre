@@ -86,4 +86,112 @@ class Vehicles extends Model
 
         parent::__construct($this->table, $joins);
     }
+
+    public function getAndFilterAllForSearch($filters = [], $rows = 0, $page = 0)
+    {
+        $parameters = [];
+        $filtersQuery = '';
+
+        if (!empty($filters['name'])) {
+            $filtersQuery .= " AND (ucase(v.name) LIKE ucase(:name) OR ucase(v.plate) LIKE ucase(:name))";
+            $parameters[':name'] = '%' . $filters['name'] . '%';
+        }
+
+        if (!empty($filters['id'])) {
+            $filtersQuery .= " AND v.id = :id";
+            $parameters[':id'] = $filters['id'];
+        }
+
+        if (!empty($filters['id_brand'])) {
+            $filtersQuery .= " AND v.id_brand = :id_brand";
+            $parameters[':id_brand'] = $filters['id_brand'];
+        }
+
+        $offset = ($page - 1) * $rows;
+
+        $sql = "SELECT
+                    v.id, v.name, v.plate, v.year_manufacture, v.year_model, v.mileage, v.vehicle_sales_value,
+                    vb.name as brand_name, vm.name as model_name
+                FROM vehicles v
+                INNER JOIN vehicle_brands vb ON vb.id = v.id_brand
+                INNER JOIN vehicle_models vm ON vm.id = v.id_model
+                WHERE v.status = 1 $filtersQuery
+                ORDER BY v.id DESC";
+
+        if ($rows > 0) {
+            $sql .= " LIMIT $rows OFFSET $offset";
+        }
+
+        $query = $this->db->prepare($sql);
+        $query->execute($parameters);
+
+        return $query->fetchAll();
+    }
+
+    public function getAndFilterAllByInterest($filters = [], $excludeIds = [], $rows = 0, $page = 0)
+    {
+        $parameters = [];
+        $filtersQuery = '';
+
+        if (!empty($filters['brand_model_pairs'])) {
+            $orParts = [];
+            foreach ($filters['brand_model_pairs'] as $pair) {
+                $orParts[] = !empty($pair->id_model)
+                    ? "(v.id_brand = " . intval($pair->id_brand) . " AND v.id_model = " . intval($pair->id_model) . ")"
+                    : "(v.id_brand = " . intval($pair->id_brand) . ")";
+            }
+            if (!empty($orParts)) {
+                $filtersQuery .= " AND (" . implode(' OR ', $orParts) . ")";
+            }
+        }
+
+        if (isset($filters['start_price'])) {
+            $filtersQuery .= " AND v.vehicle_sales_value >= :start_price";
+            $parameters[':start_price'] = $filters['start_price'];
+        }
+
+        if (isset($filters['end_price'])) {
+            $filtersQuery .= " AND v.vehicle_sales_value <= :end_price";
+            $parameters[':end_price'] = $filters['end_price'];
+        }
+
+        if (isset($filters['year_from'])) {
+            $filtersQuery .= " AND v.year_manufacture >= :year_from";
+            $parameters[':year_from'] = $filters['year_from'];
+        }
+
+        if (isset($filters['year_to'])) {
+            $filtersQuery .= " AND v.year_manufacture <= :year_to";
+            $parameters[':year_to'] = $filters['year_to'];
+        }
+
+        if (isset($filters['km_max'])) {
+            $filtersQuery .= " AND v.mileage <= :km_max";
+            $parameters[':km_max'] = $filters['km_max'];
+        }
+
+        if (!empty($excludeIds)) {
+            $filtersQuery .= " AND v.id NOT IN (" . implode(',', array_map('intval', $excludeIds)) . ")";
+        }
+
+        $offset = ($page - 1) * $rows;
+
+        $sql = "SELECT
+                    v.id, v.name, v.plate, v.year_manufacture, v.year_model, v.mileage, v.vehicle_sales_value,
+                    vb.name as brand_name, vm.name as model_name
+                FROM vehicles v
+                INNER JOIN vehicle_brands vb ON vb.id = v.id_brand
+                INNER JOIN vehicle_models vm ON vm.id = v.id_model
+                WHERE v.status = 1 $filtersQuery
+                ORDER BY v.id DESC";
+
+        if ($rows > 0) {
+            $sql .= " LIMIT $rows OFFSET $offset";
+        }
+
+        $query = $this->db->prepare($sql);
+        $query->execute($parameters);
+
+        return $query->fetchAll();
+    }
 }

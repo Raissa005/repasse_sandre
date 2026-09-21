@@ -92,9 +92,8 @@ use RR\components\MenusComponent;
                                     <li class="user-body">
                                         <div class="row">
                                             <div class="col-xs-12 text-center">
-                                                <a class="btn btn-sm btn-default" href="<?= URL . 'property/?id_user_owner=me' ?>">Imóveis</a>
                                                 <a class="btn btn-sm btn-default" href="<?= URL . 'attendance?created_by=' . $_SESSION['RR']->user->id ?>">Atendimentos</a>
-                                                <a class="btn btn-sm btn-default" href="<?= URL . 'sales?created_by=' . $_SESSION['RR']->user->id ?>">Vendas</a>
+                                                <a class="btn btn-sm btn-default" href="<?= URL . 'sale-requests?created_by=' . $_SESSION['RR']->user->id ?>">Vendas</a>
                                             </div>
                                         </div>
                                     </li>

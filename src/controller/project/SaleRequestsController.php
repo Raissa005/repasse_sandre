@@ -116,6 +116,10 @@ class SaleRequestsController extends FrontController
             ];
         }
 
+        if (isset($_GET['created_by']) && !empty($_GET['created_by'])) {
+            $filters[] = (object) ['columns' => ['created_by' => (object) ['comparison' => 'EQUAL', 'value' => $_GET['created_by']]]];
+        }
+
         $response = $this->model->getWithFiltersAllItems(
             $filters,
             [
@@ -914,9 +918,6 @@ class SaleRequestsController extends FrontController
             } else if (!empty($i->customer_company_name)) {
 
                 $i->customer_name = $i->customer_company_name;
-            } else {
-
-                $i->customer_name = $i->name;
             }
 
             $i->value = Util::maskMoney($i->value);

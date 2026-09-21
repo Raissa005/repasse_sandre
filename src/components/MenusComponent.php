@@ -3,7 +3,6 @@
 namespace RR\components;
 
 use RR\libs\Secure;
-use RR\model\Lead;
 use RR\model\User;
 use RR\model\MenuAccess;
 use RR\model\VehiclesRequestSale;
@@ -18,9 +17,7 @@ class MenusComponent
     {
         $this->menus = $menus;
 
-        $this->permissions = (object)[
-            'Site' => (object)['permission_column' => 'permission_publish', 'value' => 1]
-        ];
+        $this->permissions = (object)[];
 
         $this->render($this->menus);
     }
@@ -86,14 +83,15 @@ class MenusComponent
 
     public function newLeads()
     {
-        $filters = [
-            (object)['columns' => ['status' => ['comparison' => 'EQUAL', 'value' => 1]]],
-            (object)['where' => " AND id_attendance IS NULL"]
-        ];
-
-        $newLeads = (new Lead)->getWithFiltersAllItems($filters)->count;
-
-        return $newLeads;
+        /**
+         * Módulo Lead pausado a pedido do usuário (2026-09-02) — a tabela
+         * `lead` não existe neste banco. Hoje este método nunca é chamado de
+         * fato (os itens de menu 43/45 que o acionariam também não existem),
+         * mas se o menu do Lead for recriado sem a tabela, uma query aqui
+         * quebraria o menu lateral em TODA página do sistema. Retornar 0
+         * até o módulo ser reativado (ver LeadController.php).
+         */
+        return 0;
     }
 
     public function transferToDate (){

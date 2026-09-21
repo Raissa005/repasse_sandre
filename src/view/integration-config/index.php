@@ -2,7 +2,6 @@
 
 use RR\components\ContentHeaderComponent4214;
 use RR\components\PaginationComponent1245;
-use RR\components\PropertyFilterComponent;
 use RR\libs\Secure;
 use RR\libs\Util;
 

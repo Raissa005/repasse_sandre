@@ -616,6 +616,10 @@ class Customer extends Model
     {
         $customer = $this->getItemById($customerId);
 
+        if (!$customer) {
+            return 0;
+        }
+
         if (!isset($customer->balance) && empty($customer->balance)) {
             $customer->balance = 0;
             foreach ((new BillsToPayInstallment)->getWithFiltersAllItems([

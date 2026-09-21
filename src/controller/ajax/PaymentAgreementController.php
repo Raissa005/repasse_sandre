@@ -12,6 +12,7 @@ use RR\model\BranchUserPosition;
 use RR\model\SalesChargePaymentAgreement;
 use RR\model\ArrangementPaymentChargesInvoiceReceiveInstallment;
 use RR\model\Branch;
+use RR\model\CustomerType;
 
 class PaymentAgreementController extends Ajax
 {
@@ -59,7 +60,7 @@ class PaymentAgreementController extends Ajax
                     (object)[
                         "table" => "client_type_resource_types",
                         "columns" => [
-                            "id_customer_type" => (object)["comparison" => "EQUAL", "value" => 10]
+                            "id_customer_type" => (object)["comparison" => "EQUAL", "value" => (new CustomerType())->getIdByName('Fornecedor')]
                         ]
                     ],
                 ],
@@ -134,7 +135,7 @@ class PaymentAgreementController extends Ajax
                     (object)[
                         "table" => "client_type_resource_types",
                         "columns" => [
-                            "id_customer_type" => (object)["comparison" => "EQUAL", "value" => 10]
+                            "id_customer_type" => (object)["comparison" => "EQUAL", "value" => (new CustomerType())->getIdByName('Fornecedor')]
                         ]
                     ]
                 ],

@@ -50,7 +50,7 @@ class VehiclesController extends FrontController
         $navTabs = [
             (object)['text' => 'Editar', 'route' => URL . "{$this->route}/editItem/$itemId", 'class' => ($_GET['pg1'] == 'editItem' ? 'active' : '')],
             (object)['text' => 'Anexos', 'route' => URL . "{$this->route}/attachments/$itemId", 'class' => ($_GET['pg1'] == 'attachments' ? 'active' : '')],
-            (object)['text' => 'Fotos', 'route' => URL . "{$this->route}/photos/$itemId", 'class' => ($_GET['pg1'] == 'photos' ? 'active' : '')],
+            /**Aba "Fotos" desativada a pedido do usuário (2026-09-02) — código/rota mantidos, só tirada da navegação. */
             (object)['text' => 'Observações', 'route' => URL . "{$this->route}/observations/$itemId", 'class' => ($_GET['pg1'] == 'observations' ? 'active' : '')]
         ];
 
@@ -591,12 +591,9 @@ class VehiclesController extends FrontController
             }
         } else if (!empty($_POST['descriptionImage'])) {
             $images = $_POST['descriptionImage'];
-            $siteVisualization = $_POST['viewSite'];
 
-            /**Descrição e  status*/
             foreach ($images as $id => $image) {
-                $arrPost = array("description" => $image, "status_site" => !empty($siteVisualization[$id]) ? 1 : 0);
-                $response = (new VehicleImages)->update($arrPost, "id", $id);
+                $response = (new VehicleImages)->update(["description" => $image], "id", $id);
             }
         }
 
@@ -618,38 +615,6 @@ class VehiclesController extends FrontController
         ];
 
         redirect("{$this->route}/photos/$response->itemId");
-    }
-
-    public function handleSubmitEnableAllWebsite($itemId)
-    {
-        $vehicleImages = (new VehicleImages)->getWithFiltersAllItems([(object)['columns' => ['id_vehicle' => (object)['comparison' => 'EQUAL', 'value' => $itemId]]]])->data;
-
-        foreach ($vehicleImages as $image) {
-            $response = (new VehicleImages)->update(['status_site' => true], 'id', $image->id);
-        }
-
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->error === true ? 'Erro ao editar os itens' : 'Itens editados com successo'
-        ];
-
-        redirect("{$this->route}/photos/$itemId");
-    }
-
-    public function handleSubmitDisableAllWebsite($itemId)
-    {
-        $vehicleImages = (new VehicleImages)->getWithFiltersAllItems([(object)['columns' => ['id_vehicle' => (object)['comparison' => 'EQUAL', 'value' => $itemId]]]])->data;
-
-        foreach ($vehicleImages as $image) {
-            $response = (new VehicleImages)->update(['status_site' => false], 'id', $image->id);
-        }
-
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->error === true ? 'Erro ao editar os itens' : 'Itens editados com successo'
-        ];
-
-        redirect("{$this->route}/photos/$itemId");
     }
 
     public function handleSubmitDeleteAllImages($itemId)

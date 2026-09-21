@@ -36,12 +36,6 @@ use RR\components\ContentHeaderComponent4214;
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group pull-right" style="margin-bottom: 0px;">
-                                                    <button type="button" id="<?= $itemId ?>" class="btn btn-success btn-generic-item" sendTo="<?= $this->route . "/handleSubmitEnableAllWebsite/" ?>" bodyHtml="Deseja realmente ativar TODAS as imagens do site?" footerHtml="Ativar" btnFooter="btn-success">
-                                                        <i class="far fa-check-square"></i> Ativar todas
-                                                    </button>
-                                                    <button type="button" id="<?= $itemId ?>" class="btn btn-warning btn-generic-item" sendTo="<?= $this->route . "/handleSubmitDisableAllWebsite/" ?>" bodyHtml="Deseja realmente inativar TODAS as imagens do site?" footerHtml="Inativar" btnFooter="btn-danger">
-                                                        <i class="far fa-square"></i> Inativar todas
-                                                    </button>
                                                     <button type="button" id="<?= $itemId ?>" class="btn btn-danger btn-disable-item" sendTo="<?= $this->route . "/handleSubmitDeleteAllImages/" ?>" bodyHtml="Deseja realmente excluir TODAS as Imagens?">
                                                         <i class="fas fa-trash-alt"></i> Remover todas
                                                     </button>
@@ -60,7 +54,6 @@ use RR\components\ContentHeaderComponent4214;
                                                             <tr>
                                                                 <th class="text-center" style="width: 7rem;">Imagem</th>
                                                                 <th>Descrição</th>
-                                                                <th class="text-center">Site</th>
                                                                 <?php if (Secure::access_secretary()) { ?>
                                                                     <th class="text-center">Ações</th>
                                                                 <?php } ?>
@@ -77,9 +70,6 @@ use RR\components\ContentHeaderComponent4214;
                                                                     </td>
                                                                     <td style="vertical-align: middle;">
                                                                         <input name="descriptionImage[<?= $img->id ?>]" placeholder="Descrição da imagem..." type="text" value="<?= $img->description ?>" class="form-control">
-                                                                    </td>
-                                                                    <td class="text-center" style="vertical-align: middle;">
-                                                                        <input name="viewSite[<?= $img->id ?>]" type="checkbox" <?= $img->status_site ? "checked" : "" ?> style="width: 25px; height: 25px; cursor: pointer;">
                                                                     </td>
                                                                     <?php if (Secure::access_secretary()) { ?>
                                                                         <td class="text-center" style="vertical-align: middle;">
@@ -98,7 +88,7 @@ use RR\components\ContentHeaderComponent4214;
                                         <a type="button" class="btn btn-warning" href="<?= URL . $this->route ?>">Voltar</a>
                                         <div class="pull-right">
                                             <?php if (Secure::access_secretary()) { ?>
-                                                <button class="btn btn-primary">Salvar e Enviar</button>
+                                                <button class="btn btn-primary">Salvar</button>
                                             <?php } ?>
                                         </div>
                                     </div>

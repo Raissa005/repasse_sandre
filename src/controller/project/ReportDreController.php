@@ -2,7 +2,6 @@
 
 namespace RR\controller\project;
 
-use RR\libs\BoxAlert;
 use RR\libs\Secure;
 use RR\libs\Util;
 use RR\model\ReportDre;
@@ -21,8 +20,6 @@ class ReportDreController extends FrontController
 		$this->model = new ReportDre();
         $this->table = '';
 		parent::__construct($this->route);
-
-		$this->alert = (new BoxAlert());
 	}
 
 	public function index()

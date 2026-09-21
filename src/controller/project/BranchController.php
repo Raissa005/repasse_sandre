@@ -2,7 +2,6 @@
 
 namespace RR\controller\project;
 
-use FontLib\Table\Type\head;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\Branch;
@@ -13,8 +12,8 @@ use RR\libs\Pagination;
 use RR\libs\CommissionArrangement;
 use RR\libs\RecursiveCostCenter;
 use RR\model\BranchUserPosition;
-use RR\model\PropertyBranches;
 use RR\model\Customer;
+use RR\model\CustomerType;
 use RR\model\FormOfPayment;
 use RR\model\User;
 use RR\model\UserBranch;
@@ -163,7 +162,6 @@ class BranchController extends FrontController
         $item = new Branch();
 
         $this->addScript(URL . "js/" . JSVERSION . "/state.js");
-        $this->addScript(URL . "js/" . JSVERSION . "/branch/branch.js");
 
         $states = $modelGenerico->getAllItens("states");
         $cities = $item->getCitiesByState("SC");
@@ -413,7 +411,7 @@ class BranchController extends FrontController
             (object)[
                 'table' => 'client_type_resource_types',
                 'columns' => [
-                    'id_customer_type' => (object)['comparison' => 'EQUAL', 'value' => 10]
+                    'id_customer_type' => (object)['comparison' => 'EQUAL', 'value' => (new CustomerType())->getIdByName('Fornecedor')]
                 ]
             ]
         ])->data;

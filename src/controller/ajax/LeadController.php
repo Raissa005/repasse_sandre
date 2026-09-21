@@ -13,6 +13,20 @@ use RR\controller\project\LeadRedirectController;
 
 class LeadController extends Ajax
 {
+    /**
+     * Módulo Lead pausado a pedido do usuário (2026-09-02): as tabelas
+     * `lead`/`lead_working_date` não existem neste banco. Ver mesmo guard
+     * em src/controller/project/LeadController.php.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->error = true;
+        $this->message = 'Recurso desativado.';
+        $this->sendResponse();
+    }
+
     public function getDutySeller()
     {
         $sellers = (new LeadWorkingDate)->getWithFiltersAllItems();

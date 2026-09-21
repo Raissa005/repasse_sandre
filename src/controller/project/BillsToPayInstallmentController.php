@@ -14,6 +14,7 @@ use RR\libs\Secure;
 use RR\model\BankAccounts;
 use RR\model\Banks;
 use RR\model\Customer;
+use RR\model\CustomerType;
 use RR\model\FormOfPayment;
 use RR\model\BillsToPayInstallment;
 use PDOException;
@@ -205,7 +206,7 @@ class BillsToPayInstallmentController extends FrontController
 
         $paymentStatus = $modelGenerico->getItemByGenericFieldArray(['status' => 1], "payment_status");
         $costCenters = (new RecursiveCostCenter())->recursiveTree(0, ['status' => 1, 'id_type' => 1]);
-        $customers = (new Customer())->getAndFilterAllCustomer(0, ['status' => 1, 'id_customer_type' => 10, "id_branch" => $_SESSION['RR']->branch->current->id], 0);
+        $customers = (new Customer())->getAndFilterAllCustomer(0, ['status' => 1, 'id_customer_type' => (new CustomerType())->getIdByName('Fornecedor'), "id_branch" => $_SESSION['RR']->branch->current->id], 0);
         $formOfPayments = (new FormOfPayment())->getAndFilterAllItem(['status' => true], 0)->data;
 
         array_map(function ($element) {
@@ -587,13 +588,15 @@ class BillsToPayInstallmentController extends FrontController
                             'status' => true,
                             'id_installment' => $portion->id,
                             'id_bills_to_pay' => $portion->id_bills_to_pay,
-                            'id_check' => $check->lastId ?? $postCheck['id']
+                            'id_check' => $check->lastId ?? $postCheck['id'],
+                            'created_at' => date('Y-m-d H:i:s'),
+                            'created_by' => $_SESSION['RR']->user->id
                         ];
 
                         $linkedCheck = (new LinkedCheckControl)->getItemWithFilters([(object)['columns' => ['id_check' => ['value' => $postCheck['id']]]]]);
 
                         if (!empty($linkedCheck)) {
-                            (new LinkedCheckControl)->update(['status' => 1], 'id', $linkedCheck->id);
+                            (new LinkedCheckControl)->update(['status' => 1, 'updated_at' => date('Y-m-d H:i:s'), 'updated_by' => $_SESSION['RR']->user->id], 'id', $linkedCheck->id);
                         } else {
                             (new LinkedCheckControl)->insert($arrPost);
                         }
@@ -651,7 +654,7 @@ class BillsToPayInstallmentController extends FrontController
 
                 if ($checks->count > 0) {
                     foreach ($checks->data as $ch) {
-                        $linkedCheck = (new LinkedCheckControl)->update(['status' => 0], 'id', $ch->id);
+                        $linkedCheck = (new LinkedCheckControl)->update(['status' => 0, 'updated_at' => date('Y-m-d H:i:s'), 'updated_by' => $_SESSION['RR']->user->id], 'id', $ch->id);
 
                         if (!$linkedCheck->error) {
                             $check = (new CheckControl)->getItemById($ch->id_check);
@@ -701,7 +704,7 @@ class BillsToPayInstallmentController extends FrontController
 
     public function printReceipt($id)
     {
-        $installment = (new Contract)->getInstalmentReceivePrintReceipt($id);
+        $installment = (new Contract)->getInstalmentToPayPrintReceipt($id);
         $receipt = (new StandardContract)->getItemById($_POST['id_standard_contract']);
         $contractText = str_replace("breakPage", "<span class='break-page-print-after'></span>", $receipt->text);
 

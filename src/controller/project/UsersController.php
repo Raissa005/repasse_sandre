@@ -8,6 +8,7 @@ use RR\libs\BoxAlert;
 use RR\model\User;
 use RR\model\Branch;
 use RR\model\Customer;
+use RR\model\CustomerType;
 use RR\model\UserBranch;
 use RR\model\UserNetwork;
 use RR\model\GerenciaPost;
@@ -57,7 +58,7 @@ class UsersController extends FrontController
             ],
             (object)[
                 'table' => 'client_type_resource_types',
-                'columns' => ['id_customer_type' => (object)['value' => 12]]
+                'columns' => ['id_customer_type' => (object)['value' => (new CustomerType())->getIdByName('Colaborador')]]
             ]
         ])->data;
 
@@ -170,7 +171,7 @@ class UsersController extends FrontController
 
         $customers_filter = [
             (object)['columns' => ['status' => (object)['value' => 1]]],
-            (object)["table" => "client_type_resource_types", "columns" => ["id_customer_type" => (object)["comparison" => "IN", "value" => [10, 12]]]]
+            (object)["table" => "client_type_resource_types", "columns" => ["id_customer_type" => (object)["comparison" => "IN", "value" => [(new CustomerType())->getIdByName('Fornecedor'), (new CustomerType())->getIdByName('Colaborador')]]]]
         ];
 
         if ($_SESSION['RR']->branch->current->id != 0) {
@@ -565,7 +566,7 @@ class UsersController extends FrontController
                     'complement' => 'Usuário fornecedor',
                 ]);
 
-                (new ClientTypeResourceTypes())->insert(['id_customer' => $response->lastId, 'id_customer_type' => 10]);
+                (new ClientTypeResourceTypes())->insert(['id_customer' => $response->lastId, 'id_customer_type' => (new CustomerType())->getIdByName('Fornecedor')]);
 
                 foreach ($user_branches as $branch) {
                     (new CustomerBranch())->insert(['id_customer' => $response->lastId, 'id_branch' => $branch->id_branch]);

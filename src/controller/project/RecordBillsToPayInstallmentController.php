@@ -7,8 +7,10 @@ use RR\model\ModelGenerico;
 use RR\libs\BoxAlert;
 use RR\libs\Date;
 use RR\libs\RecursiveCostCenter;
+use RR\libs\Secure;
 use RR\libs\Util;
 use RR\model\Customer;
+use RR\model\CustomerType;
 use RR\model\FormOfPayment;
 use RR\model\BillsToPayInstallment;
 use RR\model\BillsToPay;
@@ -265,7 +267,7 @@ class RecordBillsToPayInstallmentController extends FrontController
         $branches = (new Branch)->getWithFiltersAllItems([(object)['columns' => ['status' => ['value' => 1]]]], [], ['orderBy' => 'this->table.name ASC']);
         $paymentStatus = $modelGenerico->getItemByGenericFieldArray(['status' => 1], "payment_status");
         $costCenters = (new RecursiveCostCenter())->recursiveTree(0, ['status' => 1, 'id_type' => 1]);
-        $customers = (new Customer())->getAndFilterAllCustomer(0, ['status' => 1, 'id_customer_type' => 10, "id_branch" => $_SESSION['RR']->branch->current->id], 0);
+        $customers = (new Customer())->getAndFilterAllCustomer(0, ['status' => 1, 'id_customer_type' => (new CustomerType())->getIdByName('Fornecedor'), "id_branch" => $_SESSION['RR']->branch->current->id], 0);
         $formOfPayments = (new FormOfPayment())->getAndFilterAllItem(['status' => true], 0)->data;
         $costCentersForIndexes = (new RecursiveCostCenter())->recursiveTree(0, ['id_type' => 1]);
 

@@ -51,7 +51,7 @@ e o "Super ADM" é representado pela filial de `id = 0`.
 | Components de UI reutilizáveis | `src/components/` |
 | Bibliotecas utilitárias | `src/libs/` |
 | Assets públicos (css/js/plugins/img) | `public/` |
-| Dump/estrutura do banco | `db/realize_repasse.sql` |
+| Estrutura do banco (fonte de verdade = banco local em uso, não o dump) | ver `docs/07-banco-de-dados.md` |
 | Migrations manuais (novo, ver doc 07) | `db/migrations/` |
 
 Para o fluxo técnico completo de uma requisição, ver

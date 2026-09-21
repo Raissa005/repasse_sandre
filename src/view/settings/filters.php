@@ -1,6 +1,4 @@
 <?php
-
-use RR\components\PropertyFilterComponent;
 ?>
 <div class="tab-pane active" style="background-color: #fff; margin-bottom: 20px;">
     <section class="container-fluid">

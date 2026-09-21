@@ -51,16 +51,6 @@ class Branch extends Model
                 (new BranchUserPosition)->insert(['id_branch' => $response->lastId, 'id_user_position' => $position->id, 'origin_commission' => $position->origin_commission, 'created_by' => $_SESSION['RR']->user->id]);
             }
 
-            if (!empty($post['property_branch'])) {
-                $properties = explode(',', $post['property_branch']);
-                foreach ($properties as $property) {
-                    (new PropertyBranches)->insert([
-                        'id_branch' => $response->lastId,
-                        'id_property' => $property,
-                    ]);
-                }
-            }
-
             foreach ((new User)->getWithFiltersAllItems([(object)['columns' => ['id_profile' => (object)['comparison' => 'IN', 'value' => [1, 5]]]]])->data as $user) {
                 (new UserBranch)->insert(['id_user' => $user->id, 'id_branch' => $response->lastId]);
             }

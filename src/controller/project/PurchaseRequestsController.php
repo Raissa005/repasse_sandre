@@ -152,7 +152,8 @@ class PurchaseRequestsController extends FrontController
             [
                 'limit' => $rows,
                 'page' => $page,
-                'orderBy' => 'purchase_requests.id DESC'
+                'orderBy' => 'purchase_requests.id DESC',
+                'groupBy' => 'purchase_requests.id'
             ]
         );
 
@@ -762,9 +763,6 @@ class PurchaseRequestsController extends FrontController
             } else if (!empty($i->customer_company_name)) {
 
                 $i->customer_name = $i->customer_company_name;
-            } else {
-
-                $i->customer_name = $i->name;
             }
 
             $i->value = Util::maskMoney($i->value);
@@ -831,9 +829,6 @@ class PurchaseRequestsController extends FrontController
             } else if (!empty($i->customer_company_name)) {
 
                 $i->customer_name = $i->customer_company_name;
-            } else {
-
-                $i->customer_name = $i->name;
             }
 
             $i->value = Util::maskMoney($i->value);
@@ -934,9 +929,6 @@ class PurchaseRequestsController extends FrontController
             } else if (!empty($i->customer_company_name)) {
 
                 $i->customer_name = $i->customer_company_name;
-            } else {
-
-                $i->customer_name = $i->name;
             }
 
             $i->value = Util::maskMoney($i->value);
@@ -1059,7 +1051,7 @@ class PurchaseRequestsController extends FrontController
         );
 
         array_map(function ($i) {
-            $i->customer_name = $i->name ?? $i->customer_fancy_name_company ?? $i->customer_company_name;
+            $i->customer_name = $i->customer_fancy_name_company ?? $i->customer_company_name ?? $i->customer_name;
             $i->value = Util::maskMoney($i->value);
             $i->purchase_date = Date::date($i->purchase_date);
         }, [$item]);

@@ -34,7 +34,7 @@ class SaleRequestsController extends Ajax
             $customer_filters = [
                 (object)['columns' => ['status' => (object)['value' => 1]]],
                 (object)['table' => 'customer_branches', 'columns' => ['id_branch' => (object)['comparison' => 'EQUAL', 'value' => $_SESSION['RR']->branch->current->id]]],
-                (object)["table" => 'client_type_resource_types', "columns" => ['id_customer_type' => (object)['comparison' => 'IN', 'value' => [1, 2]]]]
+                (object)["table" => 'client_type_resource_types', "columns" => ['id_customer_type' => (object)['comparison' => 'IN', 'value' => [1]]]]
             ];
 
             if (!empty($_POST['name'])) {

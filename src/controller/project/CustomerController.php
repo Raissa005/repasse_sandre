@@ -19,9 +19,6 @@ use RR\model\MaritalStatus;
 use RR\model\Professions;
 use RR\model\Contract;
 use RR\model\FormOfPayment;
-use RR\model\PropertyCategory;
-use RR\model\PropertyType;
-use RR\model\StandardContract;
 use RR\model\User;
 use RR\model\BillsToPay;
 use RR\model\BillsToPayInstallment;
@@ -30,7 +27,6 @@ use RR\model\Cities;
 use RR\model\ClientTypeResourceTypes;
 use RR\model\CustomerAttachment;
 use RR\model\CustomerBranch;
-use RR\model\Property;
 use RR\model\CustomerBalanceLog;
 use RR\model\Sales;
 use RR\model\States;
@@ -72,7 +68,10 @@ class CustomerController extends FrontController
                     $this->page->id = 19;
                     break;
                 case ['2']:
-                    $this->page->id = 60;
+                    $this->page->id = 200;
+                    break;
+                case ['3']:
+                    $this->page->id = 201;
                     break;
             }
         } else {
@@ -91,8 +90,7 @@ class CustomerController extends FrontController
         $typeSelected = array_map(function ($type) {
             return $type->id_customer_type;
         }, $typeCustomer);
-        $menuBillToPay = in_array(10, $typeSelected);
-        $menuConstructorImage = in_array(11, $typeSelected);
+        $menuBillToPay = in_array(2, $typeSelected);
         $menuSales = (new Sales)->getSalesForCustomers($customerId)->count;
 
         $navTabs = [
@@ -106,14 +104,6 @@ class CustomerController extends FrontController
                 'class' => $_GET['pg1'] === 'spouse' ? 'active' : ''
             ]);
         }
-        if ($menuConstructorImage) {
-            array_push($navTabs, (object)[
-                'text' => 'Imagem',
-                'route' => URL . $this->route . '/image/' . $customerId,
-                'class' => $_GET['pg1'] === 'image' ? 'active' : ''
-            ]);
-        }
-
         if (Secure::creator($customer->created_by) || Secure::access_secretary()) {
             if ($menuBillToPay) {
                 array_push($navTabs, (object)['text' => 'Contas a Pagar', 'route' => URL . $this->route . '/billToPay/' . $customerId, 'class' => $_GET['pg1'] === 'billToPay' ? 'active' : '']);
@@ -235,10 +225,6 @@ class CustomerController extends FrontController
             'data' => $items
         ];
 
-        if (isset($_GET['customer_type_in']) && count($_GET['customer_type_in']) == 1 && $_GET['customer_type_in'][0] == 11) {
-            array_splice($table->thead, 1, 0, [(object)['style' => 'width: 60px', 'class' => 'text-center', 'text' => 'Logo', 'column' => (object)['type' => 'image', 'link' => 'logo']]]);
-        }
-
         require APP . 'view/_templates/header.php';
         require APP . 'view/' . $this->dir . '/index.php';
         require APP . 'view/_templates/footer.php';
@@ -301,6 +287,12 @@ class CustomerController extends FrontController
         $branchModel = new Branch();
 
         $customer = $this->model->getItemById($customerId);
+
+        if (!$customer) {
+            Toast::errorToast('Cliente não encontrado');
+            redirect($this->route);
+        }
+
         $credit = $this->model->calculateCustomerCredit($customerId);
 
         $contentHeader = (object)[
@@ -433,8 +425,7 @@ class CustomerController extends FrontController
 
         /**Menu */
         $menuSpouse = 1;
-        $menuBillToPay = in_array(10, $typeSelected);
-        $menuConstructorImage = in_array(11, $typeSelected);
+        $menuBillToPay = in_array(2, $typeSelected);
         $credit = $this->model->calculateCustomerCredit($customerId);
 
         require APP . 'view/_templates/header.php';
@@ -497,60 +488,6 @@ class CustomerController extends FrontController
         }
     }
 
-    public function property($customerId)
-    {
-        $modelGenerico = new ModelGenerico();
-        $customerModel = new Customer();
-        $productModel = new Property();
-        $branchModel = new Branch();
-
-        $this->page->id = Self::menuEdit();
-
-        $customer = $customerModel->getCustomerById($customerId);
-        $branch = $branchModel->getItemById8161($customer->id_branch);
-
-        /**Tipo Cliente */
-        $typeCustomer = $modelGenerico->getItemByGenericField($customerId, "client_type_resource_types", "id_customer");
-        $typeSelected = array_map(function ($type) {
-            return $type->id_customer_type;
-        }, $typeCustomer);
-
-        /**Segurança do cadastro do cliente */
-        if (!in_array($_SESSION['RR']->branch->current->id, array_column((new CustomerBranch)->getWithFiltersAllItems([(object)['columns' => ['id_customer' => (object)['value' => $customerId]]]])->data, 'id_branch'))) {
-            redirect($this->route);
-        }
-
-        $_GET['id_owner'] = $customerId;
-
-        if (!isset($_GET['status'])) {
-            $_GET['status'] = true;
-        }
-
-        $products = $productModel->getAndFilterAllProducts(0, $_GET, 0);
-        $propertyTypes = (new PropertyType())->getAndFilterAllItem(['status' => 1], 0);
-        $propertyCategories = (new PropertyCategory())->getAllPropertyCategory();
-
-        /**Cliente foi travado ou o usuário não tem permissão de edição */
-        $permission = Secure::access_secretary() || (!$customer->blocked && Secure::creator($customer->created_by));
-        /**Os dados de contato do cliente ficarão restritos, Configuração definida por filial */
-        $restricted = !Secure::access_secretary() && !Secure::creator($customer->created_by) && $branch->restrict_owner_data;
-
-        $attrInputs = $permission && !$restricted ? "" : "disabled";
-        $attrInputsRequired = $permission && !$restricted ? "required" : "disabled";
-        $textLabelRequired = $permission && !$restricted ? "*" : "";
-
-        /**Menu */
-        $menuSpouse = $modelGenerico->getItemByGenericField($customerId, "spouse_customer", "id_spouse");
-        $menuBillToPay = in_array(10, $typeSelected);
-        $menuConstructorImage = in_array(11, $typeSelected);
-        $credit = $this->model->calculateCustomerCredit($customerId);
-
-        require APP . 'view/_templates/header.php';
-        require APP . 'view/' . $this->dir . '/menu.php';
-        require APP . 'view/' . $this->dir . '/property.php';
-        require APP . 'view/_templates/footer.php';
-    }
-
     public function image($customerId)
     {
         $modelGenerico = new ModelGenerico();
@@ -562,8 +499,7 @@ class CustomerController extends FrontController
         $typeSelected = array_map(function ($type) {
             return $type->id_customer_type;
         }, $typeCustomer);
-        $menuBillToPay = in_array(10, $typeSelected);
-        $menuConstructorImage = in_array(11, $typeSelected);
+        $menuBillToPay = in_array(2, $typeSelected);
         $credit = $this->model->calculateCustomerCredit($customerId);
 
         require APP . 'view/_templates/header.php';
@@ -811,7 +747,13 @@ class CustomerController extends FrontController
             array_fill(0, count($_FILES['file']) + 1, "attachments/customer/$customerId")
         );
 
+        $hasError = false;
         foreach ($attachments as $attachment) {
+            if ($attachment['error']) {
+                $hasError = true;
+                continue;
+            }
+
             (new CustomerAttachment)->insert([
                 "id_customer" => $customerId,
                 "name" => $_POST["name"],
@@ -820,6 +762,10 @@ class CustomerController extends FrontController
                 "status" => 1,
                 "created_by" => $_SESSION['RR']->user->id,
             ]);
+        }
+
+        if ($hasError) {
+            Toast::errorToast('Não foi possível enviar um ou mais arquivos');
         }
 
         redirect("{$this->route}/attachment/$customerId/");
@@ -998,7 +944,6 @@ class CustomerController extends FrontController
         }, $typeCustomer);
         $menuSpouse = $modelGenerico->getItemByGenericField($customerId, "spouse_customer", "id_spouse");
         $menuBillToPay = 1;
-        $menuConstructorImage = in_array(11, $typeSelected);
         $credit = $this->model->calculateCustomerCredit($customerId);
 
         require APP . 'view/_templates/header.php';
@@ -1007,130 +952,6 @@ class CustomerController extends FrontController
         require APP . 'view/_templates/footer.php';
     }
 
-    public function contract($customerId)
-    {
-        $this->addScript(URL . "js/" . JSVERSION . "/" . $this->dir . "/customer.js");
-
-        $modelGenerico = new ModelGenerico();
-        $customerModel = new Customer();
-        $branchModel = new Branch();
-        $contractModel = new Contract();
-
-        $this->page->id = Self::menuEdit();
-
-        $customer = $customerModel->getCustomerById($customerId);
-        $branch = $branchModel->getItemById8161($customer->id_branch);
-
-        /**Tipo Cliente */
-        $typeCustomer = $modelGenerico->getItemByGenericField($customerId, "client_type_resource_types", "id_customer");
-        $typeSelected = array_map(function ($type) {
-            return $type->id_customer_type;
-        }, $typeCustomer);
-
-        /**Segurança do cadastro do cliente */
-        if (!in_array($_SESSION['RR']->branch->current->id, array_column((new CustomerBranch)->getWithFiltersAllItems([(object)['columns' => ['id_customer' => (object)['value' => $customerId]]]])->data, 'id_branch'))) {
-            redirect($this->route);
-        }
-
-        /**Tipo 3 é Contrato de autorização de divulgação */
-        $standardContracts = $modelGenerico->getItemByGenericField(3, "standard_contract", "type_contract", true);
-
-        if (!isset($_GET['status'])) {
-            $_GET['status'] = true;
-        }
-        $_GET['id_customer'] = $customerId;
-
-        $contracts = $contractModel->getAndFiltersContractCustomer($_GET);
-
-        /**Cliente foi travado ou o usuário não tem permissão de edição */
-        $permission = Secure::access_secretary() || (!$customer->blocked && Secure::creator($customer->created_by));
-        /**Os dados de contato do cliente ficarão restritos, Configuração definida por filial */
-        $restricted = !Secure::access_secretary() && !Secure::creator($customer->created_by) && $branch->restrict_owner_data;
-
-        $attrInputs = $permission && !$restricted ? "" : "disabled";
-        $attrInputsRequired = $permission && !$restricted ? "required" : "disabled";
-        $textLabelRequired = $permission && !$restricted ? "*" : "";
-
-        /**Menu */
-        $menuSpouse = $modelGenerico->getItemByGenericField($customerId, "spouse_customer", "id_spouse");
-        $menuBillToPay = in_array(10, $typeSelected);
-        $menuConstructorImage = in_array(11, $typeSelected);
-        $credit = $this->model->calculateCustomerCredit($customerId);
-
-        require APP . 'view/_templates/header.php';
-        require APP . 'view/' . $this->dir . '/menu.php';
-        require APP . 'view/' . $this->dir . '/contract.php';
-        require APP . 'view/_templates/footer.php';
-    }
-
-    public function handleSubmitContract($customerId)
-    {
-        Secure::check_post_method($this->route);
-
-        $gerenciaPost = new GerenciaPost();
-        $customerModel = new Customer();
-        $standardContractModel = new StandardContract();
-        $productModel = new Property();
-        $branchModel = new Branch();
-        $userModel = new User();
-
-        $customer = $customerModel->getCustomerById($customerId);
-        Secure::redirectFunction(!Secure::access_secretary() && (!$customer->created_by || $customer->blocked == 1), $this->route . "/contract/" . $customerId, "authorization=false");
-
-        $standardContract = $standardContractModel->getStandardContractById($_POST['id_standard_contract']);
-
-        $arrPostContractAutorization = array(
-            "id_customer" => $customerId,
-            "id_standard_contract" => $_POST['id_standard_contract'],
-            "contract_text" => $standardContract->text,
-            "created_by" => $_SESSION['RR']->user->id
-        );
-
-        try {
-            $contractId = $gerenciaPost->insert7181($arrPostContractAutorization, 'property_authorization_contract', true, false);
-
-            /**Gerar hash para o contrator */
-            $gerenciaPost->update8191(["code" => hash("md4", "$contractId")], 'property_authorization_contract', "id", $contractId, false);
-            $customer = $customerModel->getCustomerById($customerId);
-            $customerContract = $customerModel->getCustomerByIdForContract($customerId);
-            array_map(function ($customer) {
-                $customer->nome_juridico = $customer->nome_fantasia ?? $customer->nome_razao;
-            }, [$customerContract]);
-            $branchContract = $branchModel->getBranchForContractById($customer->id_branch);
-            $userContract = $userModel->getUserForContractById($customer->created_by);
-
-            foreach ($_POST['product'] as $productId => $value) {
-                $arrPostPropertyInvolvedAutorization = array('id_product' => $productId, 'id_property_authorization_contract' => $contractId);
-                $gerenciaPost->insert7181($arrPostPropertyInvolvedAutorization, 'property_involved_authorization_contract', false, false);
-
-                $productContract = $productModel->getProductByIdForContract($productId);
-                $resourcesContract = $productModel->getAllProductOwnershipFeatureByIdProduct($productId);
-                $found = array_values(array_filter($resourcesContract, function ($resource) {
-                    return array_reduce(['%MATRICULA%', '%MATRÍCULA%'], function ($acc, $word) use ($resource) {
-                        return $acc || Util::likePHP($word, mb_strtoupper($resource->immovable_resource_name));
-                    }, false);
-                }));
-            }
-
-            header('location:' . URL . $this->route . "/contract/$customerId?added=true");
-            exit;
-        } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/contract/$customerId?added=false");
-            exit;
-        }
-    }
-
-    public function disabledContract($contractId)
-    {
-        $modelGenerico =  new ModelGenerico();
-
-        $contract = $modelGenerico->getItemById8161($contractId, "property_authorization_contract");
-        $customer = (new Customer)->getCustomerById($contract->id_customer);
-        Secure::redirectFunction(!Secure::access_secretary() && (!$customer->created_by || $customer->blocked == 1), $this->route . "/contract/" . $customer->id, "authorization=false");
-        $modelGenerico->disableItem($contractId, "property_authorization_contract");
-        header('location: ' . URL . $this->route . "/contract/$customer->id?disabled=true");
-        exit;
-    }
 
     public function disableItem($customerId, $page)
     {

@@ -11,6 +11,7 @@ use RR\libs\RecursiveCostCenter;
 use RR\libs\Secure;
 use RR\libs\Util;
 use RR\model\Customer;
+use RR\model\CustomerType;
 use RR\model\FormOfPayment;
 use RR\model\BillsToPay;
 use RR\model\BillsToPayInstallment;
@@ -83,7 +84,7 @@ class BillsToPayController extends FrontController
 
         $paymentStatus = $modelGenerico->getItemByGenericFieldArray(['status' => 1], "payment_status");
         $formOfPayments = (new FormOfPayment())->getAndFilterAllItem(['status' => true], 0)->data;
-        $customers = (new Customer())->getAndFilterAllCustomer(0, ['status' => 1, 'id_customer_type' => 10, "id_branch" => $_SESSION['RR']->branch->current->id], 0);
+        $customers = (new Customer())->getAndFilterAllCustomer(0, ['status' => 1, 'id_customer_type' => (new CustomerType())->getIdByName('Fornecedor'), "id_branch" => $_SESSION['RR']->branch->current->id], 0);
 
         array_map(function ($item) {
             $item->name = $item->customer_fancy_name ?? $item->customer_name;

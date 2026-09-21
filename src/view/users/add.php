@@ -64,24 +64,6 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4 col-lg-4 user_permission_publish">
-                                    <div class="form-group">
-                                        <label for="permission_publish">Publicar no Site</label>
-                                        <select name="permission_publish" id="permission_publish" class="form-control">
-                                            <option value="0">Não</option>
-                                            <option value="1">Sim</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 user_permission_publish">
-                                    <div class="form-group">
-                                        <label for="show_team">Exibir na Equipe do Site <span class="text-danger">*</span></label>
-                                        <select name="show_team" id="show_team" class="form-control">
-                                            <option value="0">Não</option>
-                                            <option value="1">Sim</option>
-                                        </select>
-                                    </div>
-                                </div>
                                 <div class="col-md-4 col-lg-4 select-branches">
                                     <div class="form-group">
                                         <label for="id_branch">Filiais<span class="text-danger">*</span></label>

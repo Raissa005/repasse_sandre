@@ -14,9 +14,13 @@
    as constantes de banco (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`).
    **`src/config/config.php` não deve ser versionado** (contém credenciais) —
    confirmar que está no `.gitignore` antes de qualquer commit que o inclua.
-3. Importar `db/realize_repasse.sql` no banco (schema base — mas ver o alerta em
-   `docs/07-banco-de-dados.md` sobre módulos não cobertos por esse dump, ex.
-   veículos).
+3. **Não usar `db/realize_repasse.sql`** para criar o banco — esse dump está
+   obsoleto (schema antigo, de quando o sistema era só imobiliário; ver alerta
+   em `docs/07-banco-de-dados.md`). Confirmado com o usuário em 2026-09-03: o
+   banco de qualquer ambiente novo (produção incluída) deve ser criado a
+   partir da **estrutura do banco de desenvolvimento local atual** (export/dump
+   gerado a partir dele, não do arquivo antigo), com as migrations de
+   `db/migrations/` já aplicadas.
 4. Apontar o vhost para `public/` (ou deixar o `.htaccess` da raiz redirecionar).
 
 ## Constantes principais (`src/config/config.php`)

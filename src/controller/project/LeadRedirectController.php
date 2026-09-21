@@ -14,6 +14,24 @@ use RR\model\LeadWorkingDate;
 
 class LeadRedirectController
 {
+    /**
+     * Módulo Lead pausado a pedido do usuário (2026-09-02): captação de leads
+     * não será usada por enquanto. As tabelas `lead`/`lead_config`/`lead_random`/
+     * `lead_working_date`/`integrations` não existem neste banco, então esses
+     * métodos já quebrariam com erro fatal de SQL — mas esta classe não estende
+     * nenhum Controller base, ou seja, sem este guard qualquer requisição
+     * externa (`leadsFaceBook` é um webhook público, sem login) chegaria a
+     * rodar SQL com dado não validado antes de falhar. Não remover o código:
+     * é só desativação, para reativar depois que as tabelas forem recriadas e
+     * a fonte de captação for redefinida (ver docs/10-modulos-negocio.md e
+     * memória do projeto "attendance-vehicle-interest"/"property-domain...").
+     */
+    public function __construct()
+    {
+        http_response_code(404);
+        exit;
+    }
+
     public function leadsFaceBook()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

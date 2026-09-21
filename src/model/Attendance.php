@@ -306,114 +306,48 @@ class Attendance extends Model
         return $query->fetchAll();
     }
 
-    public function getAndFilterAllPropertiesPresentationByAttendance($attendanceId, $filters = [], $rows = 0, $page = 0)
+    public function getAndFilterAllVehiclesPresentationByAttendance($attendanceId, $filters = [], $rows = 0, $page = 0)
     {
         $parameters = [];
         $filtersQuery = '';
-        if (!isset($filters['status_property_presentation'])) {
-            $filtersQuery .= " AND dp.status = 1";
+        if (!isset($filters['status_vehicle_presentation'])) {
+            $filtersQuery .= " AND dv.status = 1";
         }
 
         if (!isset($filters['status_attendance'])) {
             $filtersQuery .= " AND a.status = 1";
         }
 
-        if (!isset($filters['status_property'])) {
-            $filtersQuery .= " AND p.status = 1";
+        if (!isset($filters['status_vehicle'])) {
+            $filtersQuery .= " AND v.status = 1";
         }
 
         $filtersQuery .= " AND a.id = :id_attendance";
         $parameters[':id_attendance'] = $attendanceId;
 
-        if (isset($filters['status_property_presentation']) && $filters['status_property_presentation'] != '') {
-            $filtersQuery .= " AND dp.status = :status_property_presentation";
-            $parameters[':status_property_presentation'] = $filters['status_property_presentation'];
-        }
-
-        if (isset($filters['status_attendance']) && $filters['status_attendance'] != '') {
-            $filtersQuery .= " AND a.status = :status_attendance";
-            $parameters[':status_attendance'] = $filters['status_attendance'];
-        }
-
-        if (isset($filters['status_property']) && $filters['status_property'] != '') {
-            $filtersQuery .= " AND p.status = :status_property";
-            $parameters[':status_property'] = $filters['status_property'];
-        }
-
-        if (isset($filters['ids_properties']) && is_array($filters['ids_properties'])) {
-            if (!empty($filters['ids_properties'])) {
-                $filtersQuery .= " AND dp.id_product IN (";
-
-                foreach ($filters['ids_properties'] as $value) {
-                    $filtersQuery .= "$value, ";
-                }
-
-                $filtersQuery = rtrim($filtersQuery, ", ");
-                $filtersQuery .= ")";
-            }
-        }
-
         $offset = ($page - 1) * $rows;
 
         $sql = "SELECT
-                    dp.*,
-                    p.name as product_name, p.cod as product_cod, p.uf_state as product_uf, p.value as product_value, p.installment_value, p.status as product_status, p.slugify as product_slugify,
-                    ppt.name as property_type_name,
-                    ppc.name as property_category_name,
-                    c.name as city_name,
-                    (
-                        SELECT
-                            COUNT(prts.id)
-                        FROM presentations prts
-                        WHERE prts.id_displayed_properties = dp.id
-                        AND prts.status = 1
-                    ) AS count_presentations,
-                    (
-                        SELECT
-                            COUNT(pdtimg.id)
-                        FROM products_imgs pdtimg
-                        WHERE p.id = pdtimg.id_product
-                    ) AS count_products_imgs
-                FROM displayed_properties dp
-                LEFT JOIN attendance a ON a.id = dp.id_attendance
-                LEFT JOIN products p ON p.id = dp.id_product
-                LEFT JOIN property_type ppt ON ppt.id = p.id_residential_type
-                LEFT JOIN property_category ppc ON ppc.id = p.id_property_category
-                LEFT JOIN cities c ON c.id = p.id_city
+                    dv.*,
+                    v.name as vehicle_name, v.plate as vehicle_plate, v.year_manufacture, v.year_model, v.mileage,
+                    v.vehicle_sales_value, v.status as vehicle_status,
+                    vb.name as vehicle_brand_name,
+                    vm.name as vehicle_model_name
+                FROM attendance_displayed_vehicles dv
+                LEFT JOIN attendance a ON a.id = dv.id_attendance
+                LEFT JOIN vehicles v ON v.id = dv.id_vehicle
+                LEFT JOIN vehicle_brands vb ON vb.id = v.id_brand
+                LEFT JOIN vehicle_models vm ON vm.id = v.id_model
                 WHERE TRUE $filtersQuery
                 ORDER BY ";
 
-        $sql .= isset($filters['order']) && $filters['order'] != "" ? " " . $filters['order'] : " dp.created_at DESC";
+        $sql .= isset($filters['order']) && $filters['order'] != "" ? " " . $filters['order'] : " dv.created_at DESC";
 
         if ($rows > 0) {
             $sql .= " LIMIT $rows OFFSET $offset";
         }
 
         $query = $this->db->prepare($sql);
-        $query->execute($parameters);
-
-        return $query->fetchAll();
-    }
-
-    /**descontinuar */
-    public function getImmovableResourceIdAttendance($attendanceId)
-    {
-        $sql = "SELECT
-                    air.id, air.filter, air.value_money, air.value_text, air.created_by, air.created_at,
-                    ir.id as id_immovable_resource, ir.name as immovable_resource,
-                    pc.id as id_category, pc.name as category,
-                    pt.id as id_property_type, pt.name as property_type,
-                    u.name as user
-                FROM attendance_filters_interests air
-                LEFT JOIN immovable_resource ir ON ir.id = air.immovable_resource
-                LEFT JOIN property_category pc ON pc.id = air.category
-                LEFT JOIN property_type pt ON pt.id = air.property_type
-                LEFT JOIN users u ON u.id = air.created_by
-                WHERE air.id_attendance = :id
-                ORDER BY air.id ASC";
-
-        $query = $this->db->prepare($sql);
-        $parameters = array("id" => $attendanceId);
         $query->execute($parameters);
 
         return $query->fetchAll();

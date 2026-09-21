@@ -37,7 +37,10 @@ estrutura real antes de mexer no schema.
 contrato), `AttendanceController` (atendimento — kanban, call-center, timeline,
 telefone, anexo), `AttendanceStatusController`, `LeadController` +
 `LeadConfigController` + `LeadRedirectController` (captação/distribuição de
-lead), `CalendarController`, `NotificationController`.
+lead — **pausado em 2026-09-02**: tabelas `lead*`/`integrations` não existem
+neste banco e os 3 controllers têm um guard que desativa todas as ações;
+não presumir que o módulo funciona sem antes conferir esse guard),
+`CalendarController`, `NotificationController`.
 
 ## Vendas / Financeiro
 `SalesController` (venda: comissão, contrato, anexo, despesas, acordo de

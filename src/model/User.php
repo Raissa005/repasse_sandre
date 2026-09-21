@@ -59,10 +59,8 @@ class User extends Model
             'phone' => Util::removeNonNumericCharacters($_POST['phone']),
             'id_branch' => !empty($_POST['id_branch']) ? $_POST['id_branch'][0] : 0,
             'password' => password_hash($_POST['password'], PASSWORD_BCRYPT, array('cost' => 12)),
-            'permission_publish' => ($_POST['id_profile'] <= 2 ? 1 : $_POST['permission_publish']),
             'id_branch' => (isset($_POST['id_branch']) ? $_POST['id_branch'][0] : "0"),
             'created_by' => $_SESSION['RR']->user->id,
-            'show_team' => $_POST['show_team'],
         );
         try {
             $this->db->beginTransaction();
@@ -130,14 +128,12 @@ class User extends Model
             'id_customer' => !empty($post['id_customer']) ? $post['id_customer'] : '',
             'phone' => Util::removeNonNumericCharacters($post['phone']),
             'cpf' => Util::removeNonNumericCharacters($post['cpf']),
-            'show_team' => $_POST['show_team'],
             'updated_by' => $_SESSION['RR']->user->id,
             'updated_at' => date("Y-m-d H:i:s"),
         );
 
         if (Secure::access_admin()) {
             $arrayPost['id_branch'] = $post['id_branch'][0] ?? $item->id_branch;
-            $arrayPost['permission_publish'] = $post['permission_publish'];
         }
 
         if ($post['password_confirm'] === $post['password'] && $post['password'] != "") {

@@ -7,11 +7,22 @@ adivinhar o padrão a partir daqui.
 
 ## Regras de trabalho (sempre válidas, não deferidas)
 
-1. **Banco de dados**: nunca alterar o schema diretamente em produção nem assumir
-   que uma migration foi aplicada. Toda alteração de schema (nova tabela, coluna,
-   índice, seed) deve ser gerada como arquivo `.sql` em `db/migrations/`, para o
-   usuário revisar e executar manualmente. Nunca rodar `ALTER`/`CREATE`/`DROP`
-   direto no banco por conta própria. Ver `docs/07-banco-de-dados.md`.
+1. **Banco de dados**: nunca alterar o banco diretamente, nunca mesmo, por
+   nenhum meio — nem SQL direto (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`/
+   `RENAME TABLE`/`UPDATE`/`INSERT`/`DELETE`/`REPLACE INTO`/`LOAD DATA`/
+   `GRANT`/`REVOKE`/`SET PASSWORD`, via mysql CLI, phpMyAdmin ou qualquer
+   cliente) nem por caminho indireto que produza o mesmo efeito — script PHP
+   avulso que usa a camada de Model/PDO da própria aplicação (`php -r`, `php
+   arquivo.php`), ou requisição HTTP/curl contra um endpoint da aplicação
+   rodando que escreva no banco como efeito colateral (ex.: "testar" uma
+   feature de cadastro fazendo `POST` direto no controller). Não importa o
+   motivo (schema novo, seed de referência, correção pontual de uma linha,
+   reset de senha, dado de teste) nem o ambiente (vale para local/dev igual a
+   produção), e **não existe exceção mesmo que o usuário peça explicitamente
+   pra rodar direto "só dessa vez"** — a resposta é sempre gerar a migration.
+   Toda alteração no banco vira arquivo `.sql` em `db/migrations/`, para o
+   usuário revisar e executar manualmente. Leitura (`SELECT`/`SHOW`) continua
+   liberada normalmente para investigação. Ver `docs/07-banco-de-dados.md`.
 2. **Seguir o padrão existente**: arquitetura, nomenclatura, assinatura de métodos,
    forma de montar SQL, forma de estruturar views/components — tudo isso já está
    estabelecido no projeto. Implementações novas ou manutenções devem seguir os

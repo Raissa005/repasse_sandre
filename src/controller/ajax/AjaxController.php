@@ -28,11 +28,7 @@ use RR\model\Lead;
 use RR\model\ModelGenerico;
 use RR\model\Notification;
 use RR\model\NotificationRead;
-use RR\model\Property;
 use RR\model\Sales;
-use RR\model\PropertyCategory;
-use RR\model\PropertyType;
-use RR\model\StandardContract;
 
 class AjaxController
 {
@@ -238,12 +234,6 @@ class AjaxController
         echo json_encode(['error' => false, 'states' => $obj]);
     }
 
-    public function getCitiesForProperties()
-    {
-        $obj = (new Property())->getCitiesForProperties(['uf_state' => $_POST['uf'], 'status' => true, 'id_branch' => $_SESSION['RR']->branch->current->id, 'created_by' => isset($_POST['created_by']) ? $_POST['created_by'] : '']);
-        echo json_encode(['error' => false, 'cities' => $obj]);
-    }
-
     public function getCityByState()
     {
         $obj = (new Branch())->getCitiesByState($_POST['uf']);
@@ -256,89 +246,10 @@ class AjaxController
         echo json_encode(['error' => false, 'cities' => $obj]);
     }
 
-    public function getNeighborhoodsByCityId()
-    {
-        $obj = (new Property())->getWithFiltersAllItems(
-            [
-                (object)['columns' => [
-                    'status' => (object)['comparison' => 'EQUAL', 'value' => true],
-                    'id_city' => (object)['comparison' => 'EQUAL', 'value' => $_POST['id_city']],
-                    'id_branch' => (object)['comparison' => 'EQUAL', 'value' => $_SESSION['RR']->branch->current->id]
-                ]]
-            ],
-            [
-                (object)['columns' => ['neighborhood']]
-            ],
-            ['groupBy' => 'this->table.neighborhood']
-        )->data;
-
-        echo json_encode(['error' => false, 'neighborhoods' => $obj]);
-    }
-
     public function getCustomerByBranch()
     {
         $obj = (new Customer())->getCustomerByBranch($_POST['id_branch'], $_SESSION['RR']->profile->id);
         echo json_encode(['error' => false, 'customers' => $obj]);
-    }
-
-    public function getProductByBranch()
-    {
-        $obj = (new Property())->getProductsByBranch($_POST['id_branch']);
-        echo json_encode(['error' => false, 'products' => $obj]);
-    }
-
-    public function getExclusiveByBranch()
-    {
-        $customerModel = new Customer();
-        $productsModel = new Property();
-        $branchModel = new Branch();
-        $contractModel = new StandardContract();
-        $userModel = new User();
-
-        $branch = $branchModel->getItemById8161($_POST['id_branch']);
-
-        $filterCustomer = array(
-            'status' => true,
-            'id_branch' => $_POST['id_branch'],
-            'id_type_customer' => $_POST['id_type_customer'],
-        );
-
-        $filterProduct = array(
-            'status' => true,
-            'id_branch' => $_POST['id_branch'],
-        );
-
-        $filterContract = array(
-            'status' => true,
-            'id_type_contract' => 1
-        );
-
-        $filterProposal = array(
-            'status' => true,
-            'id_type_contract' => 2
-        );
-
-        $filterUsers = array(
-            'status' => true,
-            'id_profile' => 2,
-            'id_branch' => $branch->id,
-        );
-
-        $customers = $customerModel->getAndFilterAllCustomer(0, $filterCustomer, 0);
-        $products = $productsModel->getAndFilterAllProducts(0, $filterProduct, 0);
-        $users = $userModel->getAndFilterAllUsers(0, $filterUsers, 0)->data;
-        $contracts = $contractModel->getAndFilterAllStandardContract(0, $filterContract, 0);
-        $proposal = $contractModel->getAndFilterAllStandardContract(0, $filterProposal, 0);
-        $currencies = (new Currencies)->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['comparison' => 'EQUAL', 'value' => true]]]]);
-
-        echo json_encode(['error' => false, 'customers' => $customers, 'products' => $products, 'contracts' => $contracts, 'proposal' => $proposal, 'users' => $users, 'currencies' => $currencies]);
-    }
-
-    public function getProductById()
-    {
-        $product = (new Property())->getProductsById($_POST['id_product']);
-
-        echo json_encode(['error' => false, 'product' => $product]);
     }
 
     public function getAllItensFromGenericTable()
@@ -455,22 +366,6 @@ class AjaxController
         echo json_encode(['error' => false, 'amountPortions' => $arrayPost]);
     }
 
-    public function getAllPropertyTypeResourceByIdPropertyType()
-    {
-        $propertyTypeModel = new PropertyType();
-
-        $arrayPost = $propertyTypeModel->getAllPropertyTypeResourceByIdItem($_POST['id_property_type']);
-        echo json_encode(['error' => false, 'propertyTypeResources' => $arrayPost]);
-    }
-
-    public function getAllProductOwnershipFeatureByIdProduct()
-    {
-        $productsModal = new Property();
-
-        $arrayPost = $productsModal->getAllProductOwnershipFeatureByIdProduct($_POST['id_product']);
-        echo json_encode(['error' => false, 'productOwnershipFeature' => $arrayPost]);
-    }
-
     public function getCustomerTypeResources()
     {
         $customerTypeModal = new CustomerType();
@@ -483,13 +378,6 @@ class AjaxController
         $branchModal = new Branch();
         $arrayPost = $branchModal->getItemById8161($_POST['id_branch']);
         echo json_encode(['error' => false, 'branch' => $arrayPost]);
-    }
-
-    public function getAllPropertyCategory()
-    {
-        $propertyCartegoryModal = new PropertyCategory();
-        $arrayPost = $propertyCartegoryModal->getAllPropertyCategory();
-        echo json_encode(['error' => false, 'propertyCategory' => $arrayPost]);
     }
 
     public function getCustomerById()
@@ -554,53 +442,6 @@ class AjaxController
         exit;
     }
 
-    public function getAndFilterAllProducts()
-    {
-        $productsModel = new Property();
-
-        $page = $_POST['page'];
-        $rows = $_POST['rows'];
-        if (isset($_POST["statusFilterIdsProduct"]) && $_POST["statusFilterIdsProduct"] != 'false') {
-            $_POST["idsProducts"] = $_POST["filterIdsProducts"];
-        }
-
-        $products = $productsModel->getAndFilterAllProducts($rows, $_POST, $page);
-        $nextPage = !empty($productsModel->getAndFilterAllProducts($rows, $_POST, $page + 1));
-
-        echo json_encode([
-            'error' => false,
-            'products' => $products,
-            "nextPage" => $nextPage
-        ]);
-        exit;
-    }
-
-    public function getAndFilterAllPropertiesPresentationByAttendance()
-    {
-        $productsModel = new Property();
-
-        $page = $_POST['page'];
-        $rows = $_POST['rows'];
-
-        $products = $productsModel->getAndFilterAllProducts($rows, $_POST, $page);
-        $nextPage = !empty($productsModel->getAndFilterAllProducts($rows, $_POST, $page + 1));
-
-        $propertiesPresentations = (new Attendance())->getAndFilterAllPropertiesPresentationByAttendance($_POST['attendanceId'], ['status_property_presentation' => true, 'status_attendance' => true, 'status_property' => true], 0, 0);
-
-        echo json_encode([
-            'error' => false,
-            'propertiesPresentations' => $propertiesPresentations,
-            "nextPage" => $nextPage
-        ]);
-        exit;
-    }
-
-    public function getAllPropertyTypeIdTypeBranch()
-    {
-        $arrayPost = (new PropertyType)->getAndFilterAllItem(['status' => 1], 0);
-        echo json_encode(['error' => false, 'property_type' => $arrayPost]);
-    }
-
     public function changeBranch()
     {
         (new User())->checkSession();
@@ -622,71 +463,12 @@ class AjaxController
         exit;
     }
 
-    public function getAndFilterAllAttendanceForCalendar()
-    {
-        $calendar = (new Calendar())->getAndFilterAllAttendanceForCalendar(0, $_POST['filterAttendance'], 0);
-        $products = (new Property())->getAndFilterAllProducts(0, $_POST['filterProduct'], 0);
-
-        echo json_encode(["attendance" => $calendar, "products" => $products]);
-        exit;
-    }
-
-    public function getImmovableResourceIdAttendance()
-    {
-        $attendanceFiltersInterests = (new Attendance())->getImmovableResourceIdAttendance($_POST['id_attendance']);
-
-        echo json_encode(["error" => false, "filtersInterests" => $attendanceFiltersInterests]);
-        exit;
-    }
-
-    public function getAllProductWithFeatureValue()
-    {
-        $productsModel = new Property();
-
-        $allIdsProductsWithFilter = array();
-        $idsProducts = [];
-
-        if (isset($_POST['features']) && !empty($_POST['features'])) {
-
-            foreach ($_POST['features'] as $feature => $value) {
-                $arrayObj = $productsModel->getAllProductWithFeatureValue2($feature, $value);
-                $arrayString = array_map(function ($object) {
-                    return $object->id;
-                }, $arrayObj);
-
-                array_push($allIdsProductsWithFilter, $arrayString);
-            }
-
-            $idsProducts = Util::findIntersectionInMatrix($allIdsProductsWithFilter);
-        }
-        echo json_encode(["error" => false, "idsProducts" => $idsProducts]);
-        exit;
-    }
-
     public function comparePhone()
     {
         $filters = array('id_branch' => $_SESSION['RR']->branch->current->id, "phone" => $_POST['phone']);
         $attendance = (new Attendance())->comparePhone($filters);
 
         echo json_encode(["error" => false, "attendance" => $attendance]);
-        exit;
-    }
-
-    public function getPresentationsIPByIdDisplayed()
-    {
-        $attendanceModel = new Attendance();
-        $presentations = $attendanceModel->getPresentationsIPByIdDisplayed($_POST['id_displayed_properties']);
-
-        echo json_encode(["error" => false, "presentations" => $presentations]);
-        exit;
-    }
-
-    public function searchProductIdenticalByCod()
-    {
-        $filters['cod'] = $_POST['cod'];
-        $product = (new Property())->getAndFilterAllProducts(0, $filters, 0);
-
-        echo json_encode(["error" => false, "products" => $product]);
         exit;
     }
 

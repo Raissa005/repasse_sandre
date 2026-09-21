@@ -95,7 +95,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div style="display: flex; justify-content: center;">
-                    <h4 class="modal-title" id="exampleModalCenterTitle">Clientes / Vendedores</h4>
+                    <h4 class="modal-title" id="exampleModalCenterTitle">Vendedores / Fornecedores</h4>
                 </div>
                 <div style="position: absolute; right: 15px; top: 10px;">
                     <button type="button" class="btn btn-danger" data-dismiss="modal" aria-label="Close">

@@ -28,6 +28,13 @@ class LeadConfigController extends FrontController
         $this->table = 'lead_config';
         parent::__construct($this->route);
 
+        /**
+         * Módulo Lead pausado a pedido do usuário (2026-09-02): a tabela
+         * `lead_config` não existe neste banco, então qualquer ação aqui já
+         * quebraria com erro fatal de SQL. Ver mesmo guard em LeadController.
+         */
+        Secure::redirectFunction(true, 'home', 'error=lead_disabled');
+
         $this->addScript(URL . "js/" . JSVERSION . "/lead.js");
         $this->alert = (new BoxAlert());
     }

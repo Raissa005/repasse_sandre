@@ -81,24 +81,6 @@ use RR\libs\Secure;
                                             </div>
                                         </div>
                                         <?php if (Secure::access_admin()) { ?>
-                                            <div class="col-md-4 user_permission_publish">
-                                                <div class="form-group">
-                                                    <label for="permission_publish">Publicar Site <span class="text-danger">*</span></label>
-                                                    <select name="permission_publish" id="permission_publish" class="form-control">
-                                                        <option value="0" <?= $item->permission_publish ? "selected" : "" ?>>Não</option>
-                                                        <option value="1" <?= $item->permission_publish ? "selected" : "" ?>>Sim</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4 user_permission_publish">
-                                                <div class="form-group">
-                                                    <label for="show_team">Exibir na Equipe do Site <span class="text-danger">*</span></label>
-                                                    <select name="show_team" id="show_team" class="form-control">
-                                                        <option value="0" <?= $item->show_team ? "selected" : "" ?>>Não</option>
-                                                        <option value="1" <?= $item->show_team ? "selected" : "" ?>>Sim</option>
-                                                    </select>
-                                                </div>
-                                            </div>
                                             <div class="col-md-12 select-branches">
                                                 <div class="form-group">
                                                     <label for="id_branch">Filiais <span class="text-danger">*</span></label>

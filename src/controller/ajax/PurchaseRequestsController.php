@@ -33,7 +33,7 @@ class PurchaseRequestsController extends Ajax
             $customer_filters = [
                 (object) ['columns' => ['status' => (object) ['value' => 1]]],
                 (object) ['table' => 'customer_branches', 'columns' => ['id_branch' => (object) ['comparison' => 'EQUAL', 'value' => $_SESSION['RR']->branch->current->id]]],
-                (object) ["table" => 'client_type_resource_types', "columns" => ['id_customer_type' => (object) ['comparison' => 'IN', 'value' => [1, 2]]]]
+                (object) ["table" => 'client_type_resource_types', "columns" => ['id_customer_type' => (object) ['comparison' => 'IN', 'value' => [2, 3]]]]
             ];
 
             if (!empty($_POST['name'])) {
@@ -257,7 +257,19 @@ class PurchaseRequestsController extends Ajax
             ]
         );
 
-        if ($_POST['costCenter'] == 12 && !empty($_POST['purchaseBrokerId']) && !empty($_POST['commission']) && $_POST['commission'] == 1)// É uma comissao a pagar
+        /**
+         * Antes checava também "$_POST['costCenter'] == 12" para detectar
+         * que era uma comissão — id de centro de custo do esquema antigo,
+         * que não existe neste banco (aqui "Comissão" é id=17). Como esse
+         * id nunca batia, a condição inteira nunca era verdadeira: toda
+         * submissão da aba Comissão caía no ramo de conta financeira
+         * comum e, se já existisse `id_bills_to_pay` (aba Financeiro),
+         * sobrescrevia silenciosamente a conta financeira principal em
+         * vez de criar a conta de comissão. `commission` + `purchaseBrokerId`
+         * já bastam pra identificar a submissão vinda da aba Comissão, sem
+         * depender de qual centro de custo o usuário escolheu.
+         */
+        if (!empty($_POST['purchaseBrokerId']) && !empty($_POST['commission']) && $_POST['commission'] == 1)// É uma comissao a pagar
         {
             $arrPost = array(
                 'id_customer' => $_POST['purchaseBrokerId'],
@@ -486,13 +498,28 @@ class PurchaseRequestsController extends Ajax
         $lastInstallment = end($allInstallments);
         $nextInstallment = $lastInstallment->number_portion ?? $lastInstallment->bills_to_pay_installments_number_portion;
         $idBillsPay = (new PurchaseRequests())->getItemById($_POST['purchaseId']);
+        $isCommission = isset($_POST['commission']) && $_POST['commission'] == 1;
+        $targetBillsToPayId = $isCommission ? $idBillsPay->id_commission_to_pay : $idBillsPay->id_bills_to_pay;
 
-        if(isset( $_POST['commission'] ) && $_POST['commission'] == 1){
+        /**
+         * Sem isso, um clique aqui antes de existir a conta a pagar
+         * principal (comissão ou financeiro) grava a parcela com
+         * id_bills_to_pay NULL — parcela "órfã", sem erro nenhum pro
+         * usuário, mas que nunca aparece em lugar nenhum do sistema.
+         */
+        if (empty($targetBillsToPayId)) {
+            echo json_encode(['error' => true, 'message' => $isCommission
+                ? 'Cadastre a comissão principal antes de adicionar parcelas.'
+                : 'Cadastre a conta a pagar principal antes de adicionar parcelas.']);
+            exit;
+        }
+
+        if ($isCommission) {
             $arrPost = [
                 'number_portion' => $nextInstallment,
                 'description' => $_POST['description'],
                 'created_by' => $_SESSION['RR']->user->id,
-                'id_bills_to_pay' => $idBillsPay->id_commission_to_pay,
+                'id_bills_to_pay' => $targetBillsToPayId,
                 'value_of_installments' => $_POST['valueInstallments'],
                 'id_form_of_payment' => $_POST['formPaymentId'],
                 'due_date' => !empty(trim($_POST['dueDate'])) ? $_POST['dueDate'] : NULL,
@@ -503,13 +530,13 @@ class PurchaseRequestsController extends Ajax
                 'number_portion' => $nextInstallment,
                 'description' => $_POST['description'],
                 'created_by' => $_SESSION['RR']->user->id,
-                'id_bills_to_pay' => $idBillsPay->id_commission_to_pay,
+                'id_bills_to_pay' => $targetBillsToPayId,
                 'value_of_installments' => $_POST['valueInstallments'],
                 'id_form_of_payment' => $_POST['formPaymentId'],
                 'due_date' => !empty(trim($_POST['dueDate'])) ? $_POST['dueDate'] : NULL
             ];
 
-            (new BillsToPay())->update(['id_cost_center' => $_POST['costCenter']], 'id', $idBillsPay->id_bills_to_pay);
+            (new BillsToPay())->update(['id_cost_center' => $_POST['costCenter']], 'id', $targetBillsToPayId);
         }
 
         $response = (new BillsToPayInstallment)->insert($arrPost);

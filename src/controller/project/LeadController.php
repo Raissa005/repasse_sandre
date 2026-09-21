@@ -35,6 +35,17 @@ class LeadController extends FrontController
         $this->table = 'lead';
         parent::__construct($this->route);
 
+        /**
+         * Módulo Lead pausado a pedido do usuário (2026-09-02): a tabela
+         * `lead` não existe neste banco, então qualquer ação aqui já
+         * quebraria com erro fatal de SQL. Guard evita isso e evita
+         * depender de erro de banco pra manter o recurso desligado — se as
+         * tabelas forem recriadas por outro motivo, isso continua desativado
+         * até decisão explícita de reativar (ver docs/10-modulos-negocio.md
+         * e memória do projeto).
+         */
+        Secure::redirectFunction(true, 'home', 'error=lead_disabled');
+
         $this->addScript(URL . "js/" . JSVERSION . "/lead.js");
         $this->alert = (new BoxAlert());
     }

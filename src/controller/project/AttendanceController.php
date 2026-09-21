@@ -14,15 +14,12 @@ use RR\libs\FileUploader;
 use RR\libs\DeleteFile;
 use RR\libs\Secure;
 use RR\model\AttendanceStatus;
-use RR\model\ImmovableResource;
-use RR\model\PropertyCategory;
-use RR\model\PropertyType;
 use PDOException;
 use RR\model\AttendanceFiltersInterests;
-use RR\model\DisplayedProperties;
+use RR\model\AttendanceDisplayedVehicles;
 use RR\model\ManagerTeam;
-use RR\model\Property;
-use RR\model\PropertyOwnershipFeature;
+use RR\model\Vehicles;
+use RR\model\VehicleBrands;
 
 use function RR\Controller\redirect;
 
@@ -207,7 +204,6 @@ class AttendanceController extends FrontController
 
         $modelGenerico = new ModelGenerico();
         $attendanceModel = new Attendance();
-        $productModel = new Property();
 
         $attendance = $attendanceModel->getAttendanceById($attendanceId);
         /**Formatação de data */
@@ -237,19 +233,13 @@ class AttendanceController extends FrontController
             return $element->id != 11;
         });
 
-        $filterProducts = array("status" => true, "id_branch" => $attendance->id_branch);
-
         $disabledStatus = $attendance->id_status == 10 || $attendance->id_status == 11 ? true : false;
-
-        $immovableResourceModel = new ImmovableResource();
-        $propertyTypeModel = new PropertyType();
-        $propertyCategoryModel = new PropertyCategory();
 
         require APP . 'view/_templates/header.php';
         require APP . 'view/' . $this->dir . '/call-center/global.php';
         require APP . 'view/' . $this->dir . '/call-center/menu.php';
 
-        if (!isset($_GET['interests']) && !isset($_GET['properties'])) {
+        if (!isset($_GET['interests']) && !isset($_GET['vehicles'])) {
             /**Timeline */
             $timeline = $attendanceModel->getAttendanceTimelineIdAttendance($attendanceId);
 
@@ -273,29 +263,14 @@ class AttendanceController extends FrontController
         } else if (isset($_GET['interests'])) {
             /**Interests */
             parent::addScript(URL . "js/" . JSVERSION . "/{$this->dir}/interests.js");
-            // $this->addScript(URL . "js/" . JSVERSION . "/" . $this->dir . "/count-interests.js");
-            $branch = (new Branch())->getItemById8161($_SESSION['RR']->branch->current->id);
-
-            $states = $modelGenerico->getAllItens('states');
-            $cities = $modelGenerico->getItemByGenericFieldArray(['uf' => $branch->uf], 'cities');
-
-            array_map(function ($state) {
-                $state->name = Util::titleCase($state->name);
-            }, $states);
-
-            array_map(function ($city) {
-                $city->name = Util::titleCase($city->name);
-            }, $cities);
 
             $attendanceFilterType = $modelGenerico->getAllItens('attendance_filter_type');
             $interests = $attendanceModel->getFiltersInterestByAttedanceId($attendanceId);
 
-            $propertyTypes = $propertyTypeModel->getAndFilterAllItem(['status' => 1], 0)->data;
-            $resources = $immovableResourceModel->getAndFilterAllItem(['status' => 1], 0)->data;
-            $propertyCategory = $propertyCategoryModel->getAndFilterAllPropertyCategory(['status' => 1], 0)->data;
+            $vehicleBrands = (new VehicleBrands())->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['comparison' => 'EQUAL', 'value' => true]]]])->data;
 
-            /**Contagem de imoveis encontrados */
-            $number_of_properties = 0;
+            /**Contagem de veículos encontrados */
+            $number_of_vehicles = 0;
             $filters_interest = [];
 
             $attendance_filters_interests = (new AttendanceFiltersInterests)->getWithFiltersAllItems(
@@ -307,126 +282,57 @@ class AttendanceController extends FrontController
                 foreach ($attendance_filters_interests as $interest) {
                     switch ($interest->id_attendance_filter_type) {
                         case '1':
-                            $filters_interest['feature'] = json_decode($interest->json);
+                            $filters_interest['brand_model'] = json_decode($interest->json);
                             break;
                         case '2':
-                            $filters_interest['category'] = json_decode($interest->json);
-                            break;
-                        case '3':
-                            $filters_interest['location'] = json_decode($interest->json);
-                            break;
-                        case '4':
                             $filters_interest['price'] = json_decode($interest->json);
                             break;
-                        case '5':
-                            $filters_interest['type'] = json_decode($interest->json);
+                        case '3':
+                            $filters_interest['year_km'] = json_decode($interest->json);
                             break;
                     }
                 }
 
-                $properties_ids = [];
-                if (!empty($filters_interest['feature'])) {
-                    $property_ids_filter = false;
-                    foreach ($filters_interest['feature'] as $interest) {
-                        $property_ownership_feature_filters = [
-                            (object)['table' => 'property_branch', 'columns' => ['id_branch' => (object)['value' => $_SESSION['RR']->branch->current->id]]],
-                            (object)['table' => 'products', 'columns' => ['status' => (object)['value' => 1]]]
-                        ];
-
-                        if ($property_ids_filter) {
-                            $property_ownership_feature_filters[] = (object)['table' => 'products', 'columns' => ['id' => (object)['comparison' => 'in', 'value' => $properties_ids]]];
-                            if (empty($properties_ids)) {
-                                break;
-                            }
-                        }
-
-                        $resource = (new ImmovableResource())->getItemById($interest->resource);
-                        $property_ownership_feature_filters[] = (object)['table' => 'property_type_resources', 'columns' => ['id_immovable_resource' => (object)['value' => $interest->resource]]];
-                        if ($resource->data_type == 1 || $resource->data_type == 4) {
-                            $property_ownership_feature_filters[] = (object)['columns' => ['value' => (object)['comparison' => 'LIKE', 'value' => $interest->value]]];
-                        } else {
-                            $property_ownership_feature_filters[] = (object)['where' => "AND this->table.value >= " . intval($interest->value) . ""];
-                        }
-
-                        $properties_ids = array_map(function ($property) {
-                            return $property->products_id;
-                        }, (new PropertyOwnershipFeature)->getWithFiltersAllItems(
-                            $property_ownership_feature_filters,
-                            [(object)['table' => 'products', 'columns' => ['id']]],
-                            ['group' => 'products.id']
-                        )->data);
-                        $property_ids_filter = true;
-                    }
-                }
-
-                $properties_filters = [
-                    (object)['table' => 'property_branch', 'columns' => ['id_branch' => (object)['value' => $_SESSION['RR']->branch->current->id]]],
-                    (object)['columns' => ['status' => (object)['value' => 1]]],
-                    (object)['table' => 'sales', 'where' => "AND ( NOT (this->table.id_product is not null AND this->table.status = 1))"]
-                ];
-
-                $displayed_properties = (new DisplayedProperties)->getWithFiltersAllItems([
+                $displayedVehicles = (new AttendanceDisplayedVehicles())->getWithFiltersAllItems([
                     (object)['columns' => ['id_attendance' => (object)['value' => $attendanceId]]],
-                    (object)['table' => 'products', 'columns' => ['status' => (object)['value' => 1]]],
+                    (object)['table' => 'vehicles', 'columns' => ['status' => (object)['value' => 1]]],
                 ])->data;
+                $excludeVehicleIds = array_column($displayedVehicles, 'id_vehicle');
 
-                if (!empty($displayed_properties) && !empty($properties_ids)) {
-                    $not_property_ids = array_column($displayed_properties, 'id_product');
-                    $properties_filters[] = (object)['columns' => ['id' => (object)['comparison' => 'in', 'value' => array_values(array_filter($properties_ids, function ($id) use ($not_property_ids) {
-                        return !in_array($id, $not_property_ids);
-                    }))]]];
-                } else {
-                    if (!empty($filters_interest['feature'])) {
-                        if (!empty($properties_ids)) {
-                            $properties_filters[] = (object)['columns' => ['id' => (object)['comparison' => 'in', 'value' => $properties_ids]]];
-                        } else {
-                            $properties_filters[] = (object)['where' => 'AND FALSE'];
-                        }
-                    }
-
-                    if (!empty($displayed_properties)) {
-                        $properties_filters[] = (object)['columns' => ['id' => (object)['comparison' => 'not_in', 'value' => array_column($displayed_properties, 'id_product')]]];
-                    }
-                }
-
-                if (!empty($filters_interest['category'])) {
-                    $properties_filters[] = (object)['columns' => ['id_property_category' => (object)['comparison' => 'in', 'value' => $filters_interest['category']]]];
-                }
-                if (!empty($filters_interest['location'])) {
-                    if ($filters_interest['location']->id_city) {
-                        $properties_filters[] = (object)['columns' => ['id_city' => (object)['comparison' => 'in', 'value' => $filters_interest['location']->id_city]]];
-                    }
-
-                    if (!empty($filters_interest['location']->neighborhood)) {
-                        foreach ($filters_interest['location']->neighborhood as $neighborhood) {
-                            $properties_filters[] = (object)['where' => " AND neighborhood LIKE '$neighborhood' OR neighborhood LIKE '$neighborhood'"];
-                        }
-                    }
-                }
-                if (!empty($filters_interest['type'])) {
-                    $properties_filters[] = (object)['columns' => ['id_residential_type' => (object)['comparison' => 'in', 'value' => $filters_interest['type']]]];
+                $vehicleFilters = [];
+                if (!empty($filters_interest['brand_model'])) {
+                    $vehicleFilters['brand_model_pairs'] = $filters_interest['brand_model'];
                 }
                 if (!empty($filters_interest['price'])) {
-                    if (isset($filters_interest['price']->start_price) && isset($filters_interest['price']->end_price)) {
-                        $properties_filters[] = (object)['columns' => ['value' => (object)['comparison' => 'BETWEEN', 'value1' => $filters_interest['price']->start_price, 'value2' => $filters_interest['price']->end_price]]];
-                    } else if (isset($filters_interest['price']->start_price)) {
-                        $properties_filters[] = (object)['columns' => ['value' => (object)['comparison' => 'BIGGER_EQUAL', 'value' => $filters_interest['price']->start_price]]];
-                    } else if (isset($filters_interest['price']->end_price)) {
-                        $properties_filters[] = (object)['columns' => ['value' => (object)['comparison' => 'LESSER_EQUAL', 'value' => $filters_interest['price']->end_price]]];
+                    if (isset($filters_interest['price']->start_price)) {
+                        $vehicleFilters['start_price'] = $filters_interest['price']->start_price;
+                    }
+                    if (isset($filters_interest['price']->end_price)) {
+                        $vehicleFilters['end_price'] = $filters_interest['price']->end_price;
                     }
                 }
-                $number_of_properties = (new Property)->getWithFiltersAllItems($properties_filters)->count;
+                if (!empty($filters_interest['year_km'])) {
+                    if (isset($filters_interest['year_km']->year_from)) {
+                        $vehicleFilters['year_from'] = $filters_interest['year_km']->year_from;
+                    }
+                    if (isset($filters_interest['year_km']->year_to)) {
+                        $vehicleFilters['year_to'] = $filters_interest['year_km']->year_to;
+                    }
+                    if (isset($filters_interest['year_km']->km_max)) {
+                        $vehicleFilters['km_max'] = $filters_interest['year_km']->km_max;
+                    }
+                }
+
+                $number_of_vehicles = count((new Vehicles)->getAndFilterAllByInterest($vehicleFilters, $excludeVehicleIds));
             }
             require APP . "view/{$this->dir}/call-center/interest.php";
-        } else if (isset($_GET['properties'])) {
-            /**properties */
-            parent::addScript(URL . "js/" . JSVERSION . "/{$this->dir}/properties.js");
-            $products = $productModel->getAndFilterAllProducts(0, $filterProducts, 0);
-            $properties = $attendanceModel->getAndFilterAllPropertiesPresentationByAttendance($attendanceId, [], 0, 0);
+        } else if (isset($_GET['vehicles'])) {
+            /**vehicles */
+            parent::addScript(URL . "js/" . JSVERSION . "/{$this->dir}/vehicles.js");
+            $vehicleBrands = (new VehicleBrands())->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['comparison' => 'EQUAL', 'value' => true]]]])->data;
+            $vehiclesPresentations = $attendanceModel->getAndFilterAllVehiclesPresentationByAttendance($attendanceId, [], 0, 0);
 
-            $propertyTypes = $propertyTypeModel->getAndFilterAllItem(["status" => 1], 0)->data;
-            $propertyCategorys = $propertyCategoryModel->getAndFilterAllPropertyCategory(["status" => 1], 0)->data;
-            require APP . "view/{$this->dir}/call-center/property.php";
+            require APP . "view/{$this->dir}/call-center/vehicle.php";
         }
 
         require APP . 'view/_templates/footer.php';
@@ -598,21 +504,21 @@ class AttendanceController extends FrontController
         }
     }
 
-    public function handleSubmitPropertiesPresentations($attendanceId)
+    public function handleSubmitVehiclesPresentations($attendanceId)
     {
         Secure::check_post_method($this->route . "/attendance/$attendanceId");
 
         $gerenciaPost = new GerenciaPost();
-        $propertiesPresentations = explode(",", $_POST['properties_presentations']);
+        $vehiclesPresentations = explode(",", $_POST['vehicles_presentations']);
 
         try {
-            foreach ($propertiesPresentations as $key => $value) {
-                $gerenciaPost->insert7181(['id_attendance' => $attendanceId, "id_product" => $value, "created_by" => $_SESSION['RR']->user->id], "displayed_properties", false, false);
+            foreach ($vehiclesPresentations as $key => $value) {
+                $gerenciaPost->insert7181(['id_attendance' => $attendanceId, "id_vehicle" => $value, "created_by" => $_SESSION['RR']->user->id], "attendance_displayed_vehicles", false, false);
 
-                $product = (new ModelGenerico())->getItemById8161($value, "products");
+                $vehicle = (new ModelGenerico())->getItemById8161($value, "vehicles");
                 $arrTimeline = array(
                     "id_attendance" => $attendanceId,
-                    "comment" => "Adicionou o imóvel " . $product->name . ".",
+                    "comment" => "Adicionou o veículo " . $vehicle->name . ".",
                     "status_icon" => 2,
                     "status_timeline" => 4,
                     "created_by" => $_SESSION['RR']->user->id,
@@ -621,7 +527,7 @@ class AttendanceController extends FrontController
                 $gerenciaPost->insert7181($arrTimeline, "attendance_timeline", null, false);
             }
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?properties");
+            header('location:' . URL . $this->route . "/attendance/$attendanceId?vehicles");
             exit;
         } catch (PDOException $error) {
             header('location:' . URL . $this->route . "/editAttendance/$attendanceId?interests");
@@ -683,53 +589,34 @@ class AttendanceController extends FrontController
 
         switch ($_POST['filter_type']) {
             case '1':
-                /**Características */
-                $resource = (new ModelGenerico())->getItemById8161($_POST['resource'], 'immovable_resource');
+                /**Marca e Modelo */
+                $alreadyAdded = array_filter($json, function ($pair) {
+                    return $pair['id_brand'] == $_POST['id_brand'] && ($pair['id_model'] ?? '') == ($_POST['id_model'] ?? '');
+                });
 
-                if (!in_array($_POST['resource'], array_column($json, 'resource'))) {
+                if (empty($alreadyAdded)) {
                     array_push($json, [
-                        'resource' => $_POST['resource'],
-                        'value' => ($resource->data_type != 4 ? $_POST['tvalue'] : $_POST['svalue'])
+                        'id_brand' => $_POST['id_brand'],
+                        'id_model' => $_POST['id_model'] ?? null,
                     ]);
                 }
                 break;
             case '2':
-                /**Categoria */
-                if (!empty($filterInterest)) {
-                    $json = array_values(array_unique(array_merge($json, $_POST['category'])));
-                } else {
-                    $json = $_POST['category'];
-                }
-                break;
-            case '3':
-                /**Localização */
-                if (!empty($filterInterest)) {
-                    $json = [
-                        'id_city' => array_values(array_unique(array_merge($json->id_city, $_POST['id_city']))),
-                        'neighborhood' => !empty($_POST['neighborhood']) ? array_values(array_unique(array_merge($json->neighborhood, $_POST['neighborhood']))) : $json->neighborhood
-                    ];
-                } else {
-                    $json = [
-                        'id_city' => $_POST['id_city'],
-                        'neighborhood' => $_POST['neighborhood'] ?? []
-                    ];
-                }
-                break;
-            case '4':
-                /**Preço */
+                /**Faixa de Preço */
                 $json = [
                     'start_price' => Util::unMaskMoney($_POST['start_price']) > 0 ? Util::unMaskMoney($_POST['start_price']) : $json->start_price,
                     'end_price' => Util::unMaskMoney($_POST['end_price']) > 0 ? Util::unMaskMoney($_POST['end_price']) : $json->end_price,
                 ];
 
                 break;
-            case '5':
-                /**Tipo Imóvel */
-                if (!empty($filterInterest)) {
-                    $json = array_values(array_unique(array_merge($json, $_POST['property_type'])));
-                } else {
-                    $json = $_POST['property_type'];
-                }
+            case '3':
+                /**Ano/Km */
+                $json = [
+                    'year_from' => !empty($_POST['year_from']) ? $_POST['year_from'] : ($json->year_from ?? null),
+                    'year_to' => !empty($_POST['year_to']) ? $_POST['year_to'] : ($json->year_to ?? null),
+                    'km_max' => !empty($_POST['km_max']) ? $_POST['km_max'] : ($json->km_max ?? null),
+                ];
+
                 break;
         }
 
@@ -750,25 +637,6 @@ class AttendanceController extends FrontController
         }
     }
     /**Descontinuar */
-    public function handleDeleteImmovableResource($itemId)
-    {
-        $modelGenerico = new ModelGenerico();
-
-        $item = $modelGenerico->getItemById8161($itemId, "attendance_filters_interests");
-        $attendance = (new Attendance)->getAttendanceById($item->id_attendance);
-        Secure::redirectFunction(!Secure::creator($attendance->created_by) && !Secure::access_secretary(), $this->route, "authorization=false");
-
-        try {
-            $modelGenerico->deleteItemByCampoGenerico("attendance_filters_interests", "id", $itemId);
-
-            header('location:' . URL . $this->route . "/attendance/$attendance->id?deleted=true&interests");
-            exit;
-        } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendance->id?deleted=false&interests");
-            exit;
-        }
-    }
-
     public function deleteInterestFilterById(int $itemId, int $key)
     {
         $modelGenerico = new ModelGenerico();
@@ -780,39 +648,25 @@ class AttendanceController extends FrontController
         try {
             $json = json_decode($item->json);
 
-            if ($item->id_attendance_filter_type == 3) {
-                if ($json->id_city) {
-                    $ctrlNeighborhood = (new Property)->getWithFiltersAllItems(
-                        [(object)['columns' => ['id_city' => (object)['comparison' => 'EQUAL', 'value' => $json->id_city[$key]]]]],
-                        [(object)['columns' => ['neighborhood']]],
-                        ['groupBy' => 'this->table.neighborhood']
-                    )->data;
-
-                    if (!empty($ctrlNeighborhood)) {
-                        foreach ($ctrlNeighborhood as $value) {
-                            $json->neighborhood = array_values(array_filter($json->neighborhood, function ($element) use ($value) {
-                                return $element != $value->neighborhood;
-                            }, ARRAY_FILTER_USE_BOTH));
-                        }
-                    }
-
-                    $json->id_city = array_values(array_filter($json->id_city, function ($element) use ($key) {
-                        return $element != $key;
-                    }, ARRAY_FILTER_USE_KEY));
-                }
-
-                if (empty($json->id_city)) {
-                    $modelGenerico->deleteItemByCampoGenerico("attendance_filters_interests", "id", $itemId);
-                }
-            } else if ($item->id_attendance_filter_type == 4) {
-                /**Preço */
+            if ($item->id_attendance_filter_type == 2) {
+                /**Faixa de Preço */
                 if ($key == 0 && isset($json->start_price)) {
                     unset($json->start_price);
-                } else if ($key == 1 || $json->end_price) {
+                } else if ($key == 1 && isset($json->end_price)) {
                     unset($json->end_price);
                 }
+            } else if ($item->id_attendance_filter_type == 3) {
+                /**Ano/Km */
+                if ($key == 0 && isset($json->year_from)) {
+                    unset($json->year_from);
+                } else if ($key == 1 && isset($json->year_to)) {
+                    unset($json->year_to);
+                } else if ($key == 2 && isset($json->km_max)) {
+                    unset($json->km_max);
+                }
             } else {
-                $json = (array_filter($json, function ($element) use ($item, $key) {
+                /**Marca e Modelo */
+                $json = (array_filter($json, function ($element) use ($key) {
                     return $element != $key;
                 }, ARRAY_FILTER_USE_KEY));
             }
@@ -837,16 +691,16 @@ class AttendanceController extends FrontController
         }
     }
 
-    public function handleDeleteProductIdDisplayedProperties($displayedId)
+    public function handleDeleteVehicleIdDisplayedVehicles($displayedId)
     {
         $modelGenerico = new ModelGenerico();
 
-        $attendanceDisplayedProduct = $modelGenerico->getItemById8161($displayedId, "displayed_properties");
-        $product = $modelGenerico->getItemById8161($attendanceDisplayedProduct->id_product, "products");
+        $attendanceDisplayedVehicle = $modelGenerico->getItemById8161($displayedId, "attendance_displayed_vehicles");
+        $vehicle = $modelGenerico->getItemById8161($attendanceDisplayedVehicle->id_vehicle, "vehicles");
 
         $arrTimeline = array(
-            "id_attendance" => $attendanceDisplayedProduct->id_attendance,
-            "comment" => "Deletou o Imóvel " . $product->name . ".",
+            "id_attendance" => $attendanceDisplayedVehicle->id_attendance,
+            "comment" => "Deletou o Veículo " . $vehicle->name . ".",
             "status_icon" => 9,
             "status_timeline" => 4,
             "created_by" => $_SESSION['RR']->user->id,
@@ -855,12 +709,12 @@ class AttendanceController extends FrontController
         try {
             (new GerenciaPost())->insert7181($arrTimeline, "attendance_timeline", null, false);
 
-            $modelGenerico->deleteItemByCampoGenerico("displayed_properties", "id", $displayedId);
+            $modelGenerico->deleteItemByCampoGenerico("attendance_displayed_vehicles", "id", $displayedId);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedProduct->id_attendance?deleted=true&properties");
+            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedVehicle->id_attendance?deleted=true&vehicles");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedProduct->id_attendance?deleted=false&properties");
+            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedVehicle->id_attendance?deleted=false&vehicles");
             exit;
         }
     }
@@ -1004,34 +858,6 @@ class AttendanceController extends FrontController
             exit;
         } catch (PDOException $error) {
             header('location:' . URL . $this->route . "/attendance/$attachment->id_attendance?deleted=false");
-            exit;
-        }
-    }
-
-    public function handleSubmitLink($displayedId)
-    {
-        $modelGenerico = new ModelGenerico();
-
-        $displayed = $modelGenerico->getItemById8161($displayedId, "displayed_properties");
-        $product =  (new Property())->getProductsById($displayed->id_product);
-
-        try {
-            if ($displayed->status_code == false) {
-                $arrPost = array(
-                    'code' => hash("crc32", "$displayedId-" . "$displayed->id_attendance") . time(),
-                    'status_code' => true,
-                    'updated_at' => $this->now,
-                    'updated_by' => $_SESSION['RR']->user->id,
-                );
-                (new GerenciaPost())->update8191($arrPost, "displayed_properties", "id", $displayedId, false);
-
-                $displayed->code = $arrPost['code'];
-            }
-
-            header('location:' . URL . "presentations/$product->slugify/$displayed->code");
-            exit;
-        } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$displayed->id_attendance?properties");
             exit;
         }
     }
