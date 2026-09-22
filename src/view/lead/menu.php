@@ -9,7 +9,4 @@
                 <div class="nav-tabs-custom" style="background-color: transparent !important;">
                     <ul class="nav nav-tabs" style="background-color: white;">
                         <li class="<?= ($_GET['pg1'] == 'editItem') ? "active" : "" ?>"><a href="<?= URL . $this->route . "/editItem/" . $itemId ?>">Editar</a></li>
-                        <?php if (!empty($item->id_product)) { ?>
-                            <li class="<?= ($_GET['pg1'] == 'productInterest') ? "active" : "" ?>"><a href="<?= URL . $this->route . "/productInterest/" . $itemId ?>">Imóvel</a></li>
-                        <?php } ?>
                     </ul>

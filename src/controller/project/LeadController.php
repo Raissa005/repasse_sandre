@@ -13,10 +13,8 @@ use PDOException;
 use RR\libs\Pagination;
 use RR\libs\Util;
 use RR\model\Attendance;
-use RR\model\Integrations;
 use RR\model\Notification;
 use RR\model\NotificationRead;
-use RR\model\Property;
 
 class LeadController extends FrontController
 {
@@ -77,7 +75,6 @@ class LeadController extends FrontController
         $page = Pagination::getPage();
 
         $items = $this->model->getAndFilterAllItem($_GET, ['limit' => $rows, 'page' => $page]);
-        $facebookLeadAds = (new Integrations)->getItemWithFilters();
 
         $pagination = (new Pagination())->pages($items->count, $rows);
         $showItems = (new Pagination())->listItemsOnPage($items->count, $pagination, $rows);
@@ -92,12 +89,10 @@ class LeadController extends FrontController
         $modelGenerico = new ModelGenerico();
         $leadModel = new Lead();
         $userModel = new User();
-        $productsModel = new Property();
         $this->addScript(URL . "plugins/" . PLUGINSVERSION . "/ckeditor/ckeditor.js");
         $this->addScript(URL . "plugins/" . PLUGINSVERSION . "/ckeditor/config.js");
 
         $item = $leadModel->getItemById8161($itemId);
-        $product = $productsModel->getProductsById($item->id_product);
 
         if (isset($product) && !empty($product)) {
             Secure::branch($product->id_branch, $this->route);
@@ -124,7 +119,6 @@ class LeadController extends FrontController
 
         $gerenciaPost = new GerenciaPost();
         $leadModel = new Lead();
-        $productModel = new Property();
 
         if (isset($_POST['salve'])) {
             $arrPost = array(
@@ -145,10 +139,6 @@ class LeadController extends FrontController
             $item = $leadModel->getItemById8161($itemId);
 
             if (!empty($item->created_by)) {
-                if (!empty($item->id_product)) {
-                    $product = $productModel->getProductsById($item->id_product);
-                }
-
                 $arrPostAttendance = array(
                     'id_branch' => !empty($item->id_product) ? $product->id_branch : $_SESSION['RR']->branch->current->id,
                     'opening_date' => $item->created_at,
@@ -226,22 +216,6 @@ class LeadController extends FrontController
             header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=false");
             exit;
         }
-    }
-
-    public function productInterest($itemId)
-    {
-        $modelGenerico = new ModelGenerico();
-        $leadModel = new Lead();
-        $productsModel = new Property();
-
-        $item = $leadModel->getItemById8161($itemId);
-        $product = $productsModel->getProductsById($item->id_product);
-        $product->image = $productsModel->getFirstProductImage($product->id);
-
-        require APP . 'view/_templates/header.php';
-        require APP . 'view/' . $this->dir . '/menu.php';
-        require APP . 'view/' . $this->dir . '/productInterest.php';
-        require APP . 'view/_templates/footer.php';
     }
 
     public function disableItem($itemId, $page = "1")

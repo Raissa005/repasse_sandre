@@ -42,12 +42,6 @@ use RR\libs\Util;
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label for="creci"> Creci</label>
-                                        <input autocomplete="off" type="text" class="form-control" id="creci" name="creci" value="<?= $customer->creci ?? '' ?>">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
                                         <label for="salary"> Salário</label>
                                         <input autocomplete="off" type="text" class="form-control" id="salary" name="salary" value="<?= Util::maskMoney($customer->salary) ?? '' ?>" data-mask-money>
                                     </div>

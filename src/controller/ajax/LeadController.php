@@ -7,7 +7,6 @@ use RR\libs\Date;
 use RR\libs\Util;
 use RR\model\Lead;
 use RR\model\User;
-use RR\model\Property;
 use RR\model\LeadWorkingDate;
 use RR\controller\project\LeadRedirectController;
 
@@ -115,11 +114,6 @@ class LeadController extends Ajax
         ];
 
         for ($i = 0; $i < $leads->count; $i++) {
-            $product = (new Property)->getItemWithFilters(
-                [(object)['columns' => ['cod' => (object)['comparison' => 'LIKE', 'value' => $leads->data[$i][20]]]]],
-                [(object)['columns' => ['id']]]
-            );
-
             if ($i != 0) {
                 $arrPost = [
                     'id_communication_channel' => 3,

@@ -23,12 +23,6 @@
                     </div>
                     <div class="col-md-3 col-lg-3">
                         <div class="form-group">
-                            <label for="creci_legal">Creci jurídico </label>
-                            <input autocomplete="off" type="text" class="form-control" id="creci_legal" name="creci_legal" value="<?= $item->creci_legal ?>" maxlength="10">
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-lg-3">
-                        <div class="form-group">
                             <label for="email">Email <span class="text-danger">*</span></label>
                             <input autocomplete="off" type="email" class="form-control" id="email" name="email" value="<?= $item->email ?>" required>
                         </div>

@@ -59,7 +59,7 @@ use RR\libs\Date; ?>
                                             <i class="fas fa-filter"></i>
                                         </a>
 
-                                        <a href="<?= URL . $this->route . "/attendance/$attendance->id?properties=true" ?>" title="Imóveis Apresentados" class="card-link btn btn-xs bg-yellow" style="position: relative;">
+                                        <a href="<?= URL . $this->route . "/attendance/$attendance->id?vehicles=true" ?>" title="Veículos Apresentados" class="card-link btn btn-xs bg-yellow" style="position: relative;">
                                             <i class="fas fa-binoculars"></i>
                                         </a>
 

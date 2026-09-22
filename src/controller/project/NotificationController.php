@@ -5,13 +5,11 @@ namespace RR\controller\project;
 use RR\libs\Secure;
 use RR\libs\BoxAlert;
 use RR\model\Customer;
-use RR\model\Property;
 use RR\model\Attendance;
 use RR\model\Notification;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\CustomerBranch;
-use RR\model\PropertyBranches;
 
 class NotificationController extends FrontController
 {
@@ -84,29 +82,6 @@ class NotificationController extends FrontController
                         $linkName[0] = "Cliente <a href='" . URL . 'customer/edit-item/' . $customer->id . "' target='_blank'>" . $customer->name . "</a>";
 
                         $notice->description = implode('', $linkName);
-                    }
-                }
-
-                $linkProperty = explode("tem interesse no imóvel", $notice->description);
-                $linkProperty2 = explode(" - ", $linkProperty[1]);
-
-                $property = (new Property())->getItemWithFilters([(object)['where' => " AND ucase(this->table.cod) LIKE ucase('" . trim($linkProperty2[0]) . "')"]]);
-
-                if (!empty($property)) {
-                    $propertyBranches = (new PropertyBranches)->getWithFiltersAllItems(
-                        [(object)['columns' => ['id_property' => (object)['comparison' => 'EQUAL', 'value' => $property->id]]]],
-                        [(object)['columns' => ['id_branch']]]
-                    )->data;
-
-                    foreach ($propertyBranches as $item) {
-                        $verifyProprety = ($_SESSION['RR']->branch->current->id == $item->id_branch) ? true : false;
-                        if ($verifyProprety) break;
-                    }
-
-                    if ($verifyProprety === true) {
-                        $linkProperty[1] = "tem interesse no imóvel <a href='" . URL . 'property/editItem/' . $property->id . "' target='_blank'>" . $property->cod . " - " . $property->name . "</a>";
-
-                        $notice->description = implode('', $linkProperty);
                     }
                 }
             }

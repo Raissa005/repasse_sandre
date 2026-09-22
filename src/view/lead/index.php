@@ -15,11 +15,6 @@ use RR\components\PaginationComponent1245;
                         <div class="col-md-3 pull-right">
                             <button type="button" class="btn btn-sm btn-primary pull-right" id="modalLeadImport" data-toggle="modal" data-target="#file"><i class="fa fa-file-upload"></i> Importar Formulário Facebook</button>
                         </div>
-                        <div class="col-md-3 pull-right text-right" style="margin-top: 5px;">
-                            <label for="facebookLeadAds">Facebook Lead Ads: </label>
-                            <a class="label <?= $facebookLeadAds->status == 1 ? 'label-light-success text-green' : 'label-light-warning text-yellow' ?>" <?= $facebookLeadAds->status == 1 ? '' : 'href="' . URL . 'sales/edit-item/' .  $facebookLeadAds->status == 1  . '"' ?> target="_blank">
-                                <?= $facebookLeadAds->status == 1 ? 'Ativo' : 'Inativo' ?></a>
-                        </div>
                     </div>
                     <div class="box-body">
                         <div class="row">

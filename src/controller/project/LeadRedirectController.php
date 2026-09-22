@@ -2,12 +2,9 @@
 
 namespace RR\controller\project;
 
-use RR\libs\Util;
 use RR\model\Lead;
 use RR\model\User;
-use RR\model\Property;
 use RR\model\Attendance;
-use RR\model\Integrations;
 use RR\model\LeadConfig;
 use RR\model\LeadRandom;
 use RR\model\LeadWorkingDate;
@@ -17,110 +14,21 @@ class LeadRedirectController
     /**
      * Módulo Lead pausado a pedido do usuário (2026-09-02): captação de leads
      * não será usada por enquanto. As tabelas `lead`/`lead_config`/`lead_random`/
-     * `lead_working_date`/`integrations` não existem neste banco, então esses
-     * métodos já quebrariam com erro fatal de SQL — mas esta classe não estende
-     * nenhum Controller base, ou seja, sem este guard qualquer requisição
-     * externa (`leadsFaceBook` é um webhook público, sem login) chegaria a
-     * rodar SQL com dado não validado antes de falhar. Não remover o código:
-     * é só desativação, para reativar depois que as tabelas forem recriadas e
-     * a fonte de captação for redefinida (ver docs/10-modulos-negocio.md e
-     * memória do projeto "attendance-vehicle-interest"/"property-domain...").
+     * `lead_working_date` não existem neste banco, então esses métodos já
+     * quebrariam com erro fatal de SQL — mas esta classe não estende nenhum
+     * Controller base, ou seja, sem este guard qualquer requisição externa
+     * chegaria a rodar SQL com dado não validado antes de falhar. Não remover
+     * o código: é só desativação, para reativar depois que as tabelas forem
+     * recriadas e a fonte de captação for redefinida (ver
+     * docs/10-modulos-negocio.md e memória do projeto
+     * "attendance-vehicle-interest"/"property-domain..."). O webhook de
+     * Facebook Lead Ads (`leadsFaceBook`) e a tabela `integrations` foram
+     * removidos em 2026-09-21 a pedido do usuário — sem previsão de uso.
      */
     public function __construct()
     {
         http_response_code(404);
         exit;
-    }
-
-    public function leadsFaceBook()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Search the bank for the token.
-            $urlIntegrations = (new Integrations)->getItemWithFilters([], [(object)['columns' => ['token']]]);
-
-            // Separate the URL into bars.
-            $getUrl = explode("/", $_GET['url']);
-
-            // Compares the two tokens, bank and URL.
-            if (end($getUrl) === $urlIntegrations->token) {
-                // Receives the data sent in the request body.
-                $leadsData = file_get_contents('php://input');
-
-                // Instantiates the variables.
-                $rows = [];
-                $arrPost = [];
-                $ctrlFixedVariable = 0;
-
-                // Read the file and separate it by rows within the variable.
-                $rows = explode(";", $leadsData);
-
-                // Increment the variables to save in the database.
-                foreach ($rows as $row) {
-                    $explodeRow = explode(":", $row, 2);
-
-                    $key = trim($explodeRow[0]);
-                    $val = !empty($explodeRow[1]) ? trim($explodeRow[1]) : null;
-
-                    $val = str_replace('r$', 'R$', $val);
-                    $arrPost["id_communication_channel"] = 3;
-
-                    if (!empty($val)) {
-                        $val = implode(" ", explode("_", $val));
-                    }
-
-                    if (Util::removeAccentsTransformLowercase($key) == "nome") {
-                        $arrPost["name"] = $val;
-
-                        $ctrlFixedVariable = 1;
-                    }
-
-                    if (Util::removeAccentsTransformLowercase($key) == "telefone") {
-                        if (strlen($val) > 13) {
-                            $arrPost["phone"] = substr($val, 3);
-                        } else {
-                            $arrPost["phone"] = $val;
-                        }
-
-                        $ctrlFixedVariable = 1;
-                    }
-
-                    if (Util::removeAccentsTransformLowercase($key) == "email") {
-                        $arrPost["email"] = $val;
-
-                        $ctrlFixedVariable = 1;
-                    }
-
-                    if (Util::removeAccentsTransformLowercase($key) == "data de cadastro") {
-                        $url_parts = str_replace("T", ' ', explode(".", $val));
-                        $arrPost["created_at"] = $url_parts[0];
-
-                        $ctrlFixedVariable = 1;
-                    }
-
-                    if ($ctrlFixedVariable == 0) {
-                        if ($key != "" && $val != "") {
-                            isset($arrPost["message"]) ? $arrPost["message"] .= $key . ": " . $val . "\n" :  $arrPost["message"] = $key . ": " . $val . "\n";
-                        }
-                    }
-
-                    if (isset($arrPost['name']) || isset($arrPost['phone']) || isset($arrPost['email']) || isset($arrPost['created_at'])) {
-                        $ctrlFixedVariable = 0;
-                    }
-                }
-
-                (new Lead)->insert($arrPost);
-                $this->leadDistribution();
-                return;
-            } else {
-                // Return to the user if the token is wrong.
-                echo "Token invalido!";
-                die(); // Kills execution.
-            }
-        } else {
-            // If the request is not of type POST, returns an error.
-            http_response_code(405); // Method not allowed.
-            echo "Método não permitido. Utilize POST para enviar dados.<br>";
-        }
     }
 
     public function leadDistribution()
@@ -177,10 +85,6 @@ class LeadRedirectController
                         [],
                         ['order' => 'rand()', 'limit' => 1, 'page' => 1]
                     );
-                }
-
-                if (!empty($leads->data[$i]->id_product)) {
-                    $product = (new Property)->getProductsById($leads->data[$i]->id_product);
                 }
 
                 $arrPostAttendance = array(
@@ -256,10 +160,6 @@ class LeadRedirectController
 
                         $this->manualLeadsDistribution();
                         break;
-                    }
-
-                    if (!empty($leads->data[$i]->id_product)) {
-                        $product = (new Property)->getProductsById($leads->data[$i]->id_product);
                     }
 
                     $arrPostAttendance = array(
@@ -343,10 +243,6 @@ class LeadRedirectController
                 }
 
                 $min = min($allCout);
-
-                if (!empty($leads->data[$i]->id_product)) {
-                    $product = (new Property)->getProductsById($leads->data[$i]->id_product);
-                }
 
                 foreach ($attendanceGroup as $key => $values) {
                     if ($min == $key) {

@@ -67,6 +67,10 @@ adivinhar o padrão a partir daqui.
   → [`docs/11-duplicidades-legado.md`](docs/11-duplicidades-legado.md)
 - **Ambiente, configuração e instalação local** (`config.php`, Composer, `.htaccess`)
   → [`docs/12-ambiente-configuracao.md`](docs/12-ambiente-configuracao.md)
+- **Histórico da limpeza de resíduos do domínio imobiliário** (o que foi removido,
+  o que foi mantido e por quê, migrations relacionadas — ler antes de mexer em
+  código que pareça sobra do sistema de imóveis)
+  → [`docs/migracao-imobiliario-veiculos.md`](docs/migracao-imobiliario-veiculos.md)
 
 ## Como manter este índice
 

@@ -52,7 +52,6 @@ class User extends Model
     {
         $arrayPost = array(
             'name' => $_POST['name'],
-            'creci' => $_POST['creci'],
             'email' => strtolower($_POST['email']),
             'id_profile' => $_POST['id_profile'],
             'cpf' => Util::removeNonNumericCharacters($_POST['cpf']),
@@ -123,7 +122,6 @@ class User extends Model
         $arrayPost = array(
             'name' => $post['name'],
             'email' => strtolower($post['email']),
-            'creci' => $post['creci'],
             'id_profile' => $post['id_profile'],
             'id_customer' => !empty($post['id_customer']) ? $post['id_customer'] : '',
             'phone' => Util::removeNonNumericCharacters($post['phone']),
@@ -214,7 +212,6 @@ class User extends Model
             'demission_date' => $_POST['demission_date'],
             'experience_date' => $_POST['experience_date'],
             'last_vacation_date' => $_POST['last_vacation_date'],
-            'creci' => $_POST['creci'],
             'salary' => Util::unmaskMoney($_POST['salary']),
             'percentage_commission' => $_POST['percentage_commission'],
             'user_observation' => $_POST['user_observation'],
@@ -381,20 +378,6 @@ class User extends Model
 
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
-        $query->execute($parameters);
-
-        return $query->fetch();
-    }
-
-    public function getUserForContractById($userId)
-    {
-        $sql = "SELECT
-                    u.name AS nome, u.cpf, u.creci, u.email, u.phone AS celular
-                FROM users u
-                WHERE u.id = :id";
-
-        $query = $this->db->prepare($sql);
-        $parameters = array(':id' => $userId);
         $query->execute($parameters);
 
         return $query->fetch();

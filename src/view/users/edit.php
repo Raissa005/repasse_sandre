@@ -30,12 +30,6 @@ use RR\libs\Secure;
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="creci">Creci </label>
-                                                <input autocomplete="off" type="text" class="form-control" id="creci" minlength="5" maxlength="12" name="creci" value="<?= isset($item->creci) ? $item->creci : '' ?>">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
                                                 <label for="phone">Celular </label>
                                                 <input autocomplete="off" type="text" class="form-control" id="phone" name="phone" value="<?= isset($item->phone) ? $item->phone : '' ?>" cellphone>
                                             </div>

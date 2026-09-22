@@ -221,7 +221,6 @@ class BranchController extends FrontController
             "address" => $_POST['address'],
             "complement" => $_POST['complement'],
             'name_legal' => $_POST['name_legal'],
-            'creci_legal' => $_POST['creci_legal'],
             "neighborhood" => $_POST['neighborhood'],
             "updated_by" => $_SESSION['RR']->user->id,
             "restrict_owner_data" => $_POST['restrict'],

@@ -25,7 +25,7 @@ use RR\libs\Util;
                                         <div class="col-md-4 col-lg-4">
                                             <div class="form-group">
                                                 <label for="card_digital_occupation">Título Cargo <span class="text-danger">*</span></label>
-                                                <input autocomplete="off" type="text" id="card_digital_occupation" name="card_digital_occupation" class="form-control" value="<?= isset($item->card_digital_occupation) && !empty($item->card_digital_occupation) ? $item->card_digital_occupation : "Corretor de Imóveis" ?>" placeholder="Corretor de Imóveis" required>
+                                                <input autocomplete="off" type="text" id="card_digital_occupation" name="card_digital_occupation" class="form-control" value="<?= isset($item->card_digital_occupation) && !empty($item->card_digital_occupation) ? $item->card_digital_occupation : "" ?>" placeholder="Vendedor" required>
                                             </div>
                                         </div>
                                         <div class="col-md-4 col-lg-4">

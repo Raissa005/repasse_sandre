@@ -34,7 +34,6 @@ class Branch extends Model
             "address" => $post['address'],
             "complement" => $post['complement'],
             'name_legal' => $post['name_legal'],
-            'creci_legal' => $post['creci_legal'],
             "neighborhood" => $post['neighborhood'],
             "created_by" => $_SESSION['RR']->user->id,
             "restrict_owner_data" => $post['restrict'],
@@ -273,44 +272,6 @@ class Branch extends Model
 
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
-        $query->execute($parameters);
-
-        return $query->fetch();
-    }
-
-    public function getBranchIdSaleForContract($id)
-    {
-        $sql = "SELECT
-                    bra.id, bra.name AS nome, bra.id_city, ct.name AS cidade, stts.id AS id_state, stts.uf, stts.name AS estado, bra.address AS endereco,
-                    bra.neighborhood AS bairroEndereco, bra.number AS numeroEndereco, bra.complement AS complementoEndereco, bra.cnpj AS cnpj, bra.email, bra.cep
-                FROM branch bra
-                LEFT JOIN cities ct ON ct.id = bra.id_city
-                LEFT JOIN states stts ON ct.uf = stts.uf
-                LEFT JOIN sales s ON s.id_branch = bra.id
-                WHERE s.id = :id";
-
-        $query = $this->db->prepare($sql);
-        $parameters = array(':id' => $id);
-        $query->execute($parameters);
-
-        return $query->fetch();
-    }
-
-    public function getBranchForContractById($branchId)
-    {
-        $sql = "SELECT
-                    bra.id, bra.name AS nome, bra.id_city, bra.address AS endereco, bra.neighborhood AS bairroEndereco,bra.number AS numeroEndereco, bra.percentage_commission_sale AS comissao,
-                    bra.complement AS complementoEndereco, bra.cnpj, bra.email, bra.cep, bra.creci_legal AS creci, bra.name_legal AS nomeJuridico, bra.immovable_record,
-                    stts.id AS id_state, stts.uf, stts.name AS estado,
-                    ct.name AS cidade
-                FROM branch bra
-                LEFT JOIN cities ct ON ct.id = bra.id_city
-                LEFT JOIN states stts ON ct.uf = stts.uf
-                LEFT JOIN sales s ON s.id_branch = bra.id
-                WHERE bra.id = :id";
-
-        $query = $this->db->prepare($sql);
-        $parameters = array(':id' => $branchId);
         $query->execute($parameters);
 
         return $query->fetch();

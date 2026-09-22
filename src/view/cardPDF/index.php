@@ -190,9 +190,6 @@ use Sabberworm\CSS\Value\URL;
 
             <div class="div-corretor gotham">
                 <div class="texto-occupation <?= $configDigitalCard->fonte_ocupacao ?>"><?= $user->card_digital_occupation ?></div>
-                <?php if (isset($user->creci) && !empty($user->creci)) { ?>
-                    <div class="texto-creci <?= $configDigitalCard->fonte_creci ?>">CRECI: <?= $user->creci ?></div>
-                <?php } ?>
             </div>
 
             <div class="box-icones-corpo">

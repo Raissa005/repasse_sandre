@@ -50,12 +50,6 @@
                                 </div>
                                 <div class="col-md-4 col-lg-4">
                                     <div class="form-group">
-                                        <label for="creci">Creci</label>
-                                        <input autocomplete="off" type="text" class="form-control" minlength="5" maxlength="12" id="creci" name="creci">
-                                    </div>
-                                </div>
-                                <div class="col-md-4 col-lg-4">
-                                    <div class="form-group">
                                         <label for="id_profile">Tipo de usuário <span class="text-danger">*</span></label>
                                         <select name="id_profile" id="id_profile" class="form-control">
                                             <?php foreach ($users_profiles as $profile) { ?>

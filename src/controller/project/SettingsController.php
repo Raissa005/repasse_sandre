@@ -10,10 +10,8 @@ use RR\libs\BoxAlert;
 use RR\model\MenuAccess;
 use RR\model\GerenciaPost;
 use RR\model\SystemSettings;
-use RR\model\PropertyFilter;
 use RR\model\SettingsSite;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-use RR\model\Integrations;
 
 use function RR\Controller\redirect;
 
@@ -234,98 +232,6 @@ class SettingsController extends FrontController
         exit;
     }
 
-    public function filters()
-    {
-        $this->addScript(URL . "js/" . JSVERSION . "/order/orderList.js");
-        $this->addScript(URL . "js/" . JSVERSION . "/property/filters.js");
-
-        $contentHeader = (object)[
-            'route' => URL . "{$this->route}",
-            'title' => 'Configurações',
-            'caption' => 'Filtros',
-        ];
-
-        $navTabs = Self::navTabs();
-        $filters = (new PropertyFilter())->getWithFiltersAllItems([], [], ['orderBy' => 'property_filter.item_order ASC']);
-
-        array_map(function ($filter) {
-            if ($filter->status == 1) {
-                $filter->class = 'danger';
-                $filter->modal = 'disable';
-                $filter->icon = 'times';
-                $filter->labelClass = 'green';
-                $filter->labelText = 'Ativo';
-            } else {
-                $filter->class = 'success';
-                $filter->modal = 'enable';
-                $filter->icon = 'check';
-                $filter->labelClass = 'red';
-                $filter->labelText = 'Inativo';
-            }
-        }, $filters->data);
-
-        require APP . 'view/_templates/header.php';
-        require APP . 'view/' . $this->dir . '/menu.php';
-        require APP . 'view/' . $this->dir . '/filters.php';
-        require APP . 'view/_templates/footer.php';
-    }
-
-    public function handleDisableItem($filterCategoryId)
-    {
-        $response = (new PropertyFilter())->update(['status' => '0', 'updated_by' => $_SESSION['RR']->user->id], 'id', $filterCategoryId);
-
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
-
-        redirect("{$this->route}/filters/");
-    }
-
-    public function handleAbleItem($filterCategoryId)
-    {
-        $response = (new PropertyFilter())->update(['status' => '1', 'updated_by' => $_SESSION['RR']->user->id], 'id', $filterCategoryId);
-
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
-
-        redirect("{$this->route}/filters/");
-    }
-
-    public function disableAllFilters()
-    {
-        $categories = (new PropertyFilter())->getWithFiltersAllItems([], [(object)['columns' => ['id']]])->data;
-
-        foreach ($categories as $category) {
-            $response = (new PropertyFilter())->update(['status' => '0', 'updated_by' => $_SESSION['RR']->user->id], 'id', $category->id);
-        }
-
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
-
-        redirect("{$this->route}/filters/");
-    }
-
-    public function ableAllFilters()
-    {
-        $categories = (new PropertyFilter())->getWithFiltersAllItems([], [(object)['columns' => ['id']]])->data;
-
-        foreach ($categories as $category) {
-            $response = (new PropertyFilter())->update(['status' => '1', 'updated_by' => $_SESSION['RR']->user->id], 'id', $category->id);
-        }
-
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
-
-        redirect("{$this->route}/filters/");
-    }
-
     public function menus(): void
     {
         $this->addScript(URL . "js/" . JSVERSION . "/settings/menu.js");
@@ -359,52 +265,4 @@ class SettingsController extends FrontController
         redirect("{$this->route}/menus/#{$profileId}");
     }
 
-    public function integrations()
-    {
-        $this->addScript(URL . "js/" . JSVERSION . "/settings/settings.js");
-
-        $contentHeader = (object)[
-            'route' => URL . "{$this->route}/",
-            'title' => 'Configurações',
-            'caption' => 'Dados Gerais',
-        ];
-
-        $navTabs = Self::navTabs();
-
-        $config = (new SettingsSite)->getItemWithFilters([], [(object)['columns' => ['url_sistema']]]);
-        $response = (new Integrations)->getItemWithFilters();
-
-        if (!empty($response)) {
-            array_map(function ($item) use ($config, $navTabs) {
-                $item->token = $config->url_sistema . "leadRedirect/leadsFaceBook/" . $item->token;
-            }, array($response));
-        }
-
-        require APP . 'view/_templates/header.php';
-        require APP . 'view/' . $this->dir . '/menu.php';
-        require APP . 'view/' . $this->dir . '/integrations.php';
-        require APP . 'view/_templates/footer.php';
-    }
-
-    public function handleSubmitIntegrations()
-    {
-        $arrPost = [
-            'status' => $_POST['facebookLeadAds'],
-            'token' => ''
-        ];
-
-        if ($arrPost['status'] == 1) {
-            $arrPost['token'] = Util::gererateToken();
-        }
-
-        $exist = (new Integrations)->getItemWithFilters();
-
-        if ($exist) {
-            $response = (new Integrations)->update($arrPost, 'id', $exist->id);
-        } else {
-            $response = (new Integrations)->insert($arrPost);
-        }
-
-        redirect("{$this->route}/integrations/");
-    }
 }
