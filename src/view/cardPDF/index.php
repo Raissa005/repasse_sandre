@@ -118,21 +118,10 @@ use Sabberworm\CSS\Value\URL;
             font-size: <?= $configDigitalCard->tamanho_fonte_ocupacao . 'px' ?>;
         }
 
-        .texto-creci {
-            color: <?= $configDigitalCard->cor_fonte_creci ?>;
-            font-size: <?= $configDigitalCard->tamanho_fonte_creci . 'px' ?>;
-        }
-
         .div-empresa {
             text-align: center;
             margin-top: 100px;
             margin-bottom: 50px;
-        }
-
-        .texto-empresa {
-            color: <?= $configDigitalCard->cor_fonte_imobiliaria ?>;
-            font-size: <?= $configDigitalCard->tamanho_fonte_imobiliaria . 'px' ?>;
-            margin-bottom: 20px;
         }
 
         .div-legenda {
@@ -211,10 +200,6 @@ use Sabberworm\CSS\Value\URL;
                         } ?>
                     </tr>
                 </table>
-            </div>
-
-            <div class="div-empresa">
-                <span class="<?= $configDigitalCard->fonte_imobiliaria ?> texto-empresa">Imobiliária</span>
             </div>
 
             <div class="box-icones-corpo">

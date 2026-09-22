@@ -266,3 +266,102 @@ migration. Os controllers que dependiam de partes mantidas dos clusters
 (`BillReceiveInstallmentController`, `BillsToPayInstallmentController`,
 `CustomerController`, `CardPDFController`) foram conferidos individualmente
 para garantir que só referenciam o que ficou vivo.
+
+## Verificação adicional — digital-card
+
+Depois do relatório principal, uma nova varredura por `CRECI`, `corretor`,
+`imóvel`/`imoveis`/`imóveis` e `imobili` (termo mais amplo que "imóvel",
+adicionado porque escapava das buscas anteriores) em todo `src/` e
+`public/js/` levantou resíduo na tela `digital-card/editItem` e no PDF do
+cartão digital (`cardPDF/index.php`) que não tinha sido coberto nas etapas
+anteriores.
+
+### Campos de `digital-card/editItem`
+
+| Campo (name/id) | O que faz | Coluna real (`digital_card`)? | Status |
+|---|---|---|---|
+| `cor_fonte_creci` | Cor de um elemento de texto do cartão PDF | Sim | Órfã visualmente — estilizava `.texto-creci`, elemento já removido numa limpeza anterior. Campo continua na tela (não foi removido) |
+| `fonte_creci` | Fonte do mesmo elemento | Sim | **Ativa** — reaproveitada para estilizar a legenda "Toque nos ícones para entrar em contato..." no rodapé do cartão (`cardPDF/index.php:269`), sem relação com CRECI. Funciona, nome do campo é que ficou desatualizado. Não mexer |
+| `tamanho_fonte_creci` | Tamanho de fonte do mesmo elemento | Sim | Órfã visualmente, mesma situação de `cor_fonte_creci`. Campo continua na tela |
+| `cor_fonte_imobiliaria` | Cor do texto "Imobiliária" impresso no cartão | Sim (coluna permanece) | **Removida da tela e do controller** numa etapa seguinte (ver "Remoção completa dos 3 campos" abaixo) |
+| `fonte_imobiliaria` | Fonte do mesmo texto | Sim (coluna permanece) | **Removida da tela e do controller** |
+| `tamanho_fonte_imobiliaria` | Tamanho do mesmo texto | Sim (coluna permanece) | **Removida da tela e do controller** |
+
+### Achado: texto fixo "Imobiliária" no PDF do cartão digital
+
+`src/view/cardPDF/index.php:217` tinha um `<span>` com o texto **hardcoded**
+"Imobiliária" dentro de `<div class="div-empresa">`, impresso em **todo**
+cartão digital gerado pelo sistema — não é rótulo de tela administrativa, é
+conteúdo que saía no PDF final entregue a clientes/parceiros de um vendedor
+de veículo. Não refletia filial, vendedor nem nenhum dado real; era texto
+solto, sem substituto porque não existe conceito de "tipo de negócio" a
+exibir aqui numa revenda de veículos.
+
+### Correção aplicada
+
+- Removido o bloco `<div class="div-empresa"><span ...>Imobiliária</span></div>`
+  (`cardPDF/index.php`), sem substituição por outro texto.
+- Removida a regra CSS órfã `.texto-creci` (linhas 121-124 antes da edição) —
+  confirmado que nenhum elemento HTML no arquivo usava essa classe (resíduo
+  da limpeza anterior do campo Creci, que removeu o `<div>` mas não a regra
+  CSS correspondente).
+- Verificação: `grep` confirma zero ocorrências de "Imobiliária",
+  `texto-empresa` ou `div-empresa` como classe aplicada, e zero ocorrências
+  de `.texto-creci`; `php -l` sem erros; estrutura de `<div>`s ao redor do
+  ponto removido conferida manualmente (sem tag solta).
+- **Não verificado visualmente** — não há ferramenta de navegador/sessão
+  disponível nesta sessão para gerar e abrir um PDF de teste. Recomendado
+  gerar um cartão digital de teste manualmente para confirmar o espaçamento
+  no local onde o texto "Imobiliária" aparecia.
+
+### Remoção completa dos 3 campos `*_imobiliaria`
+
+Numa etapa seguinte, os 3 campos (`cor_fonte_imobiliaria`, `fonte_imobiliaria`,
+`tamanho_fonte_imobiliaria`) foram removidos por completo do código — não só
+da tela, de todos os lugares que os referenciavam, exceto a coluna no banco
+(decisão explícita: sem migration nesta etapa).
+
+**Arquivos alterados:**
+- `src/view/digital-card/add.php` — removidos os 3 grupos de label+input/select.
+- `src/view/digital-card/edit.php` — removidos os mesmos 3 grupos (correção
+  extra: a primeira tentativa de remoção deixou uma tag `</div>` órfã por
+  desbalanceamento do bloco removido; corrigida antes de prosseguir).
+- `src/controller/project/DigitalCardController.php` — removidas as 6 linhas
+  correspondentes (3 em `submitAddIttem`, 3 em `submitEditIttem`) que liam
+  `$_POST['cor_fonte_imobiliaria']`/`fonte_imobiliaria`/`tamanho_fonte_imobiliaria`.
+- `src/view/cardPDF/index.php` — **achado durante a verificação, fora do
+  escopo original desta etapa**: a regra CSS `.texto-empresa` (que estilizava
+  o texto "Imobiliária" já removido na etapa anterior) ainda lia
+  `$configDigitalCard->cor_fonte_imobiliaria`/`tamanho_fonte_imobiliaria`. Como
+  o grep de verificação pedia zero resíduo de código para esses 3 nomes de
+  campo, a regra foi removida também (nenhum elemento HTML usava essa classe).
+  A regra `.div-empresa` (só propriedades de layout, sem referência aos 3
+  campos) permanece — ver loose end abaixo.
+
+**Grep de verificação (`cor_fonte_imobiliaria`, `fonte_imobiliaria`,
+`tamanho_fonte_imobiliaria` em todo `src/` e `public/`, extensões `.php` e
+`.js`): zero ocorrências** — confirma código limpo, só a coluna no banco
+permanece (loose end).
+
+**Teste funcional**: `php -l` sem erros nos 4 arquivos alterados e contagem de
+`<div>`/`</div>` balanceada em `add.php`, `edit.php` e `cardPDF/index.php`
+(checagem estrutural). **Não testado via navegador** — sem ferramenta de
+sessão/browser disponível nesta sessão para de fato submeter o formulário de
+cadastro/edição de cartão digital e confirmar ausência de erro
+"Undefined array key" na prática. Recomendado testar manualmente.
+
+### Loose ends registrados (não tratados)
+
+- **Colunas `cor_fonte_creci`, `tamanho_fonte_creci`, `cor_fonte_imobiliaria`,
+  `fonte_imobiliaria` e `tamanho_fonte_imobiliaria`** (`digital_card`) —
+  permanecem na tabela sem nenhum código as referenciando (as 3 últimas desde
+  esta etapa; as 2 primeiras desde a etapa anterior). Aguardando decisão de
+  migration futura para dropar as colunas, se fizer sentido.
+- **Campo `fonte_creci` continua ativo** — não mexer, é usado de verdade hoje
+  (estiliza a legenda do rodapé do cartão), só o nome ficou desatualizado em
+  relação ao que ele realmente controla.
+- **Regra CSS `.div-empresa`** (`cardPDF/index.php`) — ficou órfã desde a
+  remoção do texto "Imobiliária" (nenhum elemento usa mais essa classe), mas
+  não referencia nenhuma das colunas de imóvel — é só layout (margens,
+  alinhamento) sem dono. Não removida porque não fazia parte do escopo pedido
+  nem do critério de verificação (nomes de campo).

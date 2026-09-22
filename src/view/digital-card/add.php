@@ -75,17 +75,6 @@
                                 </div>
                                 <div class="col-md-3 col-lg-3">
                                     <div class="form-group">
-                                        <label for="cor_fonte_imobiliaria">Cor de fonte imobiliária <span class="" style="color: red;">*</span></label>
-                                        <div class="input-group colorpicker-component cp2 colorpicker-element">
-                                            <span class="input-group-addon">
-                                                <i></i>
-                                            </span>
-                                            <input type="text" autocomplete="off" class="form-control" name="cor_fonte_imobiliaria" id="cor_fonte_imobiliaria" value="#ffffff" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="form-group">
                                         <label for="cor_fonte_legenda">Cor de fonte 'Toque nos ícones...' <span class="" style="color: red;">*</span></label>
                                         <div class="input-group colorpicker-component cp2 colorpicker-element">
                                             <span class="input-group-addon">
@@ -183,22 +172,6 @@
                                     <div class="form-group">
                                         <label for="tamanho_fonte_creci">Tamanho fonte creci <span class="" style="color: red;">*</span></label>
                                         <input type="number" autocomplete="off" name="tamanho_fonte_creci" id="tamanho_fonte_creci" class="form-control" value="37" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <label for="fonte_imobiliaria">Fonte imobiliária <span class="" style="color: red;">*</span></label>
-                                    <select name="fonte_imobiliaria" id="fonte_imobiliaria" class="form-control">
-                                        <option value="gotham">Gotham Black</option>
-                                        <option value="lato-black">Lato Black</option>
-                                        <option value="lato-regular">Lato Regular</option>
-                                        <option value="roboto-black">Roboto Black</option>
-                                        <option value="roboto-regular">Roboto Regular</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="form-group">
-                                        <label for="tamanho_fonte_imobiliaria">Tamanho fonte imobiliária <span class="" style="color: red;">*</span></label>
-                                        <input type="number" autocomplete="off" name="tamanho_fonte_imobiliaria" id="tamanho_fonte_imobiliaria" class="form-control" value="100" required>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-lg-3">
