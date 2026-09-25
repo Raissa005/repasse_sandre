@@ -48,7 +48,7 @@ ini_set('ignore_repeated_errors', TRUE);
 
 define('TOKEN', '8+d*) 22@o4& 9k95a8 1éã');
 define('URL_PUBLIC_FOLDER', 'public');
-define('URL_PROTOCOL', 'http://');
+define('URL_PROTOCOL', '//');
 define('URL_DOMAIN', $_SERVER['HTTP_HOST']);
 define('URL_SUB_FOLDER', str_replace(URL_PUBLIC_FOLDER, '', dirname($_SERVER['SCRIPT_NAME'])));
 define('URL', URL_PROTOCOL . URL_DOMAIN . URL_SUB_FOLDER);

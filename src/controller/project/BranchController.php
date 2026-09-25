@@ -270,67 +270,108 @@ class BranchController extends FrontController
             require_once APP . 'libs/wideImage/wide.php';
             require_once APP . 'libs/Resizer.php';
 
+            $allowedImageTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
+            $invalidExtension = false;
+
             if (!empty($_FILES['logo_menu']['tmp_name'])) {
 
-                if (!file_exists("img/branch/$itemId/")) {
-                    mkdir("img/branch/$itemId/", 0777, true);
-                }
-                @unlink("img/branch/$itemId/logo_menu-$item->logo_menu_cont.$item->logo_menu_ext");
-
                 $extension = str_replace(".", "", substr($_FILES['logo_menu']['name'], -4));
-                $gerenciaPost->update8191(["logo_menu_capa" => 1, "logo_menu_cont" => ++$item->logo_menu_cont, "logo_menu_ext" => $extension], $this->table, "id", $itemId, false);
+                $size = @getimagesize($_FILES['logo_menu']['tmp_name']);
 
-                $filename = $_FILES['logo_menu']['tmp_name'];
-                $path = "img/branch/$itemId/";
+                if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    try {
+                        if (!file_exists("img/branch/$itemId/")) {
+                            mkdir("img/branch/$itemId/", 0777, true);
+                        }
 
-                $size = getimagesize($_FILES['logo_menu']['tmp_name']);
-                if ($size[0] == 230 && $size[1] == 50) {
-                    copy($_FILES['logo_menu']['tmp_name'], $path . "logo_menu-$item->logo_menu_cont.$extension");
+                        $filename = $_FILES['logo_menu']['tmp_name'];
+                        $path = "img/branch/$itemId/";
+                        $newCont = $item->logo_menu_cont + 1;
+
+                        if ($size[0] == 230 && $size[1] == 50) {
+                            copy($_FILES['logo_menu']['tmp_name'], $path . "logo_menu-$newCont.$extension");
+                        } else {
+                            wideImagePhoto($filename, $path, 230, 50, "logo_menu-$newCont", ".$extension", 9);
+                        }
+
+                        @unlink("img/branch/$itemId/logo_menu-$item->logo_menu_cont.$item->logo_menu_ext");
+                        $item->logo_menu_cont = $newCont;
+                        $gerenciaPost->update8191(["logo_menu_capa" => 1, "logo_menu_cont" => $newCont, "logo_menu_ext" => $extension], $this->table, "id", $itemId, false);
+                    } catch (\Throwable $error) {
+                        $invalidExtension = true;
+                    }
                 } else {
-                    $logo_menu = wideImagePhoto($filename, $path, 230, 50, "logo_menu-$item->logo_menu_cont", ".$extension", 9);
+                    $invalidExtension = true;
                 }
             }
 
             if (!empty($_FILES['logo_mini']['tmp_name'])) {
 
-                if (!file_exists("img/branch/$itemId/")) {
-                    mkdir("img/branch/$itemId/", 0777, true);
-                }
-                @unlink("img/branch/$itemId/logo_mini-$item->logo_mini_cont.$item->logo_mini_ext");
-
                 $extension = str_replace(".", "", substr($_FILES['logo_mini']['name'], -4));
-                $gerenciaPost->update8191(["logo_mini_capa" => 1, "logo_mini_cont" => ++$item->logo_mini_cont, "logo_mini_ext" => $extension], $this->table, "id", $itemId, false);
+                $size = @getimagesize($_FILES['logo_mini']['tmp_name']);
 
-                $filename = $_FILES['logo_mini']['tmp_name'];
-                $path = "img/branch/$itemId/";
+                if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    try {
+                        if (!file_exists("img/branch/$itemId/")) {
+                            mkdir("img/branch/$itemId/", 0777, true);
+                        }
 
-                $size = getimagesize($_FILES['logo_mini']['tmp_name']);
-                if ($size[0] == 50 && $size[1] == 50) {
-                    copy($_FILES['logo_mini']['tmp_name'], $path . "logo_mini-$item->logo_mini_cont.$extension");
+                        $filename = $_FILES['logo_mini']['tmp_name'];
+                        $path = "img/branch/$itemId/";
+                        $newCont = $item->logo_mini_cont + 1;
+
+                        if ($size[0] == 50 && $size[1] == 50) {
+                            copy($_FILES['logo_mini']['tmp_name'], $path . "logo_mini-$newCont.$extension");
+                        } else {
+                            wideImagePhoto($filename, $path, 50, 50, "logo_mini-$newCont", ".$extension", 9);
+                        }
+
+                        @unlink("img/branch/$itemId/logo_mini-$item->logo_mini_cont.$item->logo_mini_ext");
+                        $item->logo_mini_cont = $newCont;
+                        $gerenciaPost->update8191(["logo_mini_capa" => 1, "logo_mini_cont" => $newCont, "logo_mini_ext" => $extension], $this->table, "id", $itemId, false);
+                    } catch (\Throwable $error) {
+                        $invalidExtension = true;
+                    }
                 } else {
-                    $logo_mini = wideImagePhoto($filename, $path, 50, 50, "logo_mini-$item->logo_mini_cont", ".$extension", 9);
+                    $invalidExtension = true;
                 }
             }
 
             if (!empty($_FILES['logo_rodape']['tmp_name'])) {
 
-                if (!file_exists("img/branch/$itemId/")) {
-                    mkdir("img/branch/$itemId/", 0777, true);
-                }
-                @unlink("img/branch/$itemId/logo_rodape-$item->logo_rodape_cont.$item->logo_rodape_ext");
-
                 $extension = str_replace(".", "", substr($_FILES['logo_rodape']['name'], -4));
-                $gerenciaPost->update8191(["logo_rodape_capa" => 1, "logo_rodape_cont" => ++$item->logo_rodape_cont, "logo_rodape_ext" => $extension], $this->table, "id", $itemId, false);
+                $size = @getimagesize($_FILES['logo_rodape']['tmp_name']);
 
-                $filename = $_FILES['logo_rodape']['tmp_name'];
-                $path = "img/branch/$itemId/";
+                if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    try {
+                        if (!file_exists("img/branch/$itemId/")) {
+                            mkdir("img/branch/$itemId/", 0777, true);
+                        }
 
-                $size = getimagesize($_FILES['logo_rodape']['tmp_name']);
-                if ($size[0] == 220 && $size[1] == 100) {
-                    copy($_FILES['logo_rodape']['tmp_name'], $path . "logo_rodape-$item->logo_rodape_cont.$extension");
+                        $filename = $_FILES['logo_rodape']['tmp_name'];
+                        $path = "img/branch/$itemId/";
+                        $newCont = $item->logo_rodape_cont + 1;
+
+                        if ($size[0] == 220 && $size[1] == 100) {
+                            copy($_FILES['logo_rodape']['tmp_name'], $path . "logo_rodape-$newCont.$extension");
+                        } else {
+                            wideImagePhoto($filename, $path, 220, 100, "logo_rodape-$newCont", ".$extension", 9);
+                        }
+
+                        @unlink("img/branch/$itemId/logo_rodape-$item->logo_rodape_cont.$item->logo_rodape_ext");
+                        $item->logo_rodape_cont = $newCont;
+                        $gerenciaPost->update8191(["logo_rodape_capa" => 1, "logo_rodape_cont" => $newCont, "logo_rodape_ext" => $extension], $this->table, "id", $itemId, false);
+                    } catch (\Throwable $error) {
+                        $invalidExtension = true;
+                    }
                 } else {
-                    $logo_rodape = wideImagePhoto($filename, $path, 220, 100, "logo_rodape-$item->logo_rodape_cont", ".$extension", 9);
+                    $invalidExtension = true;
                 }
+            }
+
+            if ($invalidExtension) {
+                header('location:' . URL . $this->route . "/images/$itemId?edited=true&invalidExt=1");
+                exit;
             }
 
             header('location:' . URL . $this->route . "/images/$itemId?edited=true");

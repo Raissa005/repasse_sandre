@@ -2,7 +2,13 @@
 
 ## Requisitos
 
-- PHP `>= 8.1` (ver `platform_check.php`, gerado pelo Composer).
+- PHP `>= 7.4` — é o piso real gerado em `vendor/composer/platform_check.php`,
+  vindo do `composer.lock` (o mais restritivo entre os pacotes travados é
+  `phenx/php-svg-lib`, que pede `^7.4 || ^8.0`; o próprio `README.md` do
+  projeto também diz "PHP 7"). Não há sintaxe exclusiva de PHP 8 em `src/`
+  (sem `?->`, `enum`, `readonly`, `match`) — confirmado por busca em
+  2026-09-25. O ambiente local costuma rodar PHP 8.2 (XAMPP), mas isso é só
+  o que está instalado na máquina do dev, não uma exigência do código.
 - MySQL/MariaDB.
 - Composer.
 

@@ -72,14 +72,14 @@ class ModelGenerico extends Model
         return $query->fetch();
     }
 
-    // public function disableItem($id, $table)
-    // {
-    //     $sql = "UPDATE {$table} SET status = FALSE WHERE id = :id";
-    //     $query = $this->db->prepare($sql);
-    //     $parameters = array(':id' => $id);
+    public function disableItem($id, $table = '')
+    {
+        $sql = "UPDATE {$table} SET status = FALSE WHERE id = :id";
+        $query = $this->db->prepare($sql);
+        $parameters = array(':id' => $id);
 
-    //     $query->execute($parameters);
-    // }
+        $query->execute($parameters);
+    }
 
     public function disableItem2($id, $table)
     {
@@ -99,14 +99,14 @@ class ModelGenerico extends Model
         $query->execute($parameters);
     }
 
-    // public function enableItem($id, $table)
-    // {
-    //     $sql = "UPDATE {$table} SET status = TRUE WHERE id = :id";
-    //     $query = $this->db->prepare($sql);
-    //     $parameters = array(':id' => $id);
+    public function enableItem($id, $table = '')
+    {
+        $sql = "UPDATE {$table} SET status = TRUE WHERE id = :id";
+        $query = $this->db->prepare($sql);
+        $parameters = array(':id' => $id);
 
-    //     $query->execute($parameters);
-    // }
+        $query->execute($parameters);
+    }
 
     public function enableItem2($id, $table)
     {

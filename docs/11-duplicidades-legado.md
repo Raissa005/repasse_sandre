@@ -82,6 +82,42 @@ não copiar o método marcado.
 de teste — nunca usar) vs `src/libs/FileUploader.php` (mais nova/genérica). Ver
 `docs/09-bibliotecas-libs.md`.
 
+## `ModelGenerico::disableItem`/`enableItem` vs `disableItem2`/`enableItem2` (bug real, corrigido em 2026-09-25)
+
+`ModelGenerico` tinha `disableItem`/`enableItem` **comentados** e só deixava
+`disableItem2`/`enableItem2` ativos (coluna `ativo` em vez de `status`). Como
+`ModelGenerico extends Model`, e `src/core/Model.php` também define
+`disableItem($id)`/`enableItem($id)` (sem parâmetro `$table`, usa
+`$this->table` da própria instância), qualquer controller que chamava
+`(new ModelGenerico())->disableItem($id, $this->table)` na verdade caía no
+método da classe-pai `Model`, que ignorava o `$table` passado e rodava
+`UPDATE {$this->table} ...` com `$this->table` **vazio** (`ModelGenerico` seta
+`''` no construtor). Em `ENVIRONMENT = development` o PDO está com
+`ERRMODE_WARNING`, então o UPDATE inválido falhava **silenciosamente** — a tela
+redirecionava com mensagem de sucesso, mas nada era alterado no banco. Afetava
+`BanksController`, `CountriesController`, `CommunicationChannelsController`,
+`MaritalStatusController`, `CustomerController`, `ProfessionsController` e
+`UsersController` (todos chamam `disableItem`/`enableItem` de `ModelGenerico`
+passando `$this->table`).
+
+→ **Corrigido**: `disableItem`/`enableItem` de `ModelGenerico` foram
+restaurados (não estão mais comentados), usando a coluna `status` — igual ao
+`Model::disableItem`/`enableItem` da base, mas respeitando o `$table` recebido
+por parâmetro. Confirmado por `SHOW COLUMNS` que todas as tabelas acima usam
+`status`, não `ativo`.
+
+`disableItem2`/`enableItem2` (coluna `ativo`) continuam existindo — usados por
+`NetworksSiteController` (tabela `networks_site`, que não existe no banco atual
+de dev — possível resíduo do domínio imobiliário, não investigado nesta
+correção). Não usar `disableItem2`/`enableItem2` para tabela nova sem antes
+confirmar via `SHOW COLUMNS` se ela tem coluna `ativo` em vez de `status`.
+
+**Pendência não corrigida**: `AttendanceController::disableAttendance`/
+`enableAttendance` chamam `ModelGenerico->disableItem($attendanceId)` **sem**
+o parâmetro `$table` — continuam quebrados do mesmo jeito (tabela vazia).
+Fora do escopo desta correção; se for mexer em `AttendanceController`, tratar
+esse caso também.
+
 ## Ao encontrar uma duplicidade nova não catalogada aqui
 
 1. Não escolher no achismo — rodar `grep` para ver qual variante o módulo atual
