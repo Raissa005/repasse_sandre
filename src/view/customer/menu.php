@@ -32,7 +32,6 @@ use RR\libs\Util;
         </h1>
     </section>
     <section class="content">
-        <?= $this->alert->defaultItemAlerts(); ?>
         <div class="nav-tabs-custom">
             <ul class="nav nav-tabs">
                 <li class="<?= ($_GET['pg1'] == 'editItem') ? "active" : "" ?>">

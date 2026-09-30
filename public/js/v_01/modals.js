@@ -1,7 +1,3 @@
-$(document).ready(function () {
-    $('#box-alert').delay(4000).fadeOut();
-});
-
 $('.btn-disable-item').on("click", function () {
     if ($(this).attr('disabled')) {
         return

@@ -37,13 +37,6 @@ class AjaxController
         session_start();
     }
 
-    public function toast()
-    {
-        echo json_encode(['error' => false, 'toast' => isset($_SESSION['RR']['toast']) ? $_SESSION['RR']['toast'] : ""]);
-        unset($_SESSION['RR']['toast']);
-        exit;
-    }
-
     public function addCommentToTheTimelineInAttendance()
     {
         $arrayPost = array(

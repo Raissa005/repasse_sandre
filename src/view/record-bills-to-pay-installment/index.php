@@ -16,7 +16,6 @@ use RR\libs\Util;
         </h1>
     </section>
     <section class="content">
-        <?= $this->alert->defaultItemAlerts(); ?>
         <input type="hidden" id="page" value="<?= 1 ?>">
         <json_encode id="filters" json='<?= json_encode($_GET) ?>' desc="Using to get $_GET on javascript">
             <form action="<?= URL . $this->route ?>" method="GET">

@@ -5,6 +5,8 @@ namespace RR\controller\project;
 use RR\libs\Util;
 use RR\model\User;
 use RR\libs\Secure;
+use RR\libs\Toast;
+use PDOException;
 use RR\model\States;
 use RR\model\Cities;
 use RR\model\Customer;
@@ -291,10 +293,7 @@ class VehiclesController extends FrontController
 
         $response = $this->model->insert($arrPost);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect(!$response->error ? "{$this->route}/editItem/$response->lastId" : "{$this->route}/addItem");
     }
@@ -363,10 +362,7 @@ class VehiclesController extends FrontController
 
         $response = $this->model->update($arrPost, "id", $itemId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/editItem/$itemId");
     }
@@ -408,10 +404,11 @@ class VehiclesController extends FrontController
 
     public function handleSubmitAddAttachments($itemId)
     {
-        Secure::check_post_method($this->route . "/attachment/$itemId?error=error");
+        Secure::check_post_method($this->route . "/attachment/$itemId");
 
         if (empty($_FILES)) {
-            redirect($this->route . "/attachment/$itemId?error=error");
+            Toast::genericError();
+            redirect($this->route . "/attachment/$itemId");
         }
 
         $file = [
@@ -423,10 +420,7 @@ class VehiclesController extends FrontController
 
         $response = (new VehicleAttachments)->insertAttachments($file, $itemId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/attachments/$itemId");
     }
@@ -435,10 +429,7 @@ class VehiclesController extends FrontController
     {
         $response = (new VehicleAttachments)->deleteFile($itemId, $attachmentId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/attachments/$itemId");
     }
@@ -514,10 +505,7 @@ class VehiclesController extends FrontController
             $response = (new VehiclePurchases)->update($arrPost, 'id_vehicle', $itemId);
         }
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/purchaseVehicles/$itemId");
     }
@@ -574,10 +562,11 @@ class VehiclesController extends FrontController
 
     public function handleSubmitAddImages($itemId)
     {
-        Secure::check_post_method($this->route . "/photos/$itemId?error=error");
+        Secure::check_post_method($this->route . "/photos/$itemId");
 
         if (empty($_FILES)) {
-            redirect($this->route . "/photos/$itemId?error=error");
+            Toast::genericError();
+            redirect($this->route . "/photos/$itemId");
         }
 
         if (!empty($_FILES['photos']['tmp_name'][0])) {
@@ -597,10 +586,7 @@ class VehiclesController extends FrontController
             }
         }
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/photos/$itemId");
     }
@@ -609,10 +595,7 @@ class VehiclesController extends FrontController
     {
         $response = (new VehicleImages)->deleteImage($imageId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->result->error === true ? 'error' : 'success',
-            'title' => $response->result->message
-        ];
+        Toast::checkResponse($response->result->error, $response->result->message);
 
         redirect("{$this->route}/photos/$response->itemId");
     }
@@ -625,10 +608,10 @@ class VehiclesController extends FrontController
             $response = (new VehicleImages)->deleteImage($image->id);
         }
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->result->error === true ? 'error' : 'success',
-            'title' => $response->result->error === true ? 'Erro ao excluir os itens' : 'Itens excluidos com successo'
-        ];
+        Toast::checkResponse(
+            $response->result->error,
+            $response->result->error === true ? 'Erro ao excluir os itens' : 'Itens excluidos com successo'
+        );
 
         redirect("{$this->route}/photos/$itemId");
     }
@@ -681,7 +664,7 @@ class VehiclesController extends FrontController
 
     public function handleSubmitAddObservations($itemId)
     {
-        Secure::check_post_method($this->route . "/observations/$itemId?error=error");
+        Secure::check_post_method($this->route . "/observations/$itemId");
 
         $arrPost = [
             'status' => true,
@@ -692,10 +675,7 @@ class VehiclesController extends FrontController
 
         $response = (new VehicleObservations)->insert($arrPost);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/observations/$itemId");
     }
@@ -756,17 +736,29 @@ class VehiclesController extends FrontController
 
     public function disableItem($itemId, $page)
     {
-        $this->model->disableItem($itemId);
+        try {
+            $success = $this->model->disableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($itemId, $page)
     {
-        $this->model->enableItem($itemId);
+        try {
+            $success = $this->model->enableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

@@ -5,7 +5,7 @@ namespace RR\controller\project;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\libs\Util;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Secure;
 use RR\model\DigitalCard;
 use PDOException;
@@ -18,8 +18,6 @@ class DigitalCardController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
-
     public function __construct()
     {
         $this->route = 'digital-card';
@@ -29,7 +27,6 @@ class DigitalCardController extends FrontController
         parent::__construct($this->route);
 
         $this->addScript(URL . "js/" . JSVERSION . "/digitalCard.js");
-        $this->alert = (new BoxAlert());
     }
 
     public function index()
@@ -62,7 +59,7 @@ class DigitalCardController extends FrontController
     public function handleSubmitAddItem()
     {
         Secure::access_admin(true);
-        Secure::check_post_method($this->route . "/addItem?error=error");
+        Secure::check_post_method($this->route . "/addItem");
 
         $gerenciaPost = new GerenciaPost();
 
@@ -143,10 +140,12 @@ class DigitalCardController extends FrontController
                 }
             }
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editItem/$itemId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addItem?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addItem");
             exit;
         }
     }
@@ -163,7 +162,7 @@ class DigitalCardController extends FrontController
 
     public function handleSubmitEditItem($itemId)
     {
-        Secure::check_post_method($this->route . "/editItem/$itemId?error=error");
+        Secure::check_post_method($this->route . "/editItem/$itemId");
 
         $modelGenerico = new ModelGenerico();
         $gerenciaPost = new GerenciaPost();
@@ -250,10 +249,12 @@ class DigitalCardController extends FrontController
                 }
             }
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?edited=true");
+            Toast::itemEdited();
+            header('location:' . URL . $this->route . "/editItem/$itemId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editItem/$itemId?edited=false");
+            Toast::itemEditError();
+            header('location:' . URL . $this->route . "/editItem/$itemId");
             exit;
         }
     }
@@ -269,11 +270,13 @@ class DigitalCardController extends FrontController
             $arrPost = array("capa_fundo" => 0, "cont_fundo" => ++$item->cont_fundo);
             (new GerenciaPost())->update8191($arrPost, $this->table, "id", $itemId, false);
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?deleted=true");
+            Toast::itemDeleted();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editItem/$itemId?deleted=true");
-            exit;
+            Toast::itemDeleteError();
         }
+
+        header('location:' . URL . $this->route . "/editItem/$itemId");
+        exit;
     }
 
     public function deleteImageLogo($itemId)
@@ -287,29 +290,40 @@ class DigitalCardController extends FrontController
             $arrPost = array("capa_logo" => 0, "cont_logo" => ++$item->cont_logo);
             (new GerenciaPost())->update8191($arrPost, $this->table, "id", $itemId, false);
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?deleted=true");
-            exit;
+            Toast::itemDeleted();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editItem/$itemId?deleted=false");
-            exit;
+            Toast::itemDeleteError();
         }
+
+        header('location:' . URL . $this->route . "/editItem/$itemId");
+        exit;
     }
 
     public function disableItem($itemId, $page = "1")
     {
-        $modelGenerico =  new ModelGenerico();
-        $modelGenerico->disableItem($itemId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem($itemId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($itemId, $page)
     {
-        $modelGenerico =  new ModelGenerico();
-        $modelGenerico->enableItem($itemId, $this->table);
+        try {
+            $success = (new ModelGenerico())->enableItem($itemId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

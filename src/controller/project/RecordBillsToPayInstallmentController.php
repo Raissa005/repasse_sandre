@@ -4,7 +4,6 @@ namespace RR\controller\project;
 
 use RR\model\CostCenter;
 use RR\model\ModelGenerico;
-use RR\libs\BoxAlert;
 use RR\libs\Date;
 use RR\libs\RecursiveCostCenter;
 use RR\libs\Secure;
@@ -34,7 +33,6 @@ class RecordBillsToPayInstallmentController extends FrontController
         $this->table = 'bills_to_pay_installments';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Relatório de Contas à Pagar";
     }
 

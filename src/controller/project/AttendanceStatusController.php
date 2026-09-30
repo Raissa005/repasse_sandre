@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\AttendanceStatus;
@@ -68,10 +69,12 @@ class AttendanceStatusController extends FrontController
         try {
             $itemId = (new GerenciaPost())->insert7181($arrPost, $this->table, true, false);
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editItem/$itemId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addItem?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addItem");
             exit;
         }
     }
@@ -121,12 +124,13 @@ class AttendanceStatusController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $itemId, false);
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editItem/$itemId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editItem/$itemId");
+        exit;
     }
 
     public function disableItem($itemId, $page)
@@ -135,10 +139,15 @@ class AttendanceStatusController extends FrontController
             Secure::redirectFunction(!Secure::access_dev(), $this->route, 'authorization=false');
         }
 
-        $modelGenerico = new ModelGenerico();
-        $modelGenerico->disableItem($itemId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem($itemId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
@@ -147,10 +156,16 @@ class AttendanceStatusController extends FrontController
         if ($itemId == 10 || $itemId == 11) {
             Secure::redirectFunction(!Secure::access_dev(), $this->route, 'authorization=false');
         }
-        $modelGenerico =  new ModelGenerico();
-        $modelGenerico->enableItem($itemId, $this->table);
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        try {
+            $success = (new ModelGenerico())->enableItem($itemId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

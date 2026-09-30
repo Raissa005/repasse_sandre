@@ -17,7 +17,6 @@ use RR\libs\Util;
     </section>
 
     <section class="content">
-        <?= $this->alert->defaultItemAlerts(); ?>
         <input type="hidden" id="page" value="<?= 1 ?>">
 
         <form action="<?= URL . $this->route ?>" method="GET">

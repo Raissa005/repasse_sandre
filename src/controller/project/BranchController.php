@@ -6,7 +6,7 @@ use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\Branch;
 use RR\libs\Util;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Secure;
 use RR\libs\Pagination;
 use RR\libs\CommissionArrangement;
@@ -26,7 +26,6 @@ class BranchController extends FrontController
 {
     public $route;
     public $dir;
-    public $alert;
     private $model;
     private $table;
 
@@ -37,8 +36,6 @@ class BranchController extends FrontController
         $this->model = new Branch();
         $this->table = 'branch';
         parent::__construct($this->route);
-
-        $this->alert = (new BoxAlert());
     }
 
     private function navTabs($itemId, $active)
@@ -177,10 +174,7 @@ class BranchController extends FrontController
 
         $response = $this->model->submitInsertForm($_POST);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => (!$response->error ? 'success' : 'error'),
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route);
     }
@@ -230,12 +224,13 @@ class BranchController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $itemId, false);
 
-            header('location:' . URL . $this->route . "/editItem/$itemId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editItem/$itemId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editItem/$itemId");
+        exit;
     }
 
     public function images($itemId)
@@ -370,14 +365,17 @@ class BranchController extends FrontController
             }
 
             if ($invalidExtension) {
-                header('location:' . URL . $this->route . "/images/$itemId?edited=true&invalidExt=1");
+                Toast::errorToast('Não foi possível salvar a imagem: extensão ou dimensão inválida');
+                header('location:' . URL . $this->route . "/images/$itemId");
                 exit;
             }
 
-            header('location:' . URL . $this->route . "/images/$itemId?edited=true");
+            Toast::itemEdited();
+            header('location:' . URL . $this->route . "/images/$itemId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/images/$itemId?edited=true");
+            Toast::itemEditError();
+            header('location:' . URL . $this->route . "/images/$itemId");
             exit;
         }
     }
@@ -388,7 +386,8 @@ class BranchController extends FrontController
         (new GerenciaPost())->update8191(["logo_menu_capa" => 0], $this->table, "id", $itemId, false);
         @unlink("img/branch/$itemId/logo_menu-$item->logo_menu_cont.$item->logo_menu_ext");
 
-        header('location: ' . URL . $this->route . "/images/$itemId?deleted=true");
+        Toast::itemDeleted();
+        header('location: ' . URL . $this->route . "/images/$itemId");
         exit;
     }
 
@@ -398,7 +397,8 @@ class BranchController extends FrontController
         (new GerenciaPost())->update8191(["logo_mini_capa" => 0], $this->table, "id", $itemId, false);
         @unlink("img/branch/$itemId/logo_mini-$item->logo_mini_cont.$item->logo_mini_ext");
 
-        header('location: ' . URL . $this->route . "/images/$itemId?deleted=true");
+        Toast::itemDeleted();
+        header('location: ' . URL . $this->route . "/images/$itemId");
         exit;
     }
 
@@ -408,7 +408,8 @@ class BranchController extends FrontController
         (new GerenciaPost())->update8191(["logo_rodape_capa" => 0], $this->table, "id", $itemId, false);
         @unlink("img/branch/$itemId/logo_rodape-$item->logo_rodape_cont.$item->logo_rodape_ext");
 
-        header('location: ' . URL . $this->route . "/images/$itemId?deleted=true");
+        Toast::itemDeleted();
+        header('location: ' . URL . $this->route . "/images/$itemId");
         exit;
     }
 
@@ -508,10 +509,7 @@ class BranchController extends FrontController
 
         $response = $this->model->handleFormPosition($itemId, $_POST);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/position/$itemId");
     }
@@ -579,9 +577,11 @@ class BranchController extends FrontController
                 (new GerenciaPost())->update8191(['origin_commission' => $position['origin_commission'], 'percentage_commission' => $position['percentage_commission']], 'branch_user_position', 'id', $position['id'], false);
             }
 
+            Toast::itemEdited();
             header('location:' . URL . $this->route . "/paymentArrangement/$itemId");
             exit;
         } catch (PDOException $error) {
+            Toast::itemEditError();
             header('location:' . URL . $this->route . "/paymentArrangement/$itemId");
             exit;
         }
@@ -589,17 +589,29 @@ class BranchController extends FrontController
 
     public function disableItem($itemId, $page)
     {
-        $this->model->disableItem($itemId);
+        try {
+            $success = $this->model->disableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($itemId, $page)
     {
-        $this->model->enableItem($itemId);
+        try {
+            $success = $this->model->enableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
@@ -641,10 +653,7 @@ class BranchController extends FrontController
 
         $response = $this->model->submitPaymentOfSales($itemId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => !$response->error ? 'success' : 'error',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . "/paymentOfSales/$itemId");
     }

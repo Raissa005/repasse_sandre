@@ -9,3 +9,7 @@ const Toast = Swal.mixin({
         toast.addEventListener('mouseleave', Swal.resumeTimer)
     }
 })
+
+function showToast(tipo, mensagem) {
+    Toast.fire({ icon: tipo, title: mensagem });
+}

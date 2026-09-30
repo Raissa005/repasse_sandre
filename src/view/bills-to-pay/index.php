@@ -17,7 +17,6 @@ use RR\libs\RecursiveCostCenter;
     </section>
 
     <section class="content">
-        <?= $this->alert->defaultItemAlerts(); ?>
         <input type="hidden" id="page" value="<?= $pagination->page ?>">
 
         <form action="<?= URL . $this->route ?>" method="GET">

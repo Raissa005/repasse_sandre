@@ -2,7 +2,6 @@
 
 namespace RR\controller\project;
 
-use RR\libs\BoxAlert;
 use RR\libs\Date;
 use RR\libs\Secure;
 use RR\libs\Util;
@@ -30,7 +29,6 @@ class ReportAttendanceController extends FrontController
         $this->table = 'attendance';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Relatório de atendimentos";
     }
 

@@ -1,6 +1,5 @@
 <div class="content-wrapper">
     <section class="content container-fluid">
-        <?php $this->alert->defaultItemAlerts(); ?>
         <div class="row">
             <div class="col-xs-12 col-md-12">
                 <form role="form" action="<?= URL . $this->route . '/handleSubmitNotice' ?>" method="post">

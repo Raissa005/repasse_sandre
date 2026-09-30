@@ -76,7 +76,7 @@ class BillsToPay extends Model
         });
 
         return (object)[
-            'error' => $response != false ? false : true,
+            'error' => $response != false ? true : false,
             'message' => $response != false ? 'Erro ao cancelar pagamento' : 'Pagamento cancelado com sucesso'
         ];
     }
@@ -248,10 +248,7 @@ class BillsToPay extends Model
                 }
             }
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            \RR\libs\Toast::checkResponse($response->error, $response->message);
 
             $this->db->commit();
 

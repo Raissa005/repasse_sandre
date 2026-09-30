@@ -3,6 +3,8 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
+use PDOException;
 use RR\libs\Pagination;
 use RR\model\VehicleFuels;
 
@@ -147,10 +149,7 @@ class VehicleFuelsController extends FrontController
 
         $response = $this->model->insert($arrPost);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect(!$response->error ? "{$this->route}/editItem/$response->lastId" : "{$this->route}/addItem");
     }
@@ -190,27 +189,36 @@ class VehicleFuelsController extends FrontController
 
         $response = $this->model->update($arrPost, "id", $itemId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/editItem/$itemId");
     }
 
     public function disableItem($itemId, $page)
     {
-        $this->model->disableItem($itemId);
+        try {
+            $success = $this->model->disableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($itemId, $page)
     {
-        $this->model->enableItem($itemId);
+        try {
+            $success = $this->model->enableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

@@ -2,25 +2,24 @@
 
 namespace RR\controller\project;
 
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Pagination;
 use RR\libs\Secure;
 use RR\model\ModelGenerico;
 use RR\model\CustomerType;
+use PDOException;
 
 use function RR\Controller\redirect;
 
 class CustomerTypeController extends FrontController
 {
     public $dir;
-    public $alert;
     public $route;
     private $model;
     private $table;
 
     public function __construct()
     {
-        $this->alert = (new BoxAlert);
         $this->route = 'customer-type';
         $this->dir = 'customer-type';
         $this->model = new CustomerType();
@@ -64,10 +63,7 @@ class CustomerTypeController extends FrontController
 
         $response = $this->model->addSubmitForm($_POST);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error ? 'error' : 'success'),
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . ($response->error ? '/add' : '/edit/' . $response->lastId));
     }
@@ -94,20 +90,14 @@ class CustomerTypeController extends FrontController
         )->data[0];
 
         if ($customerType->disableable == 0 && isset($_POST['status']) && $_POST['status'] == 0) {
-            $_SESSION['RR']->toast = (object)[
-                'icon' => 'error',
-                'title' => 'Este item não pode ser desativado'
-            ];
+            Toast::errorToast('Este item não pode ser desativado');
 
             redirect($this->route . "/edit/$customerTypeId");
         }
 
         $response = $this->model->editSubmitForm($customerTypeId, $_POST);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . "/edit/$customerTypeId");
     }
@@ -120,19 +110,15 @@ class CustomerTypeController extends FrontController
         )->data[0];
 
         if ($customerType->disableable == 0) {
-            $_SESSION['RR']->toast = (object)[
-                "icon" => "error",
-                "title" => "Este item não pode ser desativado."
-            ];
-        }
+            Toast::errorToast('Este item não pode ser desativado.');
+        } else {
+            try {
+                $success = $this->model->disableItem($customerTypeId);
+            } catch (PDOException $error) {
+                $success = false;
+            }
 
-        if ($customerType->disableable == 1) {
-            $this->model->disableItem($customerTypeId);
-
-            $_SESSION['RR']->toast = (object)[
-                "icon" => "success",
-                "title" => "Item desativado com sucesso."
-            ];
+            $success ? Toast::itemDisabled() : Toast::genericError();
         }
 
         redirect($this->route);
@@ -140,12 +126,13 @@ class CustomerTypeController extends FrontController
 
     public function enable($customerTypeId)
     {
-        $this->model->enableItem($customerTypeId);
+        try {
+            $success = $this->model->enableItem($customerTypeId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        $_SESSION['RR']->toast = (object)[
-            "icon" => "success",
-            "title" => "Item ativado com sucesso."
-        ];
+        $success ? Toast::itemEnabled() : Toast::genericError();
 
         redirect($this->route . "/?status=0");
     }

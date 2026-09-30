@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\Countries;
@@ -69,10 +70,12 @@ class CountriesController extends FrontController
         try {
             $countryId = (new GerenciaPost())->insert7181($arrPost, $this->table, true, false);
 
-            header('location:' . URL . $this->route . "/editCountries/$countryId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editCountries/$countryId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addCountries?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addCountries");
             exit;
         }
     }
@@ -104,31 +107,40 @@ class CountriesController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $countryId, false);
 
-            header('location:' . URL . $this->route . "/editCountries/$countryId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editCountries/$countryId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editCountries/$countryId");
+        exit;
     }
 
     public function disableCountries($countryId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
+        try {
+            $success = (new ModelGenerico())->disableItem($countryId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        $ModelGenerico->disableItem($countryId, $this->table);
+        $success ? Toast::itemDisabled() : Toast::genericError();
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableCountries($countryId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
+        try {
+            $success = (new ModelGenerico())->enableItem($countryId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        $ModelGenerico->enableItem($countryId, $this->table);
+        $success ? Toast::itemEnabled() : Toast::genericError();
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

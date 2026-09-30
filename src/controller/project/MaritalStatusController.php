@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\MaritalStatus;
@@ -60,10 +61,12 @@ class MaritalStatusController extends FrontController
         try {
             $branchId = (new GerenciaPost())->insert7181($_POST, $this->table, true);
 
-            header('location:' . URL . $this->route . "/editMaritalStatus/$branchId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editMaritalStatus/$branchId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addMaritalStatus?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addMaritalStatus");
             exit;
         }
     }
@@ -89,29 +92,40 @@ class MaritalStatusController extends FrontController
         try {
             (new GerenciaPost())->update8191($_POST, $this->table, 'id', $maritalStatusId);
 
-            header('location:' . URL . $this->route . "/editMaritalStatus/$maritalStatusId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editMaritalStatus/$maritalStatusId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editMaritalStatus/$maritalStatusId");
+        exit;
     }
 
     public function disableMaritalStatus($maritalStatusId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->disableItem($maritalStatusId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem($maritalStatusId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableMaritalStatus($maritalStatusId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->enableItem($maritalStatusId, $this->table);
+        try {
+            $success = (new ModelGenerico())->enableItem($maritalStatusId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

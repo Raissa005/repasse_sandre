@@ -3,7 +3,6 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
-use RR\libs\BoxAlert;
 use RR\libs\Pagination;
 use RR\model\PurchaseRequests;
 
@@ -24,7 +23,6 @@ class RecordOfPurchasedVehiclesController extends FrontController
         $this->model = new PurchaseRequests();
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Relatório de Veículos Comprados";
     }
 

@@ -6,7 +6,7 @@ use PDOException;
 use RR\libs\Util;
 use RR\model\User;
 use RR\libs\Secure;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\model\MenuAccess;
 use RR\model\GerenciaPost;
 use RR\model\SystemSettings;
@@ -22,8 +22,6 @@ class SettingsController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
-
     public function __construct()
     {
         $this->route = 'settings';
@@ -31,8 +29,6 @@ class SettingsController extends FrontController
         $this->model = new SystemSettings();
         $this->table = 'system_config';
         parent::__construct($this->route);
-
-        $this->alert = (new BoxAlert());
     }
 
     private function navTabs()
@@ -66,7 +62,7 @@ class SettingsController extends FrontController
 
     public function handleSubmitSettings()
     {
-        Secure::check_post_method($this->route . "?error=error");
+        Secure::check_post_method($this->route);
 
         $arrPost = array(
             'title' => $_POST['title'],
@@ -78,12 +74,13 @@ class SettingsController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, "id", 1, false);
 
-            header('location:' . URL . $this->route . "?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '?edited=false');
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 
     public function images()
@@ -279,19 +276,23 @@ class SettingsController extends FrontController
                 }
 
                 if ($invalidExtension) {
-                    header('location:' . URL . $this->route . "/images?edited=true&invalidExt=1");
+                    Toast::errorToast('Não foi possível salvar a imagem: extensão ou dimensão inválida');
+                    header('location:' . URL . $this->route . "/images");
                     exit;
                 }
 
-                header('location:' . URL . $this->route . "/images?edited=true");
+                Toast::itemEdited();
+                header('location:' . URL . $this->route . "/images");
                 exit;
             } catch (PDOException $error) {
-                header('location:' . URL . $this->route . '/images?edited=false');
+                Toast::itemEditError();
+                header('location:' . URL . $this->route . '/images');
                 exit;
             }
         }
 
-        header('location:' . URL . $this->route . "/images?error=error");
+        Toast::genericError();
+        header('location:' . URL . $this->route . "/images");
         exit;
     }
 
@@ -320,10 +321,7 @@ class SettingsController extends FrontController
         $cache = new FilesystemAdapter();
         $cache->clear();
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/menus/#{$profileId}");
     }

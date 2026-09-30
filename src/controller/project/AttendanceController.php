@@ -5,6 +5,7 @@ namespace RR\controller\project;
 use RR\libs\Date;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
+use RR\libs\Toast;
 use RR\libs\Util;
 use RR\model\Attendance;
 use RR\model\Customer;
@@ -189,9 +190,12 @@ class AttendanceController extends FrontController
             );
 
             $gerenciaPost->insert7181($arrTimeline, "attendance_timeline", null, false);
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
+            exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/addItem?added=false');
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . '/addItem');
             exit;
         }
     }
@@ -412,10 +416,12 @@ class AttendanceController extends FrontController
 
             (new GerenciaPost())->insert7181($arrTimeline, "attendance_timeline", null, false);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?edited=true");
+            Toast::itemEdited();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editAttendance/$attendanceId?edited=false");
+            Toast::itemEditError();
+            header('location:' . URL . $this->route . "/editAttendance/$attendanceId");
             exit;
         }
     }
@@ -451,11 +457,13 @@ class AttendanceController extends FrontController
             $gerenciaPost->insert7181($arrTimeline, "attendance_timeline", null, false);
             $gerenciaPost->update8191($arrPostStatus, $this->table, "id", $attendanceId, false);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?edited=true");
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/attendance/$attendanceId");
+        exit;
     }
 
     public function handleSubmitClassification($attendanceId)
@@ -465,11 +473,13 @@ class AttendanceController extends FrontController
         try {
             (new GerenciaPost())->update8191(['classification' => $_POST['classification']], $this->table, "id", $attendanceId, false);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?edited=true");
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/attendance/$attendanceId");
+        exit;
     }
 
     public function handleSubmitAddPhone($attendanceId)
@@ -496,10 +506,12 @@ class AttendanceController extends FrontController
 
             (new GerenciaPost())->insert7181($arrTimeline, "attendance_timeline", null, false);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         }
     }
@@ -553,12 +565,13 @@ class AttendanceController extends FrontController
 
             $modelGenerico->deleteItemByCampoGenerico("attendance_phones", "id", $phoneId);
 
-            header('location:' . URL . $this->route . "/attendance/$attendancePhone->id_attendance?deleted=true");
-            exit;
+            Toast::itemDeleted();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendancePhone->id_attendance?deleted=false");
-            exit;
+            Toast::itemDeleteError();
         }
+
+        header('location:' . URL . $this->route . "/attendance/$attendancePhone->id_attendance");
+        exit;
     }
 
     public function handleSubmitInterestFilter(int $attendanceId)
@@ -629,10 +642,12 @@ class AttendanceController extends FrontController
                 (new GerenciaPost)->insert7181($arrayPost, "attendance_filters_interests", null, false);
             }
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=true&interests");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId?interests");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=false&interests");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId?interests");
             exit;
         }
     }
@@ -683,10 +698,12 @@ class AttendanceController extends FrontController
                 $modelGenerico->deleteItemByCampoGenerico("attendance_filters_interests", "id", $itemId);
             }
 
-            header('location:' . URL . $this->route . "/attendance/$attendance->id?deleted=true&interests");
+            Toast::itemDeleted();
+            header('location:' . URL . $this->route . "/attendance/$attendance->id?interests");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendance->id?deleted=false&interests");
+            Toast::itemDeleteError();
+            header('location:' . URL . $this->route . "/attendance/$attendance->id?interests");
             exit;
         }
     }
@@ -711,10 +728,12 @@ class AttendanceController extends FrontController
 
             $modelGenerico->deleteItemByCampoGenerico("attendance_displayed_vehicles", "id", $displayedId);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedVehicle->id_attendance?deleted=true&vehicles");
+            Toast::itemDeleted();
+            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedVehicle->id_attendance?vehicles");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedVehicle->id_attendance?deleted=false&vehicles");
+            Toast::itemDeleteError();
+            header('location:' . URL . $this->route . "/attendance/$attendanceDisplayedVehicle->id_attendance?vehicles");
             exit;
         }
     }
@@ -757,10 +776,12 @@ class AttendanceController extends FrontController
                 }
             }
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         }
     }
@@ -776,12 +797,13 @@ class AttendanceController extends FrontController
         try {
             $modelGenerico->deleteItemByCampoGenerico("attendance_timeline", "id", $itemId);
 
-            header('location:' . URL . $this->route . "/attendance/$attendance->id?deleted=true");
-            exit;
+            Toast::itemDeleted();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendance->id?deleted=false");
-            exit;
+            Toast::itemDeleteError();
         }
+
+        header('location:' . URL . $this->route . "/attendance/$attendance->id");
+        exit;
     }
 
     public function handleSubmitAddAttachments($attendanceId)
@@ -823,10 +845,12 @@ class AttendanceController extends FrontController
 
             (new GerenciaPost())->insert7181($arrPostTimeline, "attendance_timeline", null, false);
 
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attendanceId?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/attendance/$attendanceId");
             exit;
         }
     }
@@ -854,29 +878,40 @@ class AttendanceController extends FrontController
                 ["attachments/attendance/$attachment->id_attendance/$attachment->filename.$attachment->extension"]
             );
 
-            header('location:' . URL . $this->route . "/attendance/$attachment->id_attendance?deleted=true");
-            exit;
+            Toast::itemDeleted();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/attendance/$attachment->id_attendance?deleted=false");
-            exit;
+            Toast::itemDeleteError();
         }
+
+        header('location:' . URL . $this->route . "/attendance/$attachment->id_attendance");
+        exit;
     }
 
     public function disableAttendance($attendanceId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->disableItem($attendanceId);
+        try {
+            $success = (new ModelGenerico())->disableItem($attendanceId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableAttendance($attendanceId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->enableItem($attendanceId);
+        try {
+            $success = (new ModelGenerico())->enableItem($attendanceId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

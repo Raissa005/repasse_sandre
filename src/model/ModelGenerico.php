@@ -78,7 +78,7 @@ class ModelGenerico extends Model
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
 
-        $query->execute($parameters);
+        return $query->execute($parameters);
     }
 
     public function disableItem2($id, $table)
@@ -87,7 +87,7 @@ class ModelGenerico extends Model
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
 
-        $query->execute($parameters);
+        return $query->execute($parameters);
     }
 
     public function deleteItemByCampoGenerico($table, $campo, $value)
@@ -105,7 +105,7 @@ class ModelGenerico extends Model
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
 
-        $query->execute($parameters);
+        return $query->execute($parameters);
     }
 
     public function enableItem2($id, $table)
@@ -114,7 +114,7 @@ class ModelGenerico extends Model
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
 
-        $query->execute($parameters);
+        return $query->execute($parameters);
     }
 
     public function getItemByName($name, $table)

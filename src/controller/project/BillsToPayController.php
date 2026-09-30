@@ -4,7 +4,7 @@ namespace RR\controller\project;
 
 use PDOException;
 use RR\model\ModelGenerico;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Date;
 use RR\libs\Pagination;
 use RR\libs\RecursiveCostCenter;
@@ -28,7 +28,6 @@ class BillsToPayController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
     public $title;
 
     public function __construct()
@@ -39,7 +38,6 @@ class BillsToPayController extends FrontController
         $this->table = 'bills_to_pay';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Lançamentos";
     }
 
@@ -307,11 +305,13 @@ class BillsToPayController extends FrontController
                 }
             }
 
-            header('location:' . URL . $this->route . '/entry/' . $itemId . "?edited=true");
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/entry/' . $itemId . "?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . '/entry/' . $itemId);
+        exit;
     }
 
     public function installments($itemId)
@@ -372,10 +372,7 @@ class BillsToPayController extends FrontController
 
         $response = $this->model->cancelAndUpdateInstallments($_POST['id_installments']);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error != false ? 'success' : 'error',
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . '/installments/' . $idBill);
     }
@@ -407,11 +404,12 @@ class BillsToPayController extends FrontController
         try {
             (new GerenciaPost())->insert7181($arrPost, 'bills_to_pay_installments', false, false);
 
-            header('location:' . URL . $this->route . "/installments/" . $entryId);
-            exit;
+            Toast::itemAdded();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/installments/" . $entryId);
-            exit;
+            Toast::itemAddError();
         }
+
+        header('location:' . URL . $this->route . "/installments/" . $entryId);
+        exit;
     }
 }

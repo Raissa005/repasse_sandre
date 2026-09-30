@@ -4,7 +4,7 @@ namespace RR\controller\project;
 
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\RecursiveCostCenter;
 use RR\libs\Secure;
 use RR\model\CostCenter;
@@ -18,7 +18,6 @@ class CostCenterController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
     public $title;
     public $caption;
 
@@ -30,7 +29,6 @@ class CostCenterController extends FrontController
         $this->table = 'cost_center';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Centro Custo";
         $this->caption = "Árvore";
     }
@@ -73,17 +71,19 @@ class CostCenterController extends FrontController
         try {
             (new GerenciaPost())->insert7181($arrPost, $this->table, true, false);
 
-            header('location:' . URL . $this->route . "?added=true");
+            Toast::itemAdded();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '?added=false');
-            exit;
+            Toast::itemAddError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 
     public function handleSubmitEditItem($itemId)
     {
         Secure::access_admin(true);
-        Secure::check_post_method($this->route . "?error=error");
+        Secure::check_post_method($this->route);
 
         $modelGenerico = new ModelGenerico();
         $gerenciaPost = new GerenciaPost();
@@ -113,18 +113,19 @@ class CostCenterController extends FrontController
 
             $gerenciaPost->update8191($arrayPost, $this->table, 'id', $itemId, false);
 
-            header('location:' . URL . $this->route . "?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 
     public function handleSubmitCloneItem($itemId)
     {
         Secure::access_admin(true);
-        Secure::check_post_method($this->route . "?error=error");
+        Secure::check_post_method($this->route);
 
         $item = (new CostCenter())->getItemById8161($itemId);
 
@@ -141,27 +142,40 @@ class CostCenterController extends FrontController
 
             (new RecursiveCostCenter())->recursiveClone($clonedItemId, $children, $item->id_type);
 
-            header('location:' . URL . $this->route . "?added=true");
-            exit;
+            Toast::itemAdded();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "?added=false");
-            exit;
+            Toast::itemAddError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 
     public function disableItem($itemId)
     {
-        $this->model->disableItem($itemId);
+        try {
+            $success = $this->model->disableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true');
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route);
         exit;
     }
 
     public function enableItem($itemId)
     {
-        $this->model->enableItem($itemId);
+        try {
+            $success = $this->model->enableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true');
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route);
         exit;
     }
 }

@@ -1,9 +1,7 @@
 <?php
 
-use RR\libs\BoxAlert;
 use RR\libs\Secure;
 
-$alert = (new BoxAlert());
 ?>
 <div class="content-wrapper">
     <section class="content-header">
@@ -17,8 +15,6 @@ $alert = (new BoxAlert());
     </section>
 
     <section class="content container-fluid">
-        <?php $alert->defaultItemAlerts(); ?>
-
         <form action="<?= URL . $this->route ?>" method="GET">
             <input type="hidden" name="b" value="s">
             <div class="box box-info <?= isset($_GET['b']) && $_GET['b'] == 's' ? '' : 'collapsed-box' ?>">

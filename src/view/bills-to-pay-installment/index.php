@@ -17,7 +17,6 @@ use RR\libs\Util;
         </h1>
     </section>
     <section class="content">
-        <?= $this->alert->defaultItemAlerts(); ?>
         <input type="hidden" id="page" value="<?= $pagination->page ?>">
         <div class="row">
             <div class="col-md-3 col-sm-6 col-xs-12">

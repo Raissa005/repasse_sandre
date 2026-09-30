@@ -5,7 +5,6 @@ namespace RR\controller\project;
 use PDOException;
 use RR\libs\Util;
 use Dompdf\Dompdf;
-use RR\libs\BoxAlert;
 use RR\libs\Date;
 use RR\libs\Secure;
 use RR\libs\FileUploader;
@@ -41,7 +40,6 @@ class CustomerController extends FrontController
     private $table;
 
     public $siteConfig;
-    public $alert;
     public $title;
 
     public function __construct()
@@ -54,7 +52,6 @@ class CustomerController extends FrontController
 
         $this->title = "Clientes";
         $this->siteConfig = (new ModelGenerico())->getItemById8161(1, "configuracao");
-        $this->alert = new BoxAlert();
         $this->title = 'Clientes';
     }
 
@@ -270,10 +267,7 @@ class CustomerController extends FrontController
 
         $response = $this->model->submitFormAdd($_POST);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . '/edit-item/' . $response->lastId);
     }
@@ -369,10 +363,7 @@ class CustomerController extends FrontController
 
         $response = $this->model->submitEditForm($customerId, $_POST);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . "/edit-item/$customerId");
     }
@@ -480,12 +471,13 @@ class CustomerController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, 'spouse_customer', 'id_spouse', $customerId, false, false);
 
-            header('location:' . URL . $this->route . "/spouse/$customerId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/spouse/$customerId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/spouse/$customerId");
+        exit;
     }
 
     public function image($customerId)
@@ -513,7 +505,7 @@ class CustomerController extends FrontController
         $this->page->id = Self::menuEdit();
         $item = $this->model->getItemById($customerId);
         Secure::branch($item->id_branch, $this->route);
-        Secure::redirectFunction(!Secure::access_secretary() && !Secure::creator($item->created_by), $this->route . "?authorization=false");
+        Secure::redirectFunction(!Secure::access_secretary() && !Secure::creator($item->created_by), $this->route, "authorization=false");
         $permission = Secure::access_secretary() || (Secure::creator($item->created_by));
         $customer = $this->model->getCustomerById($customerId);
 
@@ -671,7 +663,7 @@ class CustomerController extends FrontController
         $this->page->id = Self::menuEdit();
         $item = $this->model->getItemById($customerId);
         Secure::branch($item->id_branch, $this->route);
-        Secure::redirectFunction(!Secure::access_secretary() && !Secure::creator($item->created_by), $this->route . "?authorization=false");
+        Secure::redirectFunction(!Secure::access_secretary() && !Secure::creator($item->created_by), $this->route, "authorization=false");
         $permission = Secure::access_secretary() || (Secure::creator($item->created_by));
         $customer = $this->model->getCustomerById($customerId);
 
@@ -803,10 +795,12 @@ class CustomerController extends FrontController
                     }
                 }
 
-                header('location:' . URL . $this->route . "/image/$customerId?edited=true");
+                Toast::itemEdited();
+                header('location:' . URL . $this->route . "/image/$customerId");
                 exit;
             } catch (PDOException $error) {
-                header('location:' . URL . $this->route . "/image/$customerId?edited=true");
+                Toast::itemEditError();
+                header('location:' . URL . $this->route . "/image/$customerId");
                 exit;
             }
         }
@@ -818,7 +812,8 @@ class CustomerController extends FrontController
         $this->model->update(["logo" => 0], "id", $customerId);
         @unlink("img/customer/$customerId/logo-$item->logo_cont.$item->logo_ext");
 
-        header('location: ' . URL . $this->route . "/image/$customerId?deleted=true");
+        Toast::itemDeleted();
+        header('location: ' . URL . $this->route . "/image/$customerId");
         exit;
     }
 
@@ -955,21 +950,35 @@ class CustomerController extends FrontController
 
     public function disableItem($customerId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
         $customer = (new Customer)->getCustomerById($customerId);
         Secure::redirectFunction(!Secure::access_secretary() && (!$customer->created_by || $customer->blocked == 1), $this->route, "authorization=false");
-        $ModelGenerico->disableItem($customerId, $this->table);
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+
+        try {
+            $success = (new ModelGenerico())->disableItem($customerId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($customerId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
         $customer = (new Customer)->getCustomerById($customerId);
         Secure::redirectFunction(!Secure::access_secretary() && (!$customer->created_by || $customer->blocked == 1), $this->route, "authorization=false");
-        $ModelGenerico->enableItem($customerId, $this->table);
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+
+        try {
+            $success = (new ModelGenerico())->enableItem($customerId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
@@ -979,13 +988,11 @@ class CustomerController extends FrontController
         try {
             $response = (new CustomerAttachment())->update(['status' => '0'], 'id', $customerId);
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            Toast::checkResponse($response->error, $response->message);
 
             redirect($this->route . '/attachment/' . $item->id_customer);
         } catch (PDOException $error) {
+            Toast::genericError();
             redirect($this->route . '/attachment/' . $item->id_customer);
         }
     }

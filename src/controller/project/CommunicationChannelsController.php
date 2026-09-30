@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\CommunicationChannels;
@@ -59,10 +60,12 @@ class CommunicationChannelsController extends FrontController
         try {
             $communicationChannelsId = (new GerenciaPost())->insert7181($arrPost, $this->table, true, false);
 
-            header('location:' . URL . $this->route . "/editCommunicationChannels/$communicationChannelsId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editCommunicationChannels/$communicationChannelsId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addCommunicationChannels?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addCommunicationChannels");
             exit;
         }
     }
@@ -95,37 +98,48 @@ class CommunicationChannelsController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $communicationChannelId, false);
 
-            header('location:' . URL . $this->route . "/editCommunicationChannels/$communicationChannelId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editCommunicationChannels/$communicationChannelId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editCommunicationChannels/$communicationChannelId");
+        exit;
     }
 
     public function disableCommunicationChannels($communicationChannelId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
         if ($communicationChannelId == 8) {
             Secure::redirectFunction(!Secure::access_dev(), $this->route, 'authorization=false');
         }
 
-        $ModelGenerico->disableItem($communicationChannelId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem($communicationChannelId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableCommunicationChannels($communicationChannelId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
         if ($communicationChannelId == 8) {
             Secure::redirectFunction(!Secure::access_dev(), $this->route, 'authorization=false');
         }
 
-        $ModelGenerico->enableItem($communicationChannelId, $this->table);
+        try {
+            $success = (new ModelGenerico())->enableItem($communicationChannelId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

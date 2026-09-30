@@ -5,6 +5,7 @@ namespace RR\controller\project;
 use PDOException;
 use RR\libs\Util;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\libs\Pagination;
 use RR\model\Currencies;
 use RR\model\ModelGenerico;
@@ -173,10 +174,7 @@ class CurrenciesController extends FrontController
 
             $response = $this->model->insert($arrPost);
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            Toast::checkResponse($response->error, $response->message);
 
             $this->model->db->commit();
 
@@ -218,10 +216,7 @@ class CurrenciesController extends FrontController
 
             $response = $this->model->update($arrPost, 'id', $itemId);
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            Toast::checkResponse($response->error, $response->message);
 
             $this->model->db->commit();
 
@@ -236,17 +231,29 @@ class CurrenciesController extends FrontController
 
     public function disableItem($itemId, $page)
     {
-        $this->model->disableItem($itemId);
+        try {
+            $success = $this->model->disableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($itemId, $page)
     {
-        $this->model->enableItem($itemId);
+        try {
+            $success = $this->model->enableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

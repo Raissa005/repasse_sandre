@@ -3,16 +3,12 @@
 use RR\components\ContentHeaderComponent4214;
 use RR\components\PaginationComponent1245;
 use RR\components\TableComponent5432;
-use RR\libs\BoxAlert;
 
-$alert = (new BoxAlert());
 ?>
 <div class="content-wrapper">
     <?php new ContentHeaderComponent4214($contentHeader) ?>
     <section class="content container-fluid">
-        <?php $alert->defaultItemAlerts(); ?>
-
-        <form action="<?= URL . $this->route ?>" method="GET">            
+        <form action="<?= URL . $this->route ?>" method="GET">
             <input type="hidden" name="b" value="s">
             <div class="box box-info <?= isset($_GET['b']) && $_GET['b'] == 's' ? '' : 'collapsed-box' ?>">
                 <div class="box-header with-border">

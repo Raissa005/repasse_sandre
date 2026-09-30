@@ -8,6 +8,5 @@ use RR\components\NavTabsComponent;
     <?php new ContentHeaderComponent4214($contentHeader) ?>
 
     <section class="content container-fluid">
-        <?php $this->alert->defaultItemAlerts(); ?>
         <div class="nav-tabs-custom">
             <?php new NavTabsComponent($navTabs); ?>

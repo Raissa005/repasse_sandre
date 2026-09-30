@@ -417,7 +417,7 @@ class Model
         $sql = "UPDATE {$this->table} SET status = TRUE WHERE id = :id";
         $query = $this->db->prepare($sql);
 
-        $query->execute($parameters);
+        return $query->execute($parameters);
     }
 
     public function disableItem($id)
@@ -427,6 +427,6 @@ class Model
         $sql = "UPDATE {$this->table} SET status = FALSE WHERE id = :id";
         $query = $this->db->prepare($sql);
 
-        $query->execute($parameters);
+        return $query->execute($parameters);
     }
 }

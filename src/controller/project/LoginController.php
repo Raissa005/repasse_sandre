@@ -5,6 +5,7 @@ namespace RR\controller\project;
 use RR\libs\Email;
 use RR\model\User;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\Branch;
 use RR\libs\JWTWrapper;
 use RR\libs\MoreMailer;
@@ -27,7 +28,11 @@ class LoginController extends FrontController
         $modelGenerico = new ModelGenerico();
         $system = (new SystemSettings())->getItemById8161();
 
+        $pendingToast = $_SESSION['RR']->toast ?? null;
         $_SESSION['RR'] = (object)[];
+        if ($pendingToast) {
+            $_SESSION['RR']->toast = $pendingToast;
+        }
 
         if (!isset($_SESSION['RR']->user->id)) {
             require APP . 'view/login/index.php';
@@ -88,10 +93,7 @@ class LoginController extends FrontController
             header('location:' . URL . 'home');
             exit;
         } else {
-            $_SESSION['RR']->toast = (object)[
-                'icon' => 'error',
-                'title' => 'E-mail ou senha invalido!'
-            ];
+            Toast::errorToast('E-mail ou senha invalido!');
 
             header('location:' . URL . 'login');
             exit;
@@ -124,21 +126,24 @@ class LoginController extends FrontController
         $token = !empty($_GET['token']) ? $_GET['token'] : false;
 
         if (!$token) {
-            header('location: ' . URL . 'login/index?invalidToken=true');
+            Toast::warningToast('Token inválido!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
         $jwt = $modelGenerico->getItemByGenericField($token, "tokens", "id_unique", 1);
 
         if (empty($jwt)) {
-            header('location: ' . URL . 'login/index?error=error');
+            Toast::errorToast('Link inválido ou não encontrado!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
         $decodedToken = JWTWrapper::decode($jwt[0]->jwt);
 
         if ($decodedToken->expiration < time()) {
-            header('location: ' . URL . 'login/index?tokenExpired=true');
+            Toast::warningToast('O tempo para redefinir a senha expirou!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
@@ -152,14 +157,16 @@ class LoginController extends FrontController
         $token = !empty($token) ? $token : false;
 
         if (!$token) {
-            header('location: ' . URL . 'login/index?invalidToken=true');
+            Toast::warningToast('Token inválido!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
         $jwt = (new ModelGenerico())->getItemByGenericField($token, "tokens", "id_unique", 1);
 
         if (empty($jwt)) {
-            header('location: ' . URL . 'login/index?error=error');
+            Toast::errorToast('Link inválido ou não encontrado!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
@@ -171,11 +178,13 @@ class LoginController extends FrontController
             (new GerenciaPost())->update8191($arrPost, "users", "id", $decodedToken->userData->id, false);
             (new GerenciaPost())->update8191(["status" => 0], "token", "id", $jwt[0]->id, false);
 
-            header('location: ' . URL . 'login/index?edited=true');
+            Toast::successToast('Senha alterada com successo!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
-        header('location: ' . URL . 'login/changePassWord?token=' . $token . '&validPassword=false');
+        Toast::warningToast('Senhas diferentes!');
+        header('location: ' . URL . 'login/changePassWord?token=' . $token);
         exit;
     }
 
@@ -184,7 +193,8 @@ class LoginController extends FrontController
         $user = (new User())->getUserByEmail($_POST['email']);
 
         if (!$user) {
-            header('location: ' . URL . 'login/index?error=user');
+            Toast::errorToast('Ops! Usuário não encontrado!');
+            header('location: ' . URL . 'login/index');
             exit;
         }
 
@@ -221,7 +231,8 @@ class LoginController extends FrontController
 
         MoreMailer::enviarEmail($email);
 
-        header('location:' . URL . 'login/index?sendEmail=true');
+        Toast::successToast('Acabamos de enviar um email de recuperação para você!');
+        header('location:' . URL . 'login/index');
         exit;
     }
 }

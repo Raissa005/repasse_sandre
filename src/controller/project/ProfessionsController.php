@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\Professions;
@@ -62,10 +63,12 @@ class ProfessionsController extends FrontController
         try {
             $professionId = (new GerenciaPost())->insert7181($arrPost, $this->table, true);
 
-            header('location:' . URL . $this->route . "/editProfessions/$professionId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editProfessions/$professionId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addProfessions?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addProfessions");
             exit;
         }
     }
@@ -96,29 +99,40 @@ class ProfessionsController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $professionsId);
 
-            header('location:' . URL . $this->route . "/editProfessions/$professionsId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editProfessions/$professionsId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editProfessions/$professionsId");
+        exit;
     }
 
     public function disableProfessions($professionsId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->disableItem($professionsId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem($professionsId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableProfessions($professionsId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->enableItem($professionsId, $this->table);
+        try {
+            $success = (new ModelGenerico())->enableItem($professionsId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

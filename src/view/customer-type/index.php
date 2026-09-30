@@ -5,7 +5,6 @@ use RR\libs\Secure;
 ?>
 <div class="content-wrapper">
     <section class="content">
-        <?php $this->alert->defaultItemAlerts(); ?>
         <input type="hidden" id="page" value="<?= $pagination->page ?>">
         <form action="<?= URL . $this->route ?>" method="GET">
             <input type="hidden" name="filtering" value="true">

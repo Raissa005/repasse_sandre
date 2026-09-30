@@ -3,7 +3,6 @@
 namespace RR\controller\project;
 
 use RR\libs\Pagination;
-use RR\libs\BoxAlert;
 use RR\model\SaleRequests;
 use RR\model\VehicleCosts;
 use RR\model\Customer;
@@ -30,7 +29,6 @@ class RecordSaleRequestsController extends FrontController
         $this->table = 'sale_requests';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Relatório de Pedidos de Venda";
     }
 

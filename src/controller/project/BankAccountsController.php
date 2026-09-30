@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\BankAccounts;
@@ -72,10 +73,12 @@ class BankAccountsController extends FrontController
         try {
             $bankAccountId = (new GerenciaPost())->insert7181($arrPost, $this->table, true);
 
-            header('location:' . URL . $this->route . "/editBankAccounts/$bankAccountId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editBankAccounts/$bankAccountId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/addBankAccounts?added=false');
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . '/addBankAccounts');
             exit;
         }
     }
@@ -109,27 +112,40 @@ class BankAccountsController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $bankAccountId);
 
-            header('location:' . URL . $this->route . "/editBankAccounts/$bankAccountId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editBankAccounts/$bankAccountId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editBankAccounts/$bankAccountId");
+        exit;
     }
 
     public function disableBankAccounts($bankAccountId, $page)
     {
-        $this->model->disableItem($bankAccountId);
+        try {
+            $success = $this->model->disableItem($bankAccountId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableBankAccounts($bankAccountId, $page)
     {
-        $this->model->enableItem($bankAccountId);
+        try {
+            $success = $this->model->enableItem($bankAccountId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

@@ -2,7 +2,6 @@
 
 namespace RR\controller\project;
 
-use RR\libs\BoxAlert;
 use RR\libs\Date;
 use RR\libs\RecursiveCostCenter;
 use RR\libs\Secure;
@@ -32,7 +31,6 @@ class RecordBillReceiveInstallmentController extends FrontController
         $this->model = new BillReceiveInstallment();
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Relatório de Contas à Receber";
     }
 

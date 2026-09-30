@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="<?= URL . "plugins/bootstrap/css/bootstrap.min.css" ?>">
     <link rel="stylesheet" href="<?= URL . "plugins/fontawesome/font-awesome.min.css" ?>">
     <link rel="stylesheet" href="<?= URL . "plugins/adminlte/css/adminlte.min.css" ?>">
+    <link rel="stylesheet" href="<?= URL . "plugins/" . PLUGINSVERSION . "/sweetalert2/sweetalert2.min.css" ?>">
     <link rel="icon" type="imagem/png" href="<?= URL . ($system->logo_favicon_capa ? "img/settings/logo_favicon-{$system->logo_favicon_cont}.{$system->logo_favicon_ext}" : 'img/more/favicon.png') ?>" />
 
     <!-- Google Font -->
@@ -21,11 +22,6 @@
             <div class="login-logo">
                 <img class="logo-lg" src="<?= URL . "img/settings/logo_login-{$system->logo_login_cont}.{$system->logo_login_ext}" ?>">
             </div>
-            <?php if (isset($_GET['validPassword']) && $_GET['validPassword'] == "false") { ?>
-                <div class="form-group text-center">
-                    <p class="label label-warning">Senhas diferentes!</p>
-                </div>
-            <?php } ?>
             <form action="<?= URL . "login/handleSubmitChangePassWord/" . $_GET['token'] ?>" method="post">
                 <div class="form-group has-feedback">
                     <div class="input-group">
@@ -49,6 +45,9 @@
     </div>
     <script src="<?= URL . "plugins/" . PLUGINSVERSION . "/jquery/js/jquery.min.js" ?>"></script>
     <script src="<?= URL . "plugins/" . PLUGINSVERSION . "/bootstrap/js/bootstrap.min.js" ?>"></script>
+    <script src="<?= URL . "plugins/" . PLUGINSVERSION . "/sweetalert2/sweetalert2.min.js" ?>"></script>
+    <script src="<?= URL . "js/" . JSVERSION . "/toast-config.js" ?>"></script>
+    <?= \RR\libs\Toast::render() ?>
 </body>
 
 </html>

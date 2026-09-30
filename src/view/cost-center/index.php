@@ -16,7 +16,6 @@ use RR\libs\RecursiveCostCenter;
         </h1>
     </section>
     <section class="content">
-        <?php $this->alert->defaultItemAlerts(); ?>
         <form action="<?= URL . $this->route ?>" method="GET">
             <input type="hidden" name="b" value="s">
             <div class="box box-info <?= isset($_GET['b']) && $_GET['b'] == 's' ? '' : 'collapsed-box' ?>">

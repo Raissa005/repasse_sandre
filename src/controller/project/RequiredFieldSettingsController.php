@@ -4,7 +4,7 @@ namespace RR\controller\project;
 
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Secure;
 use PDOException;
 use RR\model\SystemSettings;
@@ -16,8 +16,6 @@ class RequiredFieldSettingsController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
-
     public function __construct()
     {
         $this->route = 'required-field-settings';
@@ -25,8 +23,6 @@ class RequiredFieldSettingsController extends FrontController
         $this->model = new SystemSettings();
         $this->table = '';
         parent::__construct($this->route);
-
-        $this->alert = (new BoxAlert());
     }
 
     public function index()
@@ -54,7 +50,7 @@ class RequiredFieldSettingsController extends FrontController
 
     public function handleSubmitRequiredFieldCustomer()
     {
-        Secure::check_post_method($this->route . "?error=error");
+        Secure::check_post_method($this->route);
 
         $arrayPostCustomer = array(
             'birth_date' => $_POST['customer_birth_date'],
@@ -92,11 +88,12 @@ class RequiredFieldSettingsController extends FrontController
             (new GerenciaPost())->update8191($arrayPostCustomer, 'customer_required_field', "id", 1, false);
             (new GerenciaPost())->update8191($arrayPostSpouse, 'customer_required_field', "id", 2, false);
 
-            header('location:' . URL . $this->route . "?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 }

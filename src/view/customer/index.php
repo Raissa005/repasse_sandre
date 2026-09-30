@@ -19,7 +19,6 @@ use RR\components\PaginationComponent1245;
         </h1>
     </section>
     <section class="content">
-        <?= $this->alert->defaultItemAlerts(); ?>
         <input type="hidden" id="page" value="<?= $pagination->page ?>">
         <!-- Filtro -->
         <form action="<?= URL . $this->route ?>" method="GET">

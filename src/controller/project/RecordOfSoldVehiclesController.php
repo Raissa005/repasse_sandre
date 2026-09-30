@@ -4,7 +4,6 @@ namespace RR\controller\project;
 
 use RR\libs\Secure;
 use RR\libs\Pagination;
-use RR\libs\BoxAlert;
 use RR\model\SaleRequests;
 
 class RecordOfSoldVehiclesController extends FrontController
@@ -25,7 +24,6 @@ class RecordOfSoldVehiclesController extends FrontController
         $this->table = 'sale_requests';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Relatório de Veículos Vendidos";
     }
 

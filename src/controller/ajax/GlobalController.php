@@ -34,11 +34,4 @@ class GlobalController extends Ajax
         exit;
     }
 
-    public function toast()
-    {
-        $data = (object)['toast' => isset($_SESSION['RR']->toast) ? $_SESSION['RR']->toast : ""];
-        echo json_encode(['error' => $this->error, 'message' => $this->message, 'data' => $data]);
-        unset($_SESSION['RR']->toast);
-        exit;
-    }
 }

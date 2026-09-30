@@ -5,6 +5,7 @@ namespace RR\controller\project;
 use RR\libs\Util;
 use RR\libs\Date;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\libs\Pagination;
 use RR\libs\DeleteFile;
 use RR\libs\FileUploader;
@@ -49,7 +50,6 @@ class BillReceiveInstallmentController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
     public $title;
 
     public function __construct()
@@ -556,10 +556,7 @@ class BillReceiveInstallmentController extends FrontController
         $response = $this->model->submitEditPortion($itemId);
         if (!$response->error) (new PaymentsOfSales)->submitEditPaymentOfSaleFromInstallment($itemId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => !$response->error ? 'success' : 'error',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . "/edit/$itemId");
     }
@@ -898,6 +895,8 @@ class BillReceiveInstallmentController extends FrontController
                 }
             }
 
+            Toast::successToast('Pagamento registrado com sucesso');
+
             if (isset($responseNewPosition)) {
                 redirect("{$this->route}/edit/$itemId?newPortion={$responseNewPosition->lastId}");
             }
@@ -905,6 +904,7 @@ class BillReceiveInstallmentController extends FrontController
             header('location:' . URL . $this->route . '/edit/' . $itemId);
             exit;
         } catch (PDOException $error) {
+            Toast::genericError();
             header('location:' . URL . $this->route . '/edit/' . $itemId);
             exit;
         }
@@ -944,10 +944,7 @@ class BillReceiveInstallmentController extends FrontController
                 }
             }
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => $response->error == true ? 'error' : 'success',
-                'title' => $response->message
-            ];
+            Toast::checkResponse($response->error, $response->message);
 
             $this->model->db->commit();
             if (!$response->error) (new PaymentsOfSales())->submitStatusOfPaymentFromAnInstallment($itemId, 0);
@@ -956,6 +953,7 @@ class BillReceiveInstallmentController extends FrontController
             exit;
         } catch (PDOException $error) {
             $this->model->db->rollBack();
+            Toast::genericError();
             header('location:' . URL . "{$this->route}/edit/$itemId");
             exit;
         }
@@ -1024,10 +1022,7 @@ class BillReceiveInstallmentController extends FrontController
         $response = $this->model->submitCancelInstallment($itemId);
         if (!$response->error) (new PaymentsOfSales())->submitStatusOfPaymentFromAnInstallment($itemId, 9);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error == true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/edit/$itemId");
     }
@@ -1037,10 +1032,7 @@ class BillReceiveInstallmentController extends FrontController
         $response = $this->model->submitActivateInstallment($itemId);
         if (!$response->error) (new PaymentsOfSales())->submitStatusOfPaymentFromAnInstallment($itemId, 0);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error == true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/edit/$itemId");
     }
@@ -1139,9 +1131,11 @@ class BillReceiveInstallmentController extends FrontController
                 (new GerenciaPost())->insert7181($arrayPost, "bill_receive_installment_attachment", null, false);
             }
 
+            Toast::itemAdded();
             header('location:' . URL . "{$this->route}/attachment/$itemId");
             exit;
         } catch (PDOException $error) {
+            Toast::itemAddError();
             header('location:' . URL . "{$this->route}/attachment/$itemId");
             exit;
         }
@@ -1163,10 +1157,12 @@ class BillReceiveInstallmentController extends FrontController
                 ["attachments/bill-receive/$attachment->id_bill_receive_installment/$attachment->filename.$attachment->extension"]
             );
 
-            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bill_receive_installment . "?edited=true");
+            Toast::itemDeleted();
+            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bill_receive_installment);
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bill_receive_installment . "?edited=false");
+            Toast::itemDeleteError();
+            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bill_receive_installment);
             exit;
         }
     }

@@ -6,7 +6,6 @@ use RR\components\PaginationComponent1245;
 ?>
 <div class="content-wrapper">
     <section class="content container-fluid">
-        <?php $this->alert->defaultItemAlerts(); ?>
         <div class="row">
             <div class="col-xs-12 col-md-12">
                 <div class="box box-primary">

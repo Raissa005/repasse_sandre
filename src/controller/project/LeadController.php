@@ -5,7 +5,6 @@ namespace RR\controller\project;
 use Dompdf\Positioner\Fixed;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
-use RR\libs\BoxAlert;
 use RR\libs\Secure;
 use RR\model\Lead;
 use RR\model\User;
@@ -22,8 +21,6 @@ class LeadController extends FrontController
     public $dir;
     private $model;
     private $table;
-
-    public $alert;
 
     public function __construct()
     {
@@ -45,7 +42,6 @@ class LeadController extends FrontController
         Secure::redirectFunction(true, 'home', 'error=lead_disabled');
 
         $this->addScript(URL . "js/" . JSVERSION . "/lead.js");
-        $this->alert = (new BoxAlert());
     }
 
     public function index()

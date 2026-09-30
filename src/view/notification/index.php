@@ -5,7 +5,6 @@ use RR\libs\Date;
 ?>
 <div class="content-wrapper">
     <section class="content container-fluid">
-        <?= $this->alert->defaultItemAlerts() ?>
         <div class="row">
             <div class="col-md-4">
                 <div class="box box-warning">

@@ -58,8 +58,10 @@ class BillReceive extends Model
             }
 
             $this->db->commit();
+            \RR\libs\Toast::successToast('Parcelas canceladas com sucesso');
         } catch (\PDOException $error) {
             $this->db->rollBack();
+            \RR\libs\Toast::genericError();
             if (ENVIRONMENT === 'development') {
                 echo $error->getMessage();
                 exit;
@@ -286,10 +288,7 @@ class BillReceive extends Model
                 }
             }
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            \RR\libs\Toast::checkResponse($response->error, $response->message);
 
             $this->db->commit();
 
@@ -353,10 +352,7 @@ class BillReceive extends Model
                 }
             }
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            \RR\libs\Toast::checkResponse($response->error, $response->message);
 
             $this->db->commit();
             return $response;

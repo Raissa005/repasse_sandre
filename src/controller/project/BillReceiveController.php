@@ -6,6 +6,7 @@ use PDOException;
 use RR\libs\Util;
 use RR\libs\Date;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\libs\Pagination;
 use RR\libs\RecursiveCostCenter;
 use RR\model\ModelGenerico;
@@ -28,7 +29,6 @@ class BillReceiveController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
     public $title;
 
     public function __construct()
@@ -316,6 +316,7 @@ class BillReceiveController extends FrontController
             }
         }
 
+        Toast::successToast('Parcelas canceladas com sucesso');
         redirect("{$this->route}/entry/$itemId");
     }
 
@@ -422,15 +423,12 @@ class BillReceiveController extends FrontController
 
     public function handleSubmitAddPortion($entryId)
     {
-        Secure::check_post_method($this->route . "/installments/$entryId?error=error");
+        Secure::check_post_method($this->route . "/installments/$entryId");
 
         $response = (new BillReceiveInstallment)->submitAddPortion($entryId);
         if (!$response->error) (new PaymentsOfSales)->submitAddPortionFromBillReceive($entryId, $response->lastId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . "/installment/{$entryId}");
     }

@@ -5,7 +5,7 @@ namespace RR\controller\project;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\libs\Util;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Date;
 use RR\libs\DeleteFile;
 use RR\libs\FileUploader;
@@ -38,7 +38,6 @@ class BillsToPayInstallmentController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
     public $title;
 
     public function __construct()
@@ -49,7 +48,6 @@ class BillsToPayInstallmentController extends FrontController
         $this->table = 'bills_to_pay_installments';
         parent::__construct($this->route);
 
-        $this->alert = (new BoxAlert());
         $this->title = "Contas a Pagar";
     }
 
@@ -242,7 +240,7 @@ class BillsToPayInstallmentController extends FrontController
 
     public function handleSubmitAddPortion($entryId)
     {
-        Secure::check_post_method($this->route . "/installments/$entryId?error=error");
+        Secure::check_post_method($this->route . "/installments/$entryId");
 
         $lastPortion = (new BillsToPayInstallment())->getLastNumberPortionByBillsToPayId($entryId);
 
@@ -259,10 +257,12 @@ class BillsToPayInstallmentController extends FrontController
         try {
             (new GerenciaPost())->insert7181($arrPost, $this->table, false, false);
 
-            header('location:' . URL . $this->route . "/installments/" . $entryId . "?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/installments/" . $entryId);
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/installments/" . $entryId . "?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/installments/" . $entryId);
             exit;
         }
     }
@@ -275,10 +275,7 @@ class BillsToPayInstallmentController extends FrontController
 
         $response = (new BillsToPay)->cancelAndUpdateInstallments($_POST['id_installments']);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error != false ? 'success' : 'error',
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route);
     }
@@ -406,7 +403,7 @@ class BillsToPayInstallmentController extends FrontController
 
     public function handleSubmitEditItem($itemId)
     {
-        Secure::check_post_method($this->route . "/editItem/$itemId?error=error");
+        Secure::check_post_method($this->route . "/editItem/$itemId");
 
         $item = (new BillsToPayInstallment())->getItemById8161($itemId);
 
@@ -421,17 +418,18 @@ class BillsToPayInstallmentController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrayPost, $this->table, 'id', $itemId, false);
 
-            header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . '/editItem/' . $itemId);
+        exit;
     }
 
     public function handleSubmitPayment($itemId)
     {
-        Secure::check_post_method($this->route . "/editItem/$itemId?error=error");
+        Secure::check_post_method($this->route . "/editItem/$itemId");
 
         $portion = (new BillsToPayInstallment())->getItemById8161($itemId);
 
@@ -604,22 +602,20 @@ class BillsToPayInstallmentController extends FrontController
                 }
             }
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error === true ? 'error' : 'success'),
-                'title' => $response->message,
-            ];
+            Toast::checkResponse($response->error, $response->message);
 
             if (isset($arrayPostNewPortion)) {
                 $newPortionId = (new GerenciaPost())->insert7181($arrayPostNewPortion, $this->table, true, false);
 
-                header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=true&newPortion=" . $newPortionId);
+                header('location:' . URL . $this->route . '/editItem/' . $itemId . "?newPortion=" . $newPortionId);
                 exit;
             }
 
-            header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=true");
+            header('location:' . URL . $this->route . '/editItem/' . $itemId);
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=false");
+            Toast::genericError();
+            header('location:' . URL . $this->route . '/editItem/' . $itemId);
             exit;
         }
     }
@@ -689,15 +685,13 @@ class BillsToPayInstallmentController extends FrontController
                 }
             }
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => ($response->error ? 'error' : 'success'),
-                'title' => $response->error ? 'Não foi possível estornar a parcela.' : 'Parcela estornada com sucesso.',
-            ];
+            Toast::checkResponse($response->error, $response->error ? 'Não foi possível estornar a parcela.' : 'Parcela estornada com sucesso.');
 
             redirect($this->route . "/editItem/$itemId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/editItem/' . $itemId . "?edited=false");
+            Toast::genericError();
+            header('location:' . URL . $this->route . '/editItem/' . $itemId);
             exit;
         }
     }
@@ -776,10 +770,7 @@ class BillsToPayInstallmentController extends FrontController
 
         $response = $this->model->ActivateAndDesactivateInstallmentForm($itemId, $arrayPost);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . '/editItem/' . $itemId);
     }
@@ -800,10 +791,7 @@ class BillsToPayInstallmentController extends FrontController
 
         $response = $this->model->ActivateAndDesactivateInstallmentForm($itemId, $arrayPost);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => ($response->error === true ? 'error' : 'success'),
-            'title' => $response->message,
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . '/editItem/' . $itemId);
     }
@@ -854,10 +842,11 @@ class BillsToPayInstallmentController extends FrontController
 
     public function handleSubmitAddAttachmentItem($itemId)
     {
-        Secure::check_post_method($this->route . "/attachment/$itemId?error=error");
+        Secure::check_post_method($this->route . "/attachment/$itemId");
 
         if (empty($_FILES)) {
-            redirect($this->route . "/attachment/$itemId?error=error");
+            Toast::genericError();
+            redirect($this->route . "/attachment/$itemId");
         }
 
         try {
@@ -875,10 +864,12 @@ class BillsToPayInstallmentController extends FrontController
                 (new GerenciaPost())->insert7181($arrayPost, "bills_to_pay_installments_attachment", null, false);
             }
 
-            header('location:' . URL . $this->route . '/attachment/' . $itemId . "?edited=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . '/attachment/' . $itemId);
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/attachment/' . $itemId . "?edited=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . '/attachment/' . $itemId);
             exit;
         }
     }
@@ -886,7 +877,7 @@ class BillsToPayInstallmentController extends FrontController
     public function handleSubmitDeleteAttachmentById($attachmentId)
     {
         $attachment = (new ModelGenerico())->getItemById8161($attachmentId, "bills_to_pay_installments_attachment");
-        Secure::check_post_method($this->route . "/attachment/$attachment->id_bills_to_pay_installments?error=error");
+        Secure::check_post_method($this->route . "/attachment/$attachment->id_bills_to_pay_installments");
 
         try {
             DeleteFile::deleteFile(
@@ -895,10 +886,12 @@ class BillsToPayInstallmentController extends FrontController
                 ["attachments/billsToPay/$attachment->id_bills_to_pay_installments/$attachment->filename.$attachment->extension"]
             );
 
-            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bills_to_pay_installments . "?edited=true");
+            Toast::itemDeleted();
+            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bills_to_pay_installments);
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bills_to_pay_installments . "?edited=false");
+            Toast::itemDeleteError();
+            header('location:' . URL . $this->route . '/attachment/' . $attachment->id_bills_to_pay_installments);
             exit;
         }
     }

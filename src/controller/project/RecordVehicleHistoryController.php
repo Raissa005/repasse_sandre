@@ -3,7 +3,6 @@
 namespace RR\controller\project;
 
 use RR\libs\Pagination;
-use RR\libs\BoxAlert;
 use RR\libs\Secure;
 use RR\libs\Util;
 use RR\model\BillReceive;
@@ -51,7 +50,6 @@ class RecordVehicleHistoryController extends FrontController
         $this->dir = 'record-vehicle-history';
 
         $this->model = new Vehicles();
-        $this->alert = new BoxAlert();
         $this->table = 'vehicles';
 
         parent::__construct($this->route);

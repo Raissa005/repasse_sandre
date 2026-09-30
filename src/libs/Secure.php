@@ -12,6 +12,11 @@ class Secure
     public static function redirectFunction($redirect = true, $locationController = "home", $get = "")
     {
         if ($redirect) {
+            if ($get === 'authorization=false') {
+                Toast::unauthorized();
+                $get = '';
+            }
+
             header('location: ' . URL . $locationController . ($get != "" ? "?$get" : ""));
             exit;
         }
@@ -260,10 +265,7 @@ class Secure
     public static function check_post_method(string $path = "home"): void
     {
         if (empty($_POST)) {
-            $_SESSION['RR']->toast = (object)[
-                'icon' => 'error',
-                'title' => 'Tente novamente',
-            ];
+            Toast::errorToast('Tente novamente');
             redirect($path);
         }
     }

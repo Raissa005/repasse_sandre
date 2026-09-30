@@ -3,6 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\Banks;
@@ -69,10 +70,12 @@ class BanksController extends FrontController
         try {
             $bankId = (new GerenciaPost())->insert7181($arrPost, $this->table, true, false);
 
-            header('location:' . URL . $this->route . "/editBanks/$bankId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editBanks/$bankId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addBanks?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addBanks");
             exit;
         }
     }
@@ -104,31 +107,40 @@ class BanksController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $bankId, false);
 
-            header('location:' . URL . $this->route . "/editBanks/$bankId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editBanks/$bankId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editBanks/$bankId");
+        exit;
     }
 
     public function disableBanks($bankId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
+        try {
+            $success = (new ModelGenerico())->disableItem($bankId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        $ModelGenerico->disableItem($bankId, $this->table);
+        $success ? Toast::itemDisabled() : Toast::genericError();
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableBanks($bankId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
+        try {
+            $success = (new ModelGenerico())->enableItem($bankId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        $ModelGenerico->enableItem($bankId, $this->table);
+        $success ? Toast::itemEnabled() : Toast::genericError();
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

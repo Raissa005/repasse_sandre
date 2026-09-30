@@ -3,7 +3,7 @@
 namespace RR\controller\project;
 
 use RR\libs\Secure;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\model\Customer;
 use RR\model\Attendance;
 use RR\model\Notification;
@@ -18,8 +18,6 @@ class NotificationController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
-
     public function __construct()
     {
         $this->dir = 'notification';
@@ -28,8 +26,6 @@ class NotificationController extends FrontController
         $this->model = new Notification();
 
         parent::__construct($this->route);
-
-        $this->alert = (new BoxAlert());
     }
 
     public function index()
@@ -103,19 +99,29 @@ class NotificationController extends FrontController
 
     public function disableItem($itemId, $page = "1")
     {
-        $modelGenerico =  new ModelGenerico();
-        $modelGenerico->disableItem($itemId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem($itemId, $this->table);
+        } catch (\PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableItem($itemId, $page)
     {
-        $modelGenerico =  new ModelGenerico();
-        $modelGenerico->enableItem($itemId, $this->table);
+        try {
+            $success = (new ModelGenerico())->enableItem($itemId, $this->table);
+        } catch (\PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

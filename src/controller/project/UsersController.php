@@ -4,7 +4,7 @@ namespace RR\controller\project;
 
 use RR\libs\Util;
 use RR\libs\Secure;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\model\User;
 use RR\model\Branch;
 use RR\model\Customer;
@@ -32,8 +32,6 @@ class UsersController extends FrontController
     private $table;
     private $user;
 
-    public $alert;
-
     public function __construct()
     {
         $this->route = 'users';
@@ -43,7 +41,6 @@ class UsersController extends FrontController
         parent::__construct($this->route);
 
         $this->addScript(URL . "js/" . JSVERSION . "/users.js");
-        $this->alert = (new BoxAlert());
     }
 
     private function navTabs(int $itemId)
@@ -132,10 +129,7 @@ class UsersController extends FrontController
 
         $response = $this->model->submitAddForm();
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . '/edit-item/' . $response->lastId);
     }
@@ -242,10 +236,7 @@ class UsersController extends FrontController
     {
         $response = $this->model->submitRhForm($itemId);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
 
         redirect($this->route . '/rh/' . $itemId);
     }
@@ -257,10 +248,7 @@ class UsersController extends FrontController
 
         $response = $this->model->submitEditForm($itemId, $_POST, $_FILES);
 
-        $_SESSION['RR']->toast = (object)[
-            'icon' => $response->error === true ? 'error' : 'success',
-            'title' => $response->message
-        ];
+        Toast::checkResponse($response->error, $response->message);
         redirect($this->route . "/editItem/" . $itemId);
     }
 
@@ -304,10 +292,7 @@ class UsersController extends FrontController
 
             $_SESSION['RR'] = $userSession;
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => 'success',
-                'title' => 'Você retornou às permissões do ' . trim($user->name) . '.'
-            ];
+            Toast::successToast('Você retornou às permissões do ' . trim($user->name) . '.');
         } else {
             $cache = new FilesystemAdapter();
             $cache->clear();
@@ -347,10 +332,7 @@ class UsersController extends FrontController
 
             $_SESSION['RR'] = $userSession;
 
-            $_SESSION['RR']->toast = (object)[
-                'icon' => 'success',
-                'title' => 'Agora você irá visualizar o sistema com as permissões do usuário ' . trim($user->name) . '.'
-            ];
+            Toast::successToast('Agora você irá visualizar o sistema com as permissões do usuário ' . trim($user->name) . '.');
         }
 
         redirect('/home');
@@ -504,17 +486,31 @@ class UsersController extends FrontController
     public function disableUser($itemId, $page = "1")
     {
         Secure::access_admin(true);
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->disableItem($itemId, $this->table);
-        redirect("{$this->route}?disabled=true" . ($page ? "&page=$page" : ""));
+
+        try {
+            $success = (new ModelGenerico())->disableItem($itemId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        redirect("{$this->route}" . ($page ? "?page=$page" : ""));
     }
 
     public function enableUser($itemId, $page)
     {
         Secure::access_admin(true);
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->enableItem($itemId, $this->table);
-        redirect("{$this->route}?enable=true" . ($page ? "&page=$page" : ""));
+
+        try {
+            $success = (new ModelGenerico())->enableItem($itemId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        redirect("{$this->route}" . ($page ? "?page=$page" : ""));
     }
 
     public function turnSeller()
@@ -524,15 +520,9 @@ class UsersController extends FrontController
                 $_SESSION['RR']->profile->id = 4;
                 $_SESSION['RR']->profile->access = 30;
                 $_SESSION['RR']->profile->name = 'Vendedor';
-                $_SESSION['RR']->toast = (object)[
-                    'icon' => 'success',
-                    'title' => 'Liberado acesso como vendedor! Relogue para voltar ao seu perfil padrão.',
-                ];
+                Toast::successToast('Liberado acesso como vendedor! Relogue para voltar ao seu perfil padrão.');
             } else {
-                $_SESSION['RR']->toast = (object)[
-                    'icon' => 'error',
-                    'title' => 'Acesso restrito aos desenvolvedores!',
-                ];
+                Toast::errorToast('Acesso restrito aos desenvolvedores!');
             }
         }
 
@@ -575,7 +565,7 @@ class UsersController extends FrontController
                 $this->model->update(['id_customer' => $response->lastId], 'id', $user->id);
             }
         }
-        $_SESSION['RR']->toast = (object)['icon' => ($response->error === true ? 'error' : 'success'), 'title' => $response->message];
+        Toast::checkResponse($response->error, $response->message);
         redirect("{$this->route}");
     }
 
@@ -591,7 +581,7 @@ class UsersController extends FrontController
                 $response = (new UserBranch)->insert(['id_user' => $user->id, 'id_branch' => $branch->id]);
             }
         }
-        $_SESSION['RR']->toast = (object)['icon' => ($response->error === true ? 'error' : 'success'), 'title' => $response->message];
+        Toast::checkResponse($response->error, $response->message);
         redirect("{$this->route}");
     }
 }

@@ -5,6 +5,7 @@ namespace RR\controller\project;
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\NetworksSite;
 use PDOException;
 use RR\libs\Pagination;
@@ -69,10 +70,12 @@ class NetworksSiteController extends FrontController
         try {
             $networksId = (new GerenciaPost())->insert7181($arrPost, $this->table, true, false);
 
-            header('location:' . URL . $this->route . "/editNetwork/$networksId?added=true");
+            Toast::itemAdded();
+            header('location:' . URL . $this->route . "/editNetwork/$networksId");
             exit;
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/addNetwork?added=false");
+            Toast::itemAddError();
+            header('location:' . URL . $this->route . "/addNetwork");
             exit;
         }
     }
@@ -108,29 +111,40 @@ class NetworksSiteController extends FrontController
         try {
             (new GerenciaPost())->update8191($arrPost, $this->table, 'id', $networkId, false);
 
-            header('location:' . URL . $this->route . "/editNetwork/$networkId?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . "/editNetwork/$networkId?edited=false");
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route . "/editNetwork/$networkId");
+        exit;
     }
 
     public function disableNetwork($networkId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->disableItem2($networkId, $this->table);
+        try {
+            $success = (new ModelGenerico())->disableItem2($networkId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 
     public function enableNetwork($networkId, $page)
     {
-        $ModelGenerico =  new ModelGenerico();
-        $ModelGenerico->enableItem2($networkId, $this->table);
+        try {
+            $success = (new ModelGenerico())->enableItem2($networkId, $this->table);
+        } catch (PDOException $error) {
+            $success = false;
+        }
 
-        header('location: ' . URL . $this->route . '?disabled=true&page=' . $page);
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . $page);
         exit;
     }
 }

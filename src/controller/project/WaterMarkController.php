@@ -4,7 +4,7 @@ namespace RR\controller\project;
 
 use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
-use RR\libs\BoxAlert;
+use RR\libs\Toast;
 use RR\libs\Secure;
 use RR\model\WaterMark;
 use PDOException;
@@ -16,8 +16,6 @@ class WaterMarkController extends FrontController
     private $model;
     private $table;
 
-    public $alert;
-
     public function __construct()
     {
         $this->route = 'water-mark';
@@ -25,8 +23,6 @@ class WaterMarkController extends FrontController
         $this->model = new WaterMark();
         $this->table = 'system_config';
         parent::__construct($this->route);
-
-        $this->alert = (new BoxAlert());
     }
 
     public function index()
@@ -43,7 +39,7 @@ class WaterMarkController extends FrontController
 
     public function handleSubmitWaterMark()
     {
-        Secure::check_post_method($this->route . "?error=error");
+        Secure::check_post_method($this->route);
 
         $item = (new WaterMark())->getItemById8161(1);
 
@@ -72,12 +68,13 @@ class WaterMarkController extends FrontController
 
             (new GerenciaPost())->update8191($arrPost, $this->table, "id", 1, false);
 
-            header('location:' . URL . $this->route . "?edited=true");
-            exit;
+            Toast::itemEdited();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route . '?edited=false');
-            exit;
+            Toast::itemEditError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 
     public function deleteWaterMark()
@@ -91,10 +88,12 @@ class WaterMarkController extends FrontController
             $arrPost = array("water_mark_capa" => 0, "water_mark_cont" => ++$waterMark->cont);
             (new GerenciaPost())->update8191($arrPost, $this->table, "id", 1, false);
 
-            header('location:' . URL . $this->route);
+            Toast::itemDeleted();
         } catch (PDOException $error) {
-            header('location:' . URL . $this->route);
-            exit;
+            Toast::itemDeleteError();
         }
+
+        header('location:' . URL . $this->route);
+        exit;
     }
 }

@@ -1,12 +1,9 @@
 <?php
 
-use RR\libs\BoxAlert;
 use RR\libs\Secure;
 
-$alert = (new BoxAlert());
 ?><div class="content-wrapper">
     <section class="content container-fluid">
-        <?php $alert->defaultItemAlerts(); ?>
         <div class="row">
             <div class="col-md-12">
                 <div class="box box-primary">
