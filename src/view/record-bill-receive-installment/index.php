@@ -193,7 +193,7 @@ use RR\libs\Util;
                                         <?php foreach ($response->data as $item) { ?>
                                             <tr class="<?= $item->text ?>">
                                                 <?php if (isset($_GET['column_id']) && $_GET['column_id'] == 'on') { ?>
-                                                    <td class="text-center" style="vertical-align: middle;"><a class="<?= $item->text ?>" href="<?= URL . 'bills-to-pay-installment' . "/editItem/$item->id" ?>" target="_blank"><?= $item->id ?></a>
+                                                    <td class="text-center" style="vertical-align: middle;"><a class="<?= $item->text ?>" href="<?= URL . 'bill-receive-installment' . "/edit/$item->id" ?>" target="_blank"><?= $item->id ?></a>
                                                     </td>
                                                 <?php } ?>
                                                 <td style="vertical-align: middle;"><?= $item->customer_name ?></td>

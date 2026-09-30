@@ -112,11 +112,87 @@ de dev — possível resíduo do domínio imobiliário, não investigado nesta
 correção). Não usar `disableItem2`/`enableItem2` para tabela nova sem antes
 confirmar via `SHOW COLUMNS` se ela tem coluna `ativo` em vez de `status`.
 
-**Pendência não corrigida**: `AttendanceController::disableAttendance`/
-`enableAttendance` chamam `ModelGenerico->disableItem($attendanceId)` **sem**
-o parâmetro `$table` — continuam quebrados do mesmo jeito (tabela vazia).
-Fora do escopo desta correção; se for mexer em `AttendanceController`, tratar
-esse caso também.
+**Atualização 2026-09-28**: `AttendanceController::disableAttendance`/
+`enableAttendance` também corrigidos (passavam a chamar `ModelGenerico->disableItem($attendanceId)`
+**sem** o parâmetro `$table` — mesmo bug, tabela vazia). Ver seção de migração
+do Toast abaixo para o estado final completo.
+
+## Mensagens de sucesso/aviso/erro: `BoxAlert` (removido) → `Toast` (padrão único desde 2026-09-28)
+
+O projeto tinha **duas** implementações concorrentes de feedback pós-ação, nenhuma delas totalmente correta:
+
+1. **`src/libs/BoxAlert.php`** — padrão antigo: controller redireciona com flag na
+   querystring (`?added=true`, `?disabled=true` etc.), a view chama
+   `(new BoxAlert())->defaultItemAlerts()` manualmente e ele lê `$_GET` pra decidir
+   a mensagem. Usado em ~35 controllers / ~40 views. Problema: a mensagem depende
+   só da flag da URL, não do resultado real da operação no banco — e cada view
+   precisa lembrar de chamar `defaultItemAlerts()` (várias views de edição, ex.
+   `marital-status/editMaritalStatus.php`, nunca chamavam e por isso nunca
+   mostravam nada).
+2. **`src/libs/Toast.php`** — padrão mais novo (SweetAlert2, toast no canto da
+   tela): `Toast::successToast($msg)` / `errorToast($msg)` / `warningToast($msg)`
+   grava a mensagem em `$_SESSION['RR']->toast`. Já estava em uso em 24+
+   controllers/models (`Vehicles*`, `Users`, `BillsToPay*`, `BillReceive*`,
+   `CustomerType`, `CheckControl`, `Branch`, `SaleRequests`, `PurchaseRequests`,
+   `Customer`, `Login`, `Settings`, `Secure`) — só que **a ponte que exibia o
+   toast estava completamente quebrada e nada disso aparecia pro usuário**:
+   - `public/js/v_01/toast.js` (que buscava o toast da sessão via AJAX e disparava
+     `Swal`) nunca era incluído em nenhuma página.
+   - Mesmo se fosse incluído, chamava `url + "api/ajax/toast"` — prefixo de rota
+     inválido (`src/controller/api/` não existe; o padrão correto é
+     `ajax/ajax/<método>`, ver `Application.php::splitUrl`).
+   - Havia uma segunda implementação incompatível do mesmo endpoint em
+     `GlobalController::toast()` (formato de resposta `data.toast` em vez de
+     `toast`), também nunca corretamente roteada.
+
+→ **Decisão**: consolidar em cima do `Toast.php` existente (não criar uma
+terceira classe). A ponte de exibição foi trocada por renderização **inline no
+footer comum** (`Toast::render()`, chamado em
+`src/view/_templates/footer.php`, depois de `renderScript()` pra garantir que o
+mixin `Toast` de `toast-config.js` já esteja carregado) — sem requisição AJAX
+extra, sem depender de cada view lembrar de chamar algo. `toast.js`,
+`AjaxController::toast()` e `GlobalController::toast()` foram removidos (mortos
+mesmo antes da mudança). `Toast.php` ganhou métodos de mensagem padrão
+(`itemAdded`, `itemEdited`, `itemDisabled` etc., espelhando os casos do
+`defaultItemAlerts()`) e `infoToast()`.
+
+**Efeito colateral (esperado, positivo)**: como a renderização agora é
+automática no footer comum, os 24+ controllers que já setavam
+`$_SESSION['RR']->toast` mas nunca tinham a mensagem exibida **passam a
+funcionar sem precisar tocar neles** — não é regressão, é a ponte finalmente
+fechando o circuito que já existia pela metade.
+
+**`src/view/login/index.php` tinha um terceiro mecanismo de alerta próprio**
+(não usa `_templates/header.php`/`footer.php`, então `Toast::render()` não
+alcançava essa página) — misturava flags de querystring com uma checagem manual
+de `$_SESSION['RR']->toast` que ignorava o conteúdo real e sempre mostrava o
+texto fixo "E-mail ou senha invalido!". **Corrigido**: `login/index.php`,
+`login/changePassword.php` ganharam os assets do SweetAlert2 + `toast-config.js`
++ `Toast::render()` próprios (já que não passam pelo footer comum), e
+`LoginController` foi convertido pra `Toast::` em todos os pontos
+(signIn, changePassWord, sendRecoverPasswordMail). De quebra, achado e corrigido
+outro bug: `LoginController::index()` sempre resetava `$_SESSION['RR'] =
+(object)[]` **antes** de checar o toast pendente, apagando qualquer mensagem
+recém-setada por um redirect anterior — o toast de login inválido nunca
+aparecia nem no código antigo. Agora o toast pendente é preservado através do
+reset.
+
+**Status da migração: concluída em 2026-09-28.** Todos os ~35 controllers que
+usavam `BoxAlert`/flags de querystring foram migrados pra `Toast::`, incluindo
+a correção de "só sucesso se a operação realmente funcionou" nas ações de
+disable/enable (a maioria não checava resultado nenhum). `BoxAlert.php` foi
+removido, junto com o trecho de `#box-alert` em `modals.js`. De quebra, dois
+bugs de lógica invertida foram encontrados e corrigidos nesse processo:
+`BillsToPayController::handleCancelInstallments` e
+`BillsToPay::cancelAndUpdateInstallments` mostravam "sucesso" quando a operação
+falhava e vice-versa (condição `!= false ? 'success' : 'error'` invertida).
+
+Ficou de fora, deliberadamente, código morto/inalcançável: o corpo de
+`LeadController`/`LeadConfigController` (módulo desativado por guard no
+construtor, ver [[lead_module_disabled]]) mantém flags antigas nos métodos que
+nunca executam — só o `BoxAlert` (que era importado mas nunca chamado) foi
+removido de lá. `src/view/notice/index.php` também ficou com a chamada de
+alerta removida, mas continua órfã (nenhum controller a renderiza).
 
 ## Ao encontrar uma duplicidade nova não catalogada aqui
 

@@ -13,6 +13,7 @@ use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\SystemSettings;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use PDOException;
 
 use function RR\Controller\redirect;
 
@@ -175,12 +176,18 @@ class LoginController extends FrontController
         if ($_POST["password"] == $_POST["confirm_password"]) {
             $arrPost = array('password' =>  password_hash($_POST['password'], PASSWORD_BCRYPT, array('cost' => 12)));
 
-            (new GerenciaPost())->update8191($arrPost, "users", "id", $decodedToken->userData->id, false);
-            (new GerenciaPost())->update8191(["status" => 0], "token", "id", $jwt[0]->id, false);
+            try {
+                (new GerenciaPost())->update8191($arrPost, "users", "id", $decodedToken->userData->id, false);
+                (new GerenciaPost())->update8191(["status" => 0], "tokens", "id", $jwt[0]->id, false);
 
-            Toast::successToast('Senha alterada com successo!');
-            header('location: ' . URL . 'login/index');
-            exit;
+                Toast::successToast('Senha alterada com successo!');
+                header('location: ' . URL . 'login/index');
+                exit;
+            } catch (PDOException $error) {
+                Toast::genericError();
+                header('location: ' . URL . 'login/index');
+                exit;
+            }
         }
 
         Toast::warningToast('Senhas diferentes!');

@@ -68,8 +68,8 @@ class Contract extends Model
                 INNER JOIN bill_receive br ON br.id = bri.id_bill_receive
                 LEFT JOIN banks bk ON bk.id = bri.id_bank
                 INNER JOIN customer cust ON cust.id = br.id_customer
-                INNER JOIN professions pro ON  pro.id = cust.id_profession
-                INNER JOIN marital_status ms ON ms.id = cust.id_marital_status
+                LEFT JOIN professions pro ON  pro.id = cust.id_profession
+                LEFT JOIN marital_status ms ON ms.id = cust.id_marital_status
                 LEFT JOIN spouse_customer scust ON scust.id = cust.id
                 LEFT JOIN cities cit ON cit.id = cust.id_city
                 LEFT JOIN states sta ON sta.uf = cust.uf_state
@@ -147,8 +147,8 @@ class Contract extends Model
                 INNER JOIN bills_to_pay btp ON btp.id = btpi.id_bills_to_pay
                 LEFT JOIN banks bk ON bk.id = btpi.id_bank
                 INNER JOIN customer cust ON cust.id = btp.id_customer
-                INNER JOIN professions pro ON  pro.id = cust.id_profession
-                INNER JOIN marital_status ms ON ms.id = cust.id_marital_status
+                LEFT JOIN professions pro ON  pro.id = cust.id_profession
+                LEFT JOIN marital_status ms ON ms.id = cust.id_marital_status
                 LEFT JOIN spouse_customer scust ON scust.id = cust.id
                 LEFT JOIN cities cit ON cit.id = cust.id_city
                 LEFT JOIN states sta ON sta.uf = cust.uf_state

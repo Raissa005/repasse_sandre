@@ -356,7 +356,9 @@ jQuery(function () {
 
                     if (!error) {
                         $('.disableEditButton').removeClass('disabled');
-                        $('.disableDeleteButton').attr('href', 'URL . $this->route . "/deleteVehiclesSale/$vehicle->id').removeClass('disabled');
+                        $('.disableDeleteButton').each(function () {
+                            $(this).attr('href', url + 'sale-requests/deleteVehiclesSale/' + $(this).attr('id'));
+                        }).removeClass('disabled');
 
                         Toast.fire({
                             icon: 'success',
@@ -382,7 +384,9 @@ jQuery(function () {
             });
         } else {
             $('.disableEditButton').removeClass('disabled');
-            $('.disableDeleteButton').attr('href', 'URL . $this->route . "/deleteVehiclesSale/$vehicle->id').removeClass('disabled');
+            $('.disableDeleteButton').each(function () {
+                $(this).attr('href', url + 'sale-requests/deleteVehiclesSale/' + $(this).attr('id'));
+            }).removeClass('disabled');
 
             location.reload();
         }
