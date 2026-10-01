@@ -121,6 +121,23 @@ Comparações disponíveis: `EQUAL`/`=`/`IN`, `NOT_EQUAL`/`!=`/`NOT_IN`, `LIKE`/
 `R%` (`LIKE 'x%'`), `L%` (`LIKE '%x'`), `NOT_LIKE`, `NOT_RLIKE`, `NOT_LLIKE`,
 `>`, `<`, `>=`, `<=`, `BETWEEN` (usa `value1`/`value2` em vez de `value`).
 
+Limitações do `columns`: as condições são sempre ligadas por `AND`, e o
+placeholder é `:{tabela}_{coluna}` — duas condições na mesma coluna colidem.
+Para busca "contém" em várias colunas com `OR` (ou `>=`/`<=` na mesma coluna),
+use um filtro `'where'` com placeholders e passe os valores em `'parameters'`
+(o Model faz o bind junto com os demais). **Nunca concatene `$_GET`/`$_POST`
+dentro do `'where'`.** Use nomes de placeholder distintos por ocorrência:
+
+```php
+$busca = '%' . $_GET['name'] . '%';
+$filters[] = (object)[
+    'where' => "AND (ucase(this->table.name) LIKE ucase(:busca_1)
+                OR ucase(vehicles.plate) LIKE ucase(:busca_2))",
+    'parameters' => [':busca_1' => $busca, ':busca_2' => $busca],
+];
+```
+Exemplos reais: `VehiclesController::index`, `RecordVehicleHistoryController::index`.
+
 ## Antes de criar um Model/método novo
 
 1. Ver se a operação já existe em `ModelGenerico`/`GerenciaPost` (caso genérico) —

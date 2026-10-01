@@ -99,7 +99,7 @@ class RecordVehicleHistoryController extends FrontController
                     'color' => 'info',
                     'icon' => 'fas fa-print',
                     'text' => 'Imprimir Relatório',
-                    'href' => URL . "{$this->route}/print/?{$filtersPrint}"
+                    'href' => URL . "{$this->route}/print/?" . htmlspecialchars($filtersPrint, ENT_QUOTES, 'UTF-8')
                 ]
             ]
         ];
@@ -122,27 +122,36 @@ class RecordVehicleHistoryController extends FrontController
         );
 
         if(isset($_GET['pesquisa']) && !empty($_GET['pesquisa'])){
+            $busca = '%' . $_GET['pesquisa'] . '%';
+            $buscaPlaca = '%' . substr($_GET['pesquisa'], 0, 3) . '-' . substr($_GET['pesquisa'], 3) . '%';
+
             array_push(
                 $filters,
                 (object) ['where' => "AND (
-                    ucase(this->table.id) LIKE ucase('%". $_GET['pesquisa'] . "%') OR
-                    ucase(this->table.plate) LIKE ucase('%". $_GET['pesquisa'] . "%') OR
-                    ucase(this->table.plate) LIKE ucase('%". substr($_GET['pesquisa'], 0, 3) . '-' . substr($_GET['pesquisa'], 3) ."%') OR
-                    ucase(this->table.name) LIKE ucase('%". $_GET['pesquisa'] . "%')
-                )"]);
+                    ucase(this->table.id) LIKE ucase(:busca_1) OR
+                    ucase(this->table.plate) LIKE ucase(:busca_2) OR
+                    ucase(this->table.plate) LIKE ucase(:busca_placa) OR
+                    ucase(this->table.name) LIKE ucase(:busca_3)
+                )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_placa' => $buscaPlaca,
+                    ':busca_3' => $busca
+                ]]);
         }
 
         if(isset($_GET['data_de']) && !empty($_GET['data_de']))
         {
             if($_GET['data_tipo'] == 0)
             {
-                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date >= '". $_GET['data_de'] . "'" ]);
+                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date >= :data_de", 'parameters' => [':data_de' => $_GET['data_de']] ]);
             }else if($_GET['data_tipo'] == 1)
             {
-                array_push($filters, (object) ['where' => "AND sale_requests.sale_date >= '". $_GET['data_de'] ."'" ]);
+                array_push($filters, (object) ['where' => "AND sale_requests.sale_date >= :data_de", 'parameters' => [':data_de' => $_GET['data_de']] ]);
             }else if($_GET['data_tipo'] == 2)
             {
-                array_push($filters, (object) ['where' => "AND vehicles_request_sale.due_date_transfer >= '". $_GET['data_de'] ."'" ]);
+                array_push($filters, (object) ['where' => "AND vehicles_request_sale.due_date_transfer >= :data_de", 'parameters' => [':data_de' => $_GET['data_de']] ]);
             }
         }
 
@@ -150,18 +159,18 @@ class RecordVehicleHistoryController extends FrontController
         {
             if($_GET['data_tipo'] == 0)
             {
-                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date <= '". $_GET['data_ate'] . "'" ]);
+                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date <= :data_ate", 'parameters' => [':data_ate' => $_GET['data_ate']] ]);
             }else if($_GET['data_tipo'] == 1)
             {
-                array_push($filters, (object) ['where' => "AND sale_requests.sale_date <= '". $_GET['data_ate'] . "'" ]);
+                array_push($filters, (object) ['where' => "AND sale_requests.sale_date <= :data_ate", 'parameters' => [':data_ate' => $_GET['data_ate']] ]);
             }else if($_GET['data_tipo'] == 2)
             {
-                array_push($filters, (object) ['where' => "AND vehicles_request_sale.due_date_transfer <= '". $_GET['data_ate'] ."'" ]);
+                array_push($filters, (object) ['where' => "AND vehicles_request_sale.due_date_transfer <= :data_ate", 'parameters' => [':data_ate' => $_GET['data_ate']] ]);
             }
         }
 
         if(isset($_GET['transfer']) && !empty($_GET['transfer'])){
-            array_push($filters, (object) ['where' => "AND vehicles_request_sale.transferred = ". $_GET['transfer']]);
+            array_push($filters, (object) ['where' => "AND vehicles_request_sale.transferred = :transfer", 'parameters' => [':transfer' => $_GET['transfer']]]);
         }else{
             array_push($filters, (object) ['where' => "AND (vehicles_request_sale.transferred = 0 OR vehicles_request_sale.transferred IS NULL) "]);
         }
@@ -546,27 +555,36 @@ class RecordVehicleHistoryController extends FrontController
     }
 
     public function print(){
+        Secure::access_secretary(true);
+
         $filters = [];
         $valueTotal = 0;
 
         if(isset($_GET['pesquisa']) && !empty($_GET['pesquisa'])){
+            $busca = '%' . $_GET['pesquisa'] . '%';
+
             array_push(
                 $filters,
                 (object) ['where' => "AND (
-                    ucase(this->table.id) LIKE ucase('%". $_GET['pesquisa'] . "%') OR
-                    ucase(this->table.plate) LIKE ucase('%". $_GET['pesquisa'] . "%') OR
-                    ucase(this->table.name) LIKE ucase('%". $_GET['pesquisa'] . "%')
-                )"]);
+                    ucase(this->table.id) LIKE ucase(:busca_1) OR
+                    ucase(this->table.plate) LIKE ucase(:busca_2) OR
+                    ucase(this->table.name) LIKE ucase(:busca_3)
+                )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_3' => $busca
+                ]]);
         }
 
         if(isset($_GET['data_de']) && !empty($_GET['data_de']))
         {
             if($_GET['data_tipo'] == 0)
             {
-                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date >= '". $_GET['data_de'] . "'" ]);
+                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date >= :data_de", 'parameters' => [':data_de' => $_GET['data_de']] ]);
             }else if($_GET['data_tipo'] == 1)
             {
-                array_push($filters, (object) ['where' => "AND sale_requests.sale_date >= '". $_GET['data_de'] ."'" ]);
+                array_push($filters, (object) ['where' => "AND sale_requests.sale_date >= :data_de", 'parameters' => [':data_de' => $_GET['data_de']] ]);
             }
         }
 
@@ -574,10 +592,10 @@ class RecordVehicleHistoryController extends FrontController
         {
             if($_GET['data_tipo'] == 0)
             {
-                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date <= '". $_GET['data_ate'] . "'" ]);
+                array_push($filters, (object) ['where' => "AND purchase_requests.purchase_date <= :data_ate", 'parameters' => [':data_ate' => $_GET['data_ate']] ]);
             }else if($_GET['data_tipo'] == 1)
             {
-                array_push($filters, (object) ['where' => "AND sale_requests.sale_date <= '". $_GET['data_ate'] . "'" ]);
+                array_push($filters, (object) ['where' => "AND sale_requests.sale_date <= :data_ate", 'parameters' => [':data_ate' => $_GET['data_ate']] ]);
             }
         }
 

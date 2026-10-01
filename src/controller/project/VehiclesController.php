@@ -92,23 +92,36 @@ class VehiclesController extends FrontController
         if (!empty($_GET['name']) && isset($_GET['name'])) {
             $_GET['name'] = preg_replace('/\s+/', '', $_GET['name']);
 
+            $busca = '%' . $_GET['name'] . '%';
+            $buscaPlaca = '%' . substr($_GET['name'], 0, 3) . '-' . substr($_GET['name'], 3) . '%';
+
             array_push($filters, (object)[
                 'where' => "
                     AND(
-                            ucase(this->table.name) LIKE ucase('%" . $_GET['name'] . "%')
+                            ucase(this->table.name) LIKE ucase(:busca_1)
                         OR
-                            ucase(this->table.plate) LIKE ucase('%" . $_GET['name'] . "%') OR ucase(this->table.plate) LIKE ucase('%". substr($_GET['name'], 0, 3) . '-' . substr($_GET['name'], 3) ."%')
+                            ucase(this->table.plate) LIKE ucase(:busca_2) OR ucase(this->table.plate) LIKE ucase(:busca_placa)
                         OR
-                            ucase(vehicle_brands.name) LIKE ucase('%" . $_GET['name'] . "%')
+                            ucase(vehicle_brands.name) LIKE ucase(:busca_3)
                         OR
-                            ucase(vehicle_models.name) LIKE ucase('%" . $_GET['name'] . "%')
+                            ucase(vehicle_models.name) LIKE ucase(:busca_4)
                         OR
-                            ucase(vehicle_colors.name) LIKE ucase('%" . $_GET['name'] . "%')
+                            ucase(vehicle_colors.name) LIKE ucase(:busca_5)
                         OR
-                            ucase(this->table.year_manufacture) LIKE ucase('%" . $_GET['name'] . "%')
+                            ucase(this->table.year_manufacture) LIKE ucase(:busca_6)
                         OR
-                            ucase(this->table.id) LIKE ucase('%" . $_GET['name'] . "%')
-                    )"
+                            ucase(this->table.id) LIKE ucase(:busca_7)
+                    )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_placa' => $buscaPlaca,
+                    ':busca_3' => $busca,
+                    ':busca_4' => $busca,
+                    ':busca_5' => $busca,
+                    ':busca_6' => $busca,
+                    ':busca_7' => $busca
+                ]
                 ]
             );
         }

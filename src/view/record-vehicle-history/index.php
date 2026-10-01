@@ -21,7 +21,7 @@ use RR\components\TableComponent5432;
                         <div class="col-md-3 col-lg-3">
                             <div class="form-group">
                                 <label for="pesquisa">Pesquisar</label>
-                                <input type="text" class="form-control" placeholder="Pesquisar" name="pesquisa" value="<?= (isset($_GET['pesquisa']) ? $_GET['pesquisa'] : ''); ?>">
+                                <input type="text" class="form-control" placeholder="Pesquisar" name="pesquisa" value="<?= (isset($_GET['pesquisa']) ? htmlspecialchars($_GET['pesquisa'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -46,13 +46,13 @@ use RR\components\TableComponent5432;
                         <div class="col-md-2 col-lg-2">
                             <div class="form-group">
                                 <label for="data_de">Data de</label>
-                                <input type="date" class="form-control" name="data_de" value="<?= (isset($_GET['data_de']) ? $_GET['data_de'] : ''); ?>">
+                                <input type="date" class="form-control" name="data_de" value="<?= (isset($_GET['data_de']) ? htmlspecialchars($_GET['data_de'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                         <div class="col-md-2 col-lg-2">
                             <div class="form-group">
                                 <label for="data_ate">Data até</label>
-                                <input type="date" class="form-control" name="data_ate" value="<?= (isset($_GET['data_ate']) ? $_GET['data_ate'] : ''); ?>">
+                                <input type="date" class="form-control" name="data_ate" value="<?= (isset($_GET['data_ate']) ? htmlspecialchars($_GET['data_ate'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                     </div>

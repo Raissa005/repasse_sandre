@@ -41,7 +41,7 @@ class RecordOfPurchasedVehiclesController extends FrontController
                     'icon' => 'fas fa-print',
                     'target' => '_blank',
                     'text' => 'Imprimir Relatório',
-                    'href' => URL . "{$this->route}/print/?{$filtersPrint}"
+                    'href' => URL . "{$this->route}/print/?" . htmlspecialchars($filtersPrint, ENT_QUOTES, 'UTF-8')
                 ]
             ]
         ];
@@ -74,24 +74,36 @@ class RecordOfPurchasedVehiclesController extends FrontController
 
         if( isset($_GET['name']) && !empty($_GET['name']) )
         {
+            $busca = '%' . $_GET['name'] . '%';
+
             $filters[] = (object) [
                 'where' => "AND (
-                    ucase(customer.name) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(customer.name) LIKE ucase(:busca_1)
                     OR
-                    ucase(vehicles.name) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.name) LIKE ucase(:busca_2)
                     OR
-                    ucase(vehicles.year_model) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.year_model) LIKE ucase(:busca_3)
                     OR
-                    ucase(vehicles.plate) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.plate) LIKE ucase(:busca_4)
                     OR
-                    ucase(vehicles.chassi) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.chassi) LIKE ucase(:busca_5)
                     OR
-                    ucase(vehicles.renavam) LIKE ucase('%". $_GET['name'] . "%')
+                    ucase(vehicles.renavam) LIKE ucase(:busca_6)
                     OR
-                    ucase(this->table.id) LIKE ucase('%". $_GET['name'] . "%')
+                    ucase(this->table.id) LIKE ucase(:busca_7)
                     OR
-                    ucase(types_negotiations.name) LIKE ucase('%". $_GET['name'] . "%')
-                )"
+                    ucase(types_negotiations.name) LIKE ucase(:busca_8)
+                )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_3' => $busca,
+                    ':busca_4' => $busca,
+                    ':busca_5' => $busca,
+                    ':busca_6' => $busca,
+                    ':busca_7' => $busca,
+                    ':busca_8' => $busca
+                ]
             ];
         }
 
@@ -268,24 +280,36 @@ class RecordOfPurchasedVehiclesController extends FrontController
 
         if( isset($_GET['name']) && !empty($_GET['name']) )
         {
+            $busca = '%' . $_GET['name'] . '%';
+
             $filters[] = (object) [
                 'where' => "AND (
-                    ucase(customer.name) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(customer.name) LIKE ucase(:busca_1)
                     OR
-                    ucase(vehicles.name) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.name) LIKE ucase(:busca_2)
                     OR
-                    ucase(vehicles.year_model) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.year_model) LIKE ucase(:busca_3)
                     OR
-                    ucase(vehicles.plate) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.plate) LIKE ucase(:busca_4)
                     OR
-                    ucase(vehicles.chassi) LIKE ucase('%" . $_GET['name'] . "%')
+                    ucase(vehicles.chassi) LIKE ucase(:busca_5)
                     OR
-                    ucase(vehicles.renavam) LIKE ucase('%". $_GET['name'] . "%')
+                    ucase(vehicles.renavam) LIKE ucase(:busca_6)
                     OR
-                    ucase(this->table.id) LIKE ucase('%". $_GET['name'] . "%')
+                    ucase(this->table.id) LIKE ucase(:busca_7)
                     OR
-                    ucase(types_negotiations.name) LIKE ucase('%". $_GET['name'] . "%')
-                )"
+                    ucase(types_negotiations.name) LIKE ucase(:busca_8)
+                )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_3' => $busca,
+                    ':busca_4' => $busca,
+                    ':busca_5' => $busca,
+                    ':busca_6' => $busca,
+                    ':busca_7' => $busca,
+                    ':busca_8' => $busca
+                ]
             ];
         }
 

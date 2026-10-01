@@ -257,6 +257,12 @@ class Model
                 if (isset($filter->where) && !empty($filter->where)) {
                     $filter->where = str_replace('this->table', $filter->table, $filter->where);
                     $query .= "\n{$filter->where}";
+
+                    // Valores de placeholders usados no 'where' (ex.: ':busca_1' => '%x%'),
+                    // para não concatenar input do usuário no SQL.
+                    if (isset($filter->parameters) && is_array($filter->parameters)) {
+                        $parameters = array_merge($parameters, $filter->parameters);
+                    }
                 }
             }
         }

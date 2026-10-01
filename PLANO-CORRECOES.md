@@ -92,7 +92,49 @@ tabela/coluna direto de `$_POST`, um deles sem nenhum bind de parâmetro.
    projeto; qualquer mudança de assinatura ou validação interna precisa ser
    testada contra todos os call sites existentes, não só os vulneráveis.
 
-### C2 — SQL injection autenticada via filtro "Nome"/pesquisa (13 controllers)
+### 🟡 C2 — SQL injection autenticada via filtro "Nome"/pesquisa (13 controllers) — lote 1 concluído 2026-10-01, demais pendentes
+
+**✅ Lote 1 CONCLUÍDO 2026-10-01** — `VehiclesController`,
+`RecordOfSoldVehiclesController`, `RecordOfPurchasedVehiclesController`,
+`RecordVehicleHistoryController` (todos em `src/controller/project/`).
+
+**Nota de execução**: o `columns` do Model **não serve** para essas buscas —
+ele só liga condições com `AND` e usa placeholder `:{tabela}_{coluna}` (duas
+condições na mesma coluna colidem, ex.: `plate` com e sem hífen). Trocar por
+`columns` transformaria a busca "contém em qualquer coluna" (OR) em "contém em
+todas" (AND). **Decisão do usuário**: estender o filtro `'where'` com uma chave
+opcional `'parameters'` (`[':busca_1' => '%x%', ...]`), cujos valores
+`mountSqlFromFilters` junta aos binds do `execute()` — mudança aditiva em
+`src/core/Model.php`; sem a chave, nada muda para os demais models. Os
+controllers mantêm o mesmo SQL (OR, `ucase`, variante de placa com hífen),
+só que com placeholders. **Também por decisão do usuário**, entraram no lote
+as demais concatenações de `$_GET` no `'where'` do `RecordVehicleHistory`
+(`data_de`, `data_ate` nos 3 tipos de data, e `transfer`), em `index()` e
+`print()`. Os `print()` de Vendidos/Comprados tinham o mesmo bloco de busca do
+`index()` e também foram corrigidos. Padrão documentado em
+`docs/04-models.md`.
+
+**Verificação**: `php -l` ok nos 5 arquivos. Teste antes × depois (código
+original via `git stash` × código corrigido), com os mesmos termos:
+`Veículos` por `curl` logado; os 3 relatórios exigem perfil admin/secretária e
+a sessão local disponível não tinha esse perfil, então foram executados pelo
+controller real via CLI com uma sessão de Administrador **só em memória**
+(nenhuma escrita no banco). Resultado: para termos normais (`jdj`, `JDJ9323`,
+`cliente`, `a`, vazio), status ativo/inativo, os 3 tipos de data (de, até,
+de+até) e `transfer`, o número de linhas é **idêntico** antes e depois. Com
+apóstrofo (`d'a`), antes dava `SQLSTATE[42000] 1064` em todas as 4 telas;
+agora lista vazia sem erro. Injeções que funcionavam antes
+(`data_de=2020-01-01' OR '1'='1` e `transfer=1 OR 1=1` devolviam as 7 linhas)
+agora se comportam como o valor literal.
+
+**Restam 9 controllers** (lotes seguintes): `CheckControlController` (project
+e ajax), `PurchaseRequestsController`/`SaleRequestsController` (project e
+ajax), `CustomerController` (ajax) — usar o mesmo `'where'` + `'parameters'`.
+**Nos lotes 2 e 3, verificar também em cada controller** (pedido do usuário,
+2026-10-01): (a) XSS refletido no campo de busca e em qualquer filtro devolvido
+na tela, inclusive datas e link de impressão montado de `REQUEST_URI` (ver
+N6); (b) `print()` (ou outro método de relatório) sem a mesma checagem de
+perfil do `index()` da tela (ver N4).
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §1.2.
 **Arquivos**: `RecordOfSoldVehiclesController.php`,
@@ -781,6 +823,50 @@ Levantadas ao executar o C1, deixadas para depois do lançamento:
   continua sem funcionar (não há regressão). Corrigir exige decidir se a
   reordenação de anexos de veículo deve existir e, se sim, criar a coluna via
   migration.
+
+### ✅ N4 — Impressão do Histórico de Veículos sem checagem de perfil — CONCLUÍDO 2026-10-01
+
+Achado ao testar o C2 lote 1: `RecordVehicleHistoryController::print()` não
+chamava nenhum `Secure::access_*`, enquanto `index()` exige
+`access_secretary(true)`. Um usuário logado **sem** acesso à tela recebia HTTP
+200 com o relatório em `record-vehicle-history/print/`. **Corrigido**: `print()`
+agora chama `Secure::access_secretary(true)`, a mesma regra do `index()`.
+Conferido: os `print()` de Vendidos/Comprados **já** tinham
+`access_admin(true)`, igual ao `index()` deles; não precisaram de mudança.
+**Teste antes × depois** (controller real, sessão só em memória, perfis com
+`access` 5/10/20/30/40): antes, 30 e 40 recebiam o relatório; depois, só ≤ 25
+(Superadm, Administrador, Gerente, Secretária), igual ao `index()`. Por `curl`
+com sessão real não-admin: antes 200, depois 302 → `home`.
+
+### N5 — Aviso `Undefined property: stdClass::$text` na impressão de Veículos Vendidos (só registrado)
+
+Visto ao testar o C2 lote 1. Já existia antes da correção, sem relação com o
+C2. Aparece em `record-of-sold-vehicles/print` quando há resultados. Não tratado
+(decisão do usuário: só registrar).
+
+### 🟡 N6 — XSS refletido nos filtros das telas de listagem — 4 telas concluídas 2026-10-01
+
+Achado ao testar o C2 lote 1: as views devolviam o valor dos filtros sem
+escapar (`value="<?= $_GET['name'] ?>"`); um link com
+`?name="><script>...` executava script na sessão de quem clicasse. **Corrigido
+nas 4 telas do C2 lote 1** (`vehicles`, `record-of-sold-vehicles`,
+`record-of-purchased-vehicles`, `record-vehicle-history`, todas em
+`src/view/<tela>/index.php`): `htmlspecialchars($x, ENT_QUOTES, 'UTF-8')` no
+campo de busca (`name`/`pesquisa`) e nas datas (`data_de`, `data_ate`), 12
+pontos. Os demais filtros (`status`, `transfer`, `data_tipo`, `b`) só são
+comparados, nunca impressos. Também corrigido o botão **"Imprimir Relatório"**
+dos 3 relatórios: o `href` era montado com a query crua de `REQUEST_URI`
+(`ButtonComponent` não escapa), agora com `htmlspecialchars` no próprio
+controller. **Teste antes × depois**: o payload aparecia cru em busca, datas e
+link de impressão nas 4 telas; depois, só escapado. Busca normal sem mudança
+(mesmas linhas nas 79 consultas da matriz do C2).
+
+**Pendente (fora do escopo pedido, não tratado)**: `PaginationComponent1245`
+(e `PaginationComponent`) imprimem `$_SERVER['REQUEST_URI']` cru nos links
+de página. É um componente compartilhado por várias telas, então decidir antes
+se a correção vai no componente (mais abrangente). Na prática os navegadores
+codificam `"`/`<`/`>` na URL, o que limita a exploração, mas o padrão é o
+mesmo.
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 
