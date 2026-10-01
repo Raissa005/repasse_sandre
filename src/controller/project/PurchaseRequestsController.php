@@ -289,6 +289,8 @@ class PurchaseRequestsController extends FrontController
 
     public function handleSubmitAddItem()
     {
+        Secure::access_admin(true);
+
         Secure::check_post_method($this->route . "/addItem");
 
         $arrPost = [
@@ -350,6 +352,8 @@ class PurchaseRequestsController extends FrontController
 
     public function handleSubmitEditItem($itemId)
     {
+        Secure::access_admin(true);
+
         Secure::check_post_method($this->route . "/editItem");
 
         $arrPost = [
@@ -372,6 +376,8 @@ class PurchaseRequestsController extends FrontController
 
     public function purchaseVehicles($itemId)
     {
+        Secure::access_admin(true);
+
         $this->addScript(URL . "js/" . JSVERSION . "/state.js");
         parent::addScript(URL . "js/" . JSVERSION . "/vehicles/vehicles.js");
 
@@ -437,6 +443,8 @@ class PurchaseRequestsController extends FrontController
 
     public function deleteVehiclesPurchased($itemId)
     {
+        Secure::access_admin(true);
+
         if (!empty($itemId)) {
             $vehicle = (new Vehicles)->getItemById(
                 $itemId,
@@ -465,6 +473,8 @@ class PurchaseRequestsController extends FrontController
 
     public function purchaseFinancial($itemId)
     {
+        Secure::access_admin(true);
+
         parent::addStyle(URL . "css/" . CSSVERSION . "/cost-center/global.css");
         parent::addScript(URL . "js/" . JSVERSION . "/{$this->dir}/financial.js");
         $this->addScript(URL . "js/" . JSVERSION . "/bills-to-pay/installments.js");
@@ -584,6 +594,8 @@ class PurchaseRequestsController extends FrontController
     }
 
     public function purchaseCommission($itemId){
+        Secure::access_admin(true);
+
         parent::addStyle(URL . "css/" . CSSVERSION . "/cost-center/global.css");
         parent::addScript(URL . "js/" . JSVERSION . "/{$this->dir}/financial.js");
         $this->addScript(URL . "js/" . JSVERSION . "/bills-to-pay/installments.js");
@@ -817,6 +829,8 @@ class PurchaseRequestsController extends FrontController
 
     public function installmentPrinting($itemId)
     {
+        Secure::access_admin(true);
+
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
@@ -920,6 +934,8 @@ class PurchaseRequestsController extends FrontController
 
     public function vehicleInstallmentPrinting($itemId)
     {
+        Secure::access_admin(true);
+
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
@@ -1051,6 +1067,8 @@ class PurchaseRequestsController extends FrontController
     }
 
     public function commissionInstallmentPrinting($itemId){
+        Secure::access_admin(true);
+
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
@@ -1146,6 +1164,8 @@ class PurchaseRequestsController extends FrontController
     }
 
     public function disableItem($id){
+        Secure::access_admin(true);
+
         $this->model->update([
             'status' => 0
         ], 'id', $id);
@@ -1154,6 +1174,8 @@ class PurchaseRequestsController extends FrontController
     }
 
     public function enableItem($id){
+        Secure::access_admin(true);
+
         $this->model->update([
             'status' => 1
         ], 'id', $id);

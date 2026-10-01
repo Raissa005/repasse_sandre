@@ -250,7 +250,7 @@ use RR\components\ContentHeaderComponent4214;
                                         <td class="text-center align-middle"><?= $vehicle->vehicle_sales_value ?></td>
                                         <td class="text-center align-middle">
                                             <a class="btn btn-sm btn-primary editVehiclesPurchased disableEditButton" id="<?= $vehicle->id ?>"><i class="fas fa-pencil-alt"></i></a>
-                                            <a id="<?= $vehicle->id ?>" class="btn btn-sm btn-danger disableDeleteButton" <?= !Secure::access_admin() ? 'desabled' : '' ?> href="<?= URL . $this->route . "/deleteVehiclesPurchased/$vehicle->id" ?>"><i class="fa fa-trash"></i></a>
+                                            <a id="<?= $vehicle->id ?>" class="btn btn-sm btn-danger disableDeleteButton<?= !Secure::access_admin() ? ' disabled' : '' ?>" href="<?= URL . $this->route . "/deleteVehiclesPurchased/$vehicle->id" ?>"><i class="fa fa-trash"></i></a>
                                         </td>
                                     </tr>
                                 <?php } ?>

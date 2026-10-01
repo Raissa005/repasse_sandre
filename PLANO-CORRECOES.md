@@ -945,7 +945,71 @@ nos 3 endpoints ajax do lote 2 (ver C2). **Não tratado**:
 `ModelGenerico::getItens` também concatena `LIMIT $qtd` e `ORDER BY
 $filters['order']`, mas tem **zero chamadores** (código morto, ver B1).
 
-### N8 — Pedidos de Compra/Venda: métodos sem checagem de perfil (só registrado, decisão pendente)
+### ✅ N8 — Pedidos de Compra/Venda: métodos sem checagem de perfil — CONCLUÍDO 2026-10-01
+
+**✅ Parte 1 (decisão do usuário: "Financeiro, Comissão e as impressões deles:
+só Administrador e Superadmin", a mesma regra que a tela já usa).** A aba usa
+`Secure::access_admin()` (access ≤ 10: Superadm, Administrador e também
+Desenvolvedor, perfil sem usuários ativos). Aplicado `Secure::access_admin(true)`
+(redireciona para `home`) em `purchaseFinancial`/`saleFinancial`,
+`purchaseCommission`/`saleCommission`, `installmentPrinting`,
+`commissionInstallmentPrinting` e `vehicleInstallmentPrinting` (impressão de
+parcelas cujo botão só aparece para admin em "Dados Gerais"), nos 2
+controllers. Também nos 4 endpoints ajax que só essas abas chamam
+(`financial.js`) e que **gravam** conta/parcela:
+`ajax/PurchaseRequests/handleSubmitAddBillsToPay` e `addBillsToPayInstallment`,
+`ajax/SaleRequests/handleSubmitAddBillReceive` e `addBillReceiveInstallment`.
+Sem permissão, devolvem `error=true` com "Sem permissão para esta ação." pelo
+`sendResponse()` (que o `financial.js` já mostra em Toast), **antes** de
+qualquer leitura/gravação. **Teste antes × depois** (controller real via CLI,
+perfis de access 5/10/18/25/30, pedido 1): Superadm e Administrador com saída
+idêntica byte a byte; Gerente Geral, Secretária e Vendedor abriam as 2 telas e
+as 3 impressões e agora são redirecionados. `vehiclePrinting` e `editItem`
+ficaram iguais (controles). **Os 4 endpoints ajax não foram executados**: eles
+gravam no banco, e se a checagem falhasse o próprio teste gravaria. Verificação
+estática: a checagem é a 1ª instrução dos 4 métodos, e `access_admin()` devolve
+`false` para access 18–30 e `true` para ≤ 10.
+
+**✅ Parte 2 (aprovada pelo usuário)**: quem edita o pedido hoje é
+`access_admin(true)` no `editItem` (na listagem, os botões Editar e
+Ativar/Inativar só habilitam para os perfis id 1 e 2, Superadm e Administrador;
+a única diferença é o Desenvolvedor, sem usuários). Aplicado
+`Secure::access_admin(true)` em `deleteVehiclesPurchased`/`deleteVehiclesSale`,
+`disableItem`, `enableItem` e (extra pedido pelo usuário)
+`handleSubmitEditItem`, nos 2 controllers, como 1ª instrução. Corrigido o
+botão de excluir veículo (`purchase-requests/vehicles.php`,
+`sale-requests/vehicles.php`): o atributo inválido `desabled` virou a classe
+`disabled`, padrão do projeto. No Bootstrap 3.3.7 só a **classe** bloqueia o
+clique em `<a>` (`a.btn.disabled{pointer-events:none}`); o atributo só
+esmaeceria. Observação: o JS da aba (`removeClass('disabled')` depois de
+editar um veículo) pode reabilitar o botão visualmente, mas o servidor agora
+bloqueia. **Teste**: a aba Veículos renderizada como Administrador mostra o botão
+normal e como Vendedor com `disabled`. Os 5 métodos **gravam** e não foram
+executados (se a checagem falhasse o teste gravaria); conferido estaticamente
+que a checagem é a 1ª instrução e que `access_admin(true)` redireciona com `exit`.
+
+**✅ Extras (aprovados pelo usuário depois do levantamento abaixo)**: `handleSubmitAddItem`, aba Veículos
+e ajax de adicionar/editar veículo. Levantamento do que a tela mostra hoje, igual
+em Compra e Venda:
+- Menu e listagem: `menu.access = 30`, então todos os perfis veem.
+- Botão "Adicionar": aparece para todos, mas só **habilitado** para Superadm e
+  Administrador (`profile->id` 1 ou 2); o `addItem` exige `access_admin(true)`.
+- Aba Veículos: dentro do pedido aberto não tem condição de perfil, mas só se chega
+  a ela por caminhos admin: `editItem` (admin), redirect depois de
+  salvar/adicionar pedido (admin) e links dos relatórios Veículos
+  Comprados/Vendidos (`access_admin`). Os botões Cadastrar/Editar/Salvar veículo
+  dentro da aba (que chamam `ajax/*/addVehicles*` e `editVehicles*`) não têm
+  condição.
+
+**Aplicado** (regra do servidor igual à da tela): `Secure::access_admin(true)` em
+`handleSubmitAddItem`, `purchaseVehicles` e `saleVehicles`; recusa em JSON
+("Sem permissão para esta ação.", 1ª instrução) em `ajax/PurchaseRequests/addVehiclesPurchase`
+e `editVehiclesPurchase`, e em `ajax/SaleRequests/addVehiclesSale` e `editVehiclesSale`.
+**Teste antes × depois** (perfis de access 5/10/18/25/30): a aba Veículos abre igual
+para Superadm e Administrador (diferença de 1–2 bytes = espaço a menos por botão de
+excluir, da correção do `desabled`); Gerente Geral, Secretária e Vendedor abriam pela
+URL e agora são redirecionados. `handleSubmitAddItem` e os 4 ajax gravam e não foram
+executados; conferido estaticamente que a checagem é a 1ª instrução.
 
 Achado no C2 lote 2. Em `PurchaseRequestsController` e `SaleRequestsController`
 (project), **não chamam nenhum `Secure::`**: `purchaseVehicles`/`saleVehicles`,
@@ -983,12 +1047,11 @@ Já aconteciam antes das correções; não têm relação com o C2:
 | C5 | Criar as tabelas de rateio de comissão de verdade, ou remover a feature? |
 | C7 | Qual o SMTP/e-mail de envio real da Repasse Sandré? |
 | A5/M2 | Quem pode criar/desativar filial, centro de custo, e acessar Compra/Custos de veículo, DRE, Atendimento? |
-| N8 | Pedidos de Compra/Venda: quem pode ver/imprimir Financeiro e Comissão, excluir veículo do pedido, ativar/desativar pedido? |
 | A9 | Qual o telefone de suporte e e-mail de contato reais da Repasse Sandré? |
 | M1 | A aba "Vendas" do cliente deveria virar "Veículo" (usando a tabela `vehicles`) ou ser removida? |
 | M12 | A feature de Moedas deveria ser implementada de verdade ou removida? |
 | B2 | Pode dropar as 6 tabelas/colunas órfãs do domínio imobiliário, ou manter documentado? |
 
-Nenhuma dessas nove decisões foi presumida neste plano — todas exigem
+Nenhuma dessas oito decisões foi presumida neste plano — todas exigem
 resposta do usuário antes de qualquer correção ou migration ser escrita,
 conforme a regra do CLAUDE.md de não presumir regra de negócio.

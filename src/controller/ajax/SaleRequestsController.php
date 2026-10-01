@@ -3,6 +3,7 @@
 namespace RR\controller\ajax;
 
 use RR\libs\Util;
+use RR\libs\Secure;
 use RR\core\Ajax;
 use RR\libs\Date;
 use RR\model\Branch;
@@ -166,6 +167,13 @@ class SaleRequestsController extends Ajax
 
     public function addVehiclesSale()
     {
+        // Mesma regra da aba Veículos (só se chega a ela como admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         if (!empty($_POST['saleId'])) {
             $saleRequest = (new SaleRequests)->getItemById($_POST['saleId']);
 
@@ -220,6 +228,13 @@ class SaleRequestsController extends Ajax
 
     public function editVehiclesSale()
     {
+        // Mesma regra da aba Veículos (só se chega a ela como admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         if ($_POST['vehicles']) {
             $saleRequest = (new SaleRequests)->getItemById($_POST['saleId']);
 
@@ -253,6 +268,13 @@ class SaleRequestsController extends Ajax
 
     public function handleSubmitAddBillReceive()
     {
+        // Mesma regra da aba Financeiro/Comissão (só aparece para admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         if (!empty($_POST)) {
             $saleRequest = (new SaleRequests)->getItemById(
                 $_POST['saleRequestId'],
@@ -447,6 +469,13 @@ class SaleRequestsController extends Ajax
 
     public function addBillReceiveInstallment()
     {
+        // Mesma regra da aba Financeiro/Comissão (só aparece para admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
 
         $allInstallments =  (new SaleRequests())->getWithFiltersAllItems(
             [

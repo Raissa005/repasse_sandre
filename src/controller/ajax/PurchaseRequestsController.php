@@ -5,6 +5,7 @@ namespace RR\controller\ajax;
 use RR\core\Ajax;
 use RR\libs\Date;
 use RR\libs\Util;
+use RR\libs\Secure;
 use RR\model\Branch;
 use RR\model\Customer;
 use RR\model\Vehicles;
@@ -89,6 +90,13 @@ class PurchaseRequestsController extends Ajax
 
     public function addVehiclesPurchase()
     {
+        // Mesma regra da aba Veículos (só se chega a ela como admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         if (!empty($_POST)) {
             $purchase = (new PurchaseRequests)->getItemById($_POST['itemId']);
 
@@ -194,6 +202,13 @@ class PurchaseRequestsController extends Ajax
 
     public function editVehiclesPurchase()
     {
+        // Mesma regra da aba Veículos (só se chega a ela como admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         if (!empty($_POST)) {
             $purchase = (new PurchaseRequests)->getItemById($_POST['itemId']);
 
@@ -254,6 +269,13 @@ class PurchaseRequestsController extends Ajax
 
     public function handleSubmitAddBillsToPay()
     {
+        // Mesma regra da aba Financeiro/Comissão (só aparece para admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         $purchase = (new PurchaseRequests)->getItemById(
             $_POST['purchaseId'],
             [
@@ -466,6 +488,13 @@ class PurchaseRequestsController extends Ajax
 
     public function addBillsToPayInstallment()
     {
+        // Mesma regra da aba Financeiro/Comissão (só aparece para admin)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         $allInstallments = (new PurchaseRequests())->getWithFiltersAllItems(
             [
                 (object) [

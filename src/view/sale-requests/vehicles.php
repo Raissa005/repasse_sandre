@@ -104,7 +104,7 @@ use RR\components\ContentHeaderComponent4214;
                                         <td class="text-center align-middle"><?= $vehicle->value ?></td>
                                         <td class="text-center">
                                             <a class="btn btn-sm btn-primary editVehiclesSale disableEditButton" id="<?= $vehicle->id_vehicle ?>"><i class="fas fa-pencil-alt"></i></a>
-                                            <a id="<?= $vehicle->id_vehicle ?>" class="btn btn-sm btn-danger disableDeleteButton" <?= !Secure::access_admin() ? 'desabled' : '' ?> href="<?= URL . $this->route . "/deleteVehiclesSale/$vehicle->id_vehicle" ?>"><i class="fa fa-trash"></i></a>
+                                            <a id="<?= $vehicle->id_vehicle ?>" class="btn btn-sm btn-danger disableDeleteButton<?= !Secure::access_admin() ? ' disabled' : '' ?>" href="<?= URL . $this->route . "/deleteVehiclesSale/$vehicle->id_vehicle" ?>"><i class="fa fa-trash"></i></a>
                                         </td>
                                     </tr>
                                 <?php } ?>

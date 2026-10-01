@@ -284,6 +284,8 @@ class SaleRequestsController extends FrontController
 
     public function handleSubmitAddItem()
     {
+        Secure::access_admin(true);
+
         Secure::check_post_method($this->route . "/addItem");
 
         $arrPost = [
@@ -345,6 +347,8 @@ class SaleRequestsController extends FrontController
 
     public function handleSubmitEditItem($itemId)
     {
+        Secure::access_admin(true);
+
         Secure::check_post_method($this->route . "/editItem");
 
         $arrPost = [
@@ -370,6 +374,8 @@ class SaleRequestsController extends FrontController
 
     public function saleVehicles($itemId)
     {
+        Secure::access_admin(true);
+
         $contentHeader = (object) [
             'route' => URL . $this->route,
             'title' => 'Pedido de Venda',
@@ -440,6 +446,8 @@ class SaleRequestsController extends FrontController
 
     public function deleteVehiclesSale($itemId)
     {
+        Secure::access_admin(true);
+
         $vehiclesRequestSale = (new VehiclesRequestSale)->getItemWithFilters([(object) ['columns' => ['id_vehicle' => (object) ['value' => $itemId]]]]);
 
         if (!empty($vehiclesRequestSale)) {
@@ -473,6 +481,8 @@ class SaleRequestsController extends FrontController
 
     public function saleFinancial($itemId)
     {
+        Secure::access_admin(true);
+
         parent::addScript(URL . "js/" . JSVERSION . "/bill-receive/global.js");
         parent::addStyle(URL . "css/" . CSSVERSION . "/cost-center/global.css");
         parent::addScript(URL . "js/" . JSVERSION . "/recursive-cost-center/tree.js");
@@ -598,6 +608,8 @@ class SaleRequestsController extends FrontController
     }
 
     public function saleCommission($itemId){
+        Secure::access_admin(true);
+
         parent::addScript(URL . "js/" . JSVERSION . "/bill-receive/global.js");
         parent::addStyle(URL . "css/" . CSSVERSION . "/cost-center/global.css");
         parent::addScript(URL . "js/" . JSVERSION . "/recursive-cost-center/tree.js");
@@ -819,6 +831,8 @@ class SaleRequestsController extends FrontController
 
     public function installmentPrinting($itemId)
     {
+        Secure::access_admin(true);
+
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
@@ -912,6 +926,8 @@ class SaleRequestsController extends FrontController
 
     public function vehicleInstallmentPrinting($itemId)
     {
+        Secure::access_admin(true);
+
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
@@ -1054,6 +1070,8 @@ class SaleRequestsController extends FrontController
 
     public function commissionInstallmentPrinting($itemId)
     {
+        Secure::access_admin(true);
+
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
@@ -1146,6 +1164,8 @@ class SaleRequestsController extends FrontController
     }
 
     public function disableItem($id){
+        Secure::access_admin(true);
+
         $this->model->update([
             'status' => 0
         ], 'id', $id);
@@ -1154,6 +1174,8 @@ class SaleRequestsController extends FrontController
     }
 
     public function enableItem($id){
+        Secure::access_admin(true);
+
         $this->model->update([
             'status' => 1
         ], 'id', $id);
