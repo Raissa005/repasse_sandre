@@ -66,7 +66,26 @@ class CheckControlController extends FrontController
         $filters = [(object)['columns' => ['status' => (object)['comparison' => 'EQUAL', 'value' => $_GET['statusCheck']]]]];
 
         if (!empty($_GET['name'])) {
-            array_push($filters, (object)['where' => " AND ucase(this->table.owner_check) LIKE ucase('%" . $_GET['name'] . "%') OR ucase(this->table.forwarded_by_name) LIKE ucase('%" . $_GET['name'] . "%')"]);
+            $busca = '%' . $_GET['name'] . '%';
+
+            // Titular do cheque ou cliente que repassou (coluna "Repassado Por")
+            array_push($filters, (object)[
+                'where' => " AND (
+                    ucase(this->table.owner_check) LIKE ucase(:busca_1)
+                    OR this->table.forwarded_by IN (
+                        SELECT customer.id FROM customer
+                        WHERE ucase(customer.name) LIKE ucase(:busca_2)
+                        OR ucase(customer.fancy_name_company) LIKE ucase(:busca_3)
+                        OR ucase(customer.company_name) LIKE ucase(:busca_4)
+                    )
+                )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_3' => $busca,
+                    ':busca_4' => $busca
+                ]
+            ]);
         }
 
         $response = $this->model->getWithFiltersAllItems(
@@ -219,6 +238,8 @@ class CheckControlController extends FrontController
 
     public function handleSubmitAddItem()
     {
+        Secure::access_admin(true);
+
         Secure::check_post_method($this->route . "/addItem");
 
         $arrPost = [
@@ -362,6 +383,8 @@ class CheckControlController extends FrontController
 
     public function handleSubmitEditItem($itemId)
     {
+        Secure::access_admin(true);
+
         Secure::check_post_method($this->route . "/addItem");
 
         $item = (new CheckControl)->getItemById($itemId);
@@ -443,6 +466,9 @@ class CheckControlController extends FrontController
 
     public function handleDeleteCheckTimeline($itemId)
     {
+        // Mesma regra do botão de excluir comentário em edit.php
+        Secure::access_superAdm(true);
+
         $checkTimeline = (new CheckControlTimeline)->getItemById($itemId);
 
         Secure::check_post_method($this->route . "/editItem/$checkTimeline->id_check");

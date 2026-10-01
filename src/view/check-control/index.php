@@ -22,7 +22,7 @@ use RR\components\ContentHeaderComponent4214;
                         <div class="col-md-3 col-lg-3">
                             <div class="form-group">
                                 <label for="name">Nome</label>
-                                <input type="text" class="form-control" placeholder="Nome" name="name" value="<?= (isset($_GET['name']) ? $_GET['name'] : ''); ?>">
+                                <input type="text" class="form-control" placeholder="Nome" name="name" value="<?= (isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                         <div class="col-md-3">

@@ -92,7 +92,7 @@ tabela/coluna direto de `$_POST`, um deles sem nenhum bind de parâmetro.
    projeto; qualquer mudança de assinatura ou validação interna precisa ser
    testada contra todos os call sites existentes, não só os vulneráveis.
 
-### 🟡 C2 — SQL injection autenticada via filtro "Nome"/pesquisa (13 controllers) — lotes 1 e 2 concluídos 2026-10-01, lote 3 pendente
+### ✅ C2 — SQL injection autenticada via filtro "Nome"/pesquisa (13 controllers) — CONCLUÍDO 2026-10-01 (lotes 1, 2 e 3)
 
 **✅ Lote 1 CONCLUÍDO 2026-10-01** — `VehiclesController`,
 `RecordOfSoldVehiclesController`, `RecordOfPurchasedVehiclesController`,
@@ -163,10 +163,60 @@ agora se comportam como o valor literal.
   linha `status=0` em `menu_access` (escrita no banco, proibida). A chamada é
   idêntica à do `index()`.
 
-**Restam 5 controllers** (lote 3): `CheckControlController` (project
-e ajax), `CustomerController` (ajax) — usar o mesmo `'where'` + `'parameters'`.
-Os outros 3 que passam `limit`/`page` da requisição (ajax `Customer`, ajax
-`CheckControl`, `BillsToPayInstallment`) já estão cobertos pelo N7.
+**✅ Lote 3 CONCLUÍDO 2026-10-01** — `CheckControlController` (project e
+ajax) e `CustomerController` (ajax).
+- **SQL injection**: 4 pontos, todos de busca (os demais valores da requisição
+  no SQL já iam por `columns`, com bind: `statusCheck`, `customerId`,
+  `deleteItems`/`NOT_IN`; `limit`/`page` pelo N7): `index()` da tela Cheques,
+  `ajax/CheckControl/getCustomersChecks` e `getAllChecks`,
+  `ajax/Customer/getCustomersSuppliersAndBuilders`. Mesmo padrão `'where'` +
+  `'parameters'`.
+- **Busca da tela Cheques estava quebrada** (achado no lote): o SQL usava
+  `check_control.forwarded_by_name`, coluna que não existe, então **qualquer**
+  busca dava `SQLSTATE 1054` e lista vazia; e faltava parêntese (`AND titular
+  LIKE x OR ...` furaria o filtro de status). **Decisão do usuário**: buscar no
+  titular (`owner_check`) **ou** no nome/razão/fantasia do cliente que repassou
+  (coluna "Repassado Por", `forwarded_by` → `customer`, por subquery), tudo
+  entre parênteses — mesma lógica dos 2 endpoints ajax de cheque.
+- **XSS**: `check-control/index.php` devolvia a busca crua; agora com
+  `htmlspecialchars`. A tela não tem filtro de data nem link de impressão
+  montado de `REQUEST_URI` (`statusCheck` e `b` só são comparados). Os ajax
+  devolvem JSON e não ecoam o termo.
+- **Impressão**: não há `print()` nem outro relatório nesses 3 controllers.
+- **Gravações sem checagem de perfil**: `handleSubmitAddItem` e
+  `handleSubmitEditItem` só checavam o método POST; agora
+  `Secure::access_admin(true)` (1ª instrução), igual a `addItem`/`editItem`/
+  `index()`. `handleDeleteCheckTimeline` não tinha checagem nenhuma; o botão
+  de excluir comentário em `edit.php` só aparece para `access_superAdm()`, e
+  **por decisão do usuário** o servidor agora exige o mesmo
+  (`Secure::access_superAdm(true)`, 1ª instrução; Administrador passa a ser
+  recusado se chamar a rota direto). `ajax/CheckControl/addNewInstallment`
+  (cheque devolvido: grava cheque, linha do tempo, parcela/conta) só é chamado
+  da tela de edição (admin); agora recusa com "Sem permissão para esta ação."
+  em JSON (padrão N8; o `checkControl.js` já trata `error`). O ajax
+  `Customer` não tem método que grave.
+- **Teste antes × depois** (código original via `git stash`, controller real
+  via CLI com sessão de Administrador **só em memória**; saídas comparadas
+  normalizando o `?v=` dos assets): listagem sem busca e com status
+  1/0/2, edição do cheque 1 como Superadm/Administrador (e redirect para
+  access 18/30), 9 termos × 2 endpoints ajax de cheque (`limit` 5), exclusão
+  por `deleteItems`, cliente sem cheques, 8 termos × 2 páginas no ajax de
+  cliente: **idênticos**. Diferenças só onde esperado: na tela Cheques, as
+  buscas antes davam `SQLSTATE 1054` e agora listam (`alf`/`ALF`/`reis` acham
+  pelo titular; `silvia`/`SILV`/`fisica` pela cliente que repassou;
+  `catarinense`/`tito`/`zzz` nada; `a` com status inativo, nada — o status é
+  respeitado). Com apóstrofo, antes `SQLSTATE 1064` nos 3 ajax (JSON
+  quebrado); agora lista vazia, JSON válido. A sonda `zz%') OR 1=1 OR ('` em
+  `getAllChecks` devolvia o cheque 1; agora nada. Payload XSS no campo de
+  busca saía cru; agora escapado.
+  **Limite**: `getCustomersSuppliersAndBuilders` devolve vazio para qualquer
+  termo no banco local (nenhum cliente da filial com tipo 9/11, ids fixos, ver
+  N10); a busca dele foi conferida pelo model `Customer` com o mesmo filtro
+  sem o de tipo (só `SELECT`): antigo × novo iguais em 10 termos × 3 páginas.
+  **Não executados** (gravam no banco): `handleSubmitAddItem`,
+  `handleSubmitEditItem`, `handleDeleteCheckTimeline`, `addNewInstallment`;
+  conferido estaticamente que a checagem é a 1ª instrução.
+
 **Nos lotes 2 e 3, verificar também em cada controller** (pedido do usuário,
 2026-10-01): (a) XSS refletido no campo de busca e em qualquer filtro devolvido
 na tela, inclusive datas e link de impressão montado de `REQUEST_URI` (ver
@@ -1038,6 +1088,23 @@ Já aconteciam antes das correções; não têm relação com o C2:
   `vehicleInstallmentPrinting` do pedido 7, `commissionInstallmentPrinting`
   dos pedidos 1 e 7): `Undefined variable $installments`/`$totalInstallments`
   e `foreach()` em null — imprimem sem as parcelas.
+
+### N10 — Coisas já existentes vistas no C2 lote 3 (só registrado)
+
+Já aconteciam antes; não têm relação com o C2:
+- **Cheques: botões Ativar/Inativar da listagem não funcionam** — apontam para
+  `check-control/disableItem`/`enableItem`, que não existem no
+  `CheckControlController` (a rota cai em `error`).
+- **`ajax/Customer/getCustomersSuppliersAndBuilders` sem chamador** em
+  `public/js`, e filtra tipos de cliente por ids fixos `[9, 11]`; no banco
+  local nenhum cliente tem esses tipos, então sempre volta vazio. Mesma
+  família dos ids fixos de tipo de cliente já tratados em outros arquivos.
+- Os endpoints ajax de **leitura** de cheque (`getCustomersChecks`,
+  `getAllChecks`, `getCheckById`, `getBankById`, `getAccountsById`,
+  `getBillReceiveById`) não checam perfil além do login (C1); são chamados das
+  telas de pagamento de parcelas e da edição do cheque. Fora do escopo do C2
+  (que pediu checagem em impressões e gravações). `getBillReceiveById` não tem
+  chamador e não faz nada (monta um array e não usa).
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 

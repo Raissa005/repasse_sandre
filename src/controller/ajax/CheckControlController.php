@@ -5,6 +5,7 @@ namespace RR\controller\ajax;
 use RR\core\Ajax;
 use RR\libs\Date;
 use RR\libs\Util;
+use RR\libs\Secure;
 use RR\model\Banks;
 use RR\libs\Pagination;
 use RR\model\BillReceive;
@@ -61,6 +62,13 @@ class CheckControlController extends Ajax
 
     public function addNewInstallment()
     {
+        // Mesma regra da tela de edição do cheque (check-control/editItem)
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
+
         $item = (new CheckControl)->getItemById($_POST['checkId']);
 
         (new CheckControl)->update(['status_check' => 4], 'id', $item->id);
@@ -210,10 +218,16 @@ class CheckControlController extends Ajax
 
         if (!empty($_POST['name'])) {
             $checkFilters[] = (object)['where' => " AND (
-                ucase(this->table.owner_check) LIKE ucase('%" . $_POST['name'] . "%')
-                OR ucase(customer.name) LIKE ucase('%" . $_POST['name'] . "%')
-                OR ucase(customer.fancy_name_company) LIKE ucase('%" . $_POST['name'] . "%')
-                OR ucase(customer.company_name) LIKE ucase('%" . $_POST['name'] . "%'))"];
+                ucase(this->table.owner_check) LIKE ucase(:busca_1)
+                OR ucase(customer.name) LIKE ucase(:busca_2)
+                OR ucase(customer.fancy_name_company) LIKE ucase(:busca_3)
+                OR ucase(customer.company_name) LIKE ucase(:busca_4))",
+                'parameters' => [
+                    ':busca_1' => '%' . $_POST['name'] . '%',
+                    ':busca_2' => '%' . $_POST['name'] . '%',
+                    ':busca_3' => '%' . $_POST['name'] . '%',
+                    ':busca_4' => '%' . $_POST['name'] . '%'
+                ]];
         }
 
         $response = (new CheckControl)->getWithFiltersAllItems(
@@ -298,10 +312,16 @@ class CheckControlController extends Ajax
 
         if (!empty($_POST['name'])) {
             $checkFilters[] = (object)['where' => " AND (
-                ucase(this->table.owner_check) LIKE ucase('%" . $_POST['name'] . "%')
-                OR ucase(customer.name) LIKE ucase('%" . $_POST['name'] . "%')
-                OR ucase(customer.fancy_name_company) LIKE ucase('%" . $_POST['name'] . "%')
-                OR ucase(customer.company_name) LIKE ucase('%" . $_POST['name'] . "%'))"];
+                ucase(this->table.owner_check) LIKE ucase(:busca_1)
+                OR ucase(customer.name) LIKE ucase(:busca_2)
+                OR ucase(customer.fancy_name_company) LIKE ucase(:busca_3)
+                OR ucase(customer.company_name) LIKE ucase(:busca_4))",
+                'parameters' => [
+                    ':busca_1' => '%' . $_POST['name'] . '%',
+                    ':busca_2' => '%' . $_POST['name'] . '%',
+                    ':busca_3' => '%' . $_POST['name'] . '%',
+                    ':busca_4' => '%' . $_POST['name'] . '%'
+                ]];
         }
 
         $response = (new CheckControl)->getWithFiltersAllItems(
