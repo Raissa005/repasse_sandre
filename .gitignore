@@ -10,6 +10,7 @@ src/libs/dompdf/lib/fonts/*
 public/attachments/attendance/*
 public/attachments/customer/*
 public/attachments/billsToPay/*
+public/vehicle/*
 .sql
 
 #macOs

@@ -18,7 +18,9 @@ class GerenciaPost extends Model
 
     public function insert7181($arrayPost, $table, $return = null, $up = false, $json = false)
     {
+        self::assertIdentifier($table);
         foreach ($arrayPost as $key => $value) {
+            self::assertIdentifier($key);
             $columnArray[] = "`$key`";
             $columnArrayPDO[] = ($key == 'json' || $json == true ? "'" . $value . "'" : ":" . $key);
             if ($key != 'json') {
@@ -49,7 +51,10 @@ class GerenciaPost extends Model
 
     public function update8191($arrayPost, $table, $where_col, $where_val, $up = true, $json = false)
     {
+        self::assertIdentifier($table);
+        self::assertIdentifier($where_col);
         foreach ($arrayPost as $key => $value) {
+            self::assertIdentifier($key);
             $columnArray[] = "`" . $key . "`" . " = " . ($key == 'json' || $json == true ? "'" . $value . "'" : ":" . $key);
             if ($key != 'json') {
                 if ($key == 'password' || !$up || $key == 'icon') {

@@ -18,6 +18,20 @@ class Model
     protected $message_admins = "Ops! Ocorreu um problema ao realizar esse função &#128546. Entre em contato os <a target=\"_blank\" href=\"https://api.whatsapp.com/send?phone=554832636688\">administradores</a>";
 
     /**
+     * Garante que um nome de tabela/coluna usado em SQL interpolado contém só
+     * caracteres válidos de identificador. Barra injeção quando o nome vem
+     * (direta ou indiretamente) de input do usuário. Lança em caso inválido —
+     * todas as chamadas internas usam nomes fixos, então nunca dispara em uso normal.
+     */
+    protected static function assertIdentifier($name): string
+    {
+        if (!is_string($name) || !preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name)) {
+            throw new \InvalidArgumentException('Identificador de tabela/coluna inválido.');
+        }
+        return $name;
+    }
+
+    /**
      * Whenever model is created, open a database connection.
      */
     function __construct($table = '', $joins = [])

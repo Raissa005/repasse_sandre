@@ -3,6 +3,7 @@
 namespace RR\controller\ajax;
 
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use RR\core\Ajax;
 use RR\core\Model;
 use RR\libs\Date;
 use RR\libs\Pagination;
@@ -30,13 +31,8 @@ use RR\model\Notification;
 use RR\model\NotificationRead;
 use RR\model\Sales;
 
-class AjaxController
+class AjaxController extends Ajax
 {
-    public function __construct()
-    {
-        session_start();
-    }
-
     public function addCommentToTheTimelineInAttendance()
     {
         $arrayPost = array(
@@ -245,13 +241,6 @@ class AjaxController
         echo json_encode(['error' => false, 'customers' => $obj]);
     }
 
-    public function getAllItensFromGenericTable()
-    {
-        $formOfPayment = (new ModelGenerico())->getAllItens($_POST['table']);
-
-        echo json_encode(['error' => false, 'response' => $formOfPayment]);
-    }
-
     public function updatePortion()
     {
         $portionPost = $_POST['portion'];
@@ -379,8 +368,17 @@ class AjaxController
         echo json_encode(['error' => false, 'customer' => $arrayPost]);
     }
 
+    /** Tabelas que podem ter a ordem dos itens reordenada por arrastar. */
+    private const REORDERABLE_TABLES = ['vehicle_images', 'user_networks'];
+
     public function updateFilesOrder()
     {
+        $table = $_POST['table'] ?? '';
+        if (!in_array($table, self::REORDERABLE_TABLES, true)) {
+            echo json_encode(['error' => true, 'message' => 'Tabela não permitida.']);
+            exit;
+        }
+
         $gerenciaPost = new GerenciaPost();
 
         $list = array();
@@ -389,13 +387,19 @@ class AjaxController
         $arrayPost = ["item_order" => 1];
 
         foreach ($list['item'] as $id) {
-            $gerenciaPost->update8191($arrayPost, $_POST['table'], "id", $id, false);
+            $gerenciaPost->update8191($arrayPost, $table, "id", $id, false);
             $arrayPost['item_order']++;
         }
     }
 
     public function updateFilesOrdem()
     {
+        $table = $_POST['table'] ?? '';
+        if (!in_array($table, self::REORDERABLE_TABLES, true)) {
+            echo json_encode(['error' => true, 'message' => 'Tabela não permitida.']);
+            exit;
+        }
+
         $gerenciaPost = new GerenciaPost();
 
         $list = array();
@@ -403,7 +407,7 @@ class AjaxController
 
         foreach ($list['item'] as $key => $id) {
             $arrayPost = ['ordem' => $key];
-            $gerenciaPost->update8191($arrayPost, $_POST['table'], "id", $id, false);
+            $gerenciaPost->update8191($arrayPost, $table, "id", $id, false);
         }
     }
 

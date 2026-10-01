@@ -47,6 +47,7 @@ class ModelGenerico extends Model
             $parameters[':name'] = '%' . $filters['name'] . '%';
         }
 
+        self::assertIdentifier($table);
         $offset = ($pagina - 1) * $qtd;
 
         $sql = "SELECT * FROM {$table} WHERE TRUE $filters_query ORDER BY ";
@@ -63,6 +64,7 @@ class ModelGenerico extends Model
 
     public function getItemById8161($id, $table)
     {
+        self::assertIdentifier($table);
         $sql = "SELECT * FROM {$table} WHERE id = :id";
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
@@ -74,6 +76,7 @@ class ModelGenerico extends Model
 
     public function disableItem($id, $table = '')
     {
+        self::assertIdentifier($table);
         $sql = "UPDATE {$table} SET status = FALSE WHERE id = :id";
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
@@ -83,6 +86,7 @@ class ModelGenerico extends Model
 
     public function disableItem2($id, $table)
     {
+        self::assertIdentifier($table);
         $sql = "UPDATE {$table} SET ativo = FALSE WHERE id = :id";
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
@@ -92,6 +96,8 @@ class ModelGenerico extends Model
 
     public function deleteItemByCampoGenerico($table, $campo, $value)
     {
+        self::assertIdentifier($table);
+        self::assertIdentifier($campo);
         $sql = "DELETE FROM {$table} WHERE {$campo} = :value";
         $query = $this->db->prepare($sql);
         $parameters = array(':value' => $value);
@@ -101,6 +107,7 @@ class ModelGenerico extends Model
 
     public function enableItem($id, $table = '')
     {
+        self::assertIdentifier($table);
         $sql = "UPDATE {$table} SET status = TRUE WHERE id = :id";
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
@@ -110,6 +117,7 @@ class ModelGenerico extends Model
 
     public function enableItem2($id, $table)
     {
+        self::assertIdentifier($table);
         $sql = "UPDATE {$table} SET ativo = TRUE WHERE id = :id";
         $query = $this->db->prepare($sql);
         $parameters = array(':id' => $id);
@@ -119,7 +127,7 @@ class ModelGenerico extends Model
 
     public function getItemByName($name, $table)
     {
-
+        self::assertIdentifier($table);
         $sql = "SELECT * FROM {$table} WHERE name = :name";
         $query = $this->db->prepare($sql);
         $parameters = array(':name' => $name);
@@ -138,6 +146,8 @@ class ModelGenerico extends Model
             $parameters[':status'] = $status;
         }
 
+        self::assertIdentifier($table);
+        self::assertIdentifier($field);
         $sql = "SELECT * FROM {$table} WHERE {$field} = :value $statusFilter";
 
         $query = $this->db->prepare($sql);
@@ -148,19 +158,25 @@ class ModelGenerico extends Model
 
     public function getItemByGenericFieldArray(array $array, string $table)
     {
+        self::assertIdentifier($table);
+
         $sql = "SELECT * FROM {$table} WHERE TRUE ";
+        $parameters = [];
         foreach ($array as $key => $value) {
-            $sql .= " AND $key = '$value'";
+            self::assertIdentifier($key);
+            $sql .= " AND {$key} = :{$key}";
+            $parameters[":{$key}"] = $value;
         }
-        
+
         $query = $this->db->prepare($sql);
-        $query->execute();
+        $query->execute($parameters);
 
         return $query->fetchAll();
     }
 
     public function getAllItens($table)
     {
+        self::assertIdentifier($table);
         $sql = "SELECT * FROM {$table} WHERE status = 1";
         $query = $this->db->prepare($sql);
 

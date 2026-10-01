@@ -7,11 +7,6 @@ use RR\model\BillsToPayInstallment;
 
 class BillReceiveInstallmentController extends Ajax
 {
-    public function __construct()
-    {
-        session_start();
-    }
-
     public function checkInstallmentPaidInBillToPay()
     {
         $bill_pay = (new BillsToPayInstallment())->getWithFiltersAllItems([(object)['columns' => [

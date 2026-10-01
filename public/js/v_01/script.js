@@ -145,6 +145,21 @@ $(".change-branch").on("click", function () {
     });
 });
 
+// Sessão expirada: qualquer AJAX que volte "Invalid session!" (da classe Ajax)
+// redireciona ao login em vez de deixar a tela quebrar com dado vazio.
+let sessaoExpiradaTratada = false;
+$(document).ajaxComplete(function (event, xhr) {
+    if (sessaoExpiradaTratada) return;
+    let res = xhr.responseJSON;
+    if (!res && typeof xhr.responseText === 'string' && xhr.responseText.indexOf('Invalid session!') !== -1) {
+        try { res = JSON.parse(xhr.responseText); } catch (e) { res = null; }
+    }
+    if (res && res.error === true && res.message === 'Invalid session!') {
+        sessaoExpiradaTratada = true;
+        window.location.href = `${url}login/logout`;
+    }
+});
+
 $(document).ready(function () {
     $.post({
         url: `${url}ajax/global/toast`,

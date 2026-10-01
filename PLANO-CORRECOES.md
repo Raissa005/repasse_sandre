@@ -38,7 +38,36 @@ Nenhuma correção foi aplicada. Este é só o plano.
 
 ## CRÍTICO
 
-### C1 — Endpoints ajax genéricos sem autenticação + SQL injection sem bind
+### ✅ C1 — Endpoints ajax genéricos sem autenticação + SQL injection sem bind — CONCLUÍDO 2026-10-01
+
+**Nota de execução (2026-10-01)** — aplicado em 4 etapas, todas verificadas:
+1. **Login obrigatório** em 4 controllers ajax (não 2 como o plano previa): o
+   levantamento prévio achou `SettingsController` (ajax) e
+   `BillReceiveInstallmentController` (ajax) com o mesmo bypass. Os quatro
+   agora herdam a checagem da classe `Ajax` (removido o `__construct` que só
+   fazia `session_start()`; `AjaxController` passou a `extends Ajax`).
+   Confirmado por `curl` sem login: os 4 respondem `Invalid session!`.
+2. **Whitelist no `GlobalController`**: `getGenericoById` só aceita as 8
+   tabelas realmente consultadas pelo front-end e, para `users`, devolve só
+   `id`+`name` (antes vazava o hash da senha a qualquer logado);
+   `getItemByGenericFieldArray` só aceita `attendance_filters_interests` com
+   as 2 colunas usadas. O endpoint `getItemByGenericField` (sem uso) foi
+   **removido** (re-grep confirmou zero chamadas).
+3. **Validação de identificador na base** (`Model::assertIdentifier`, herdada
+   por `ModelGenerico` e `GerenciaPost`): todo nome de tabela/coluna
+   interpolado é checado contra `^[A-Za-z_][A-Za-z0-9_]*$`;
+   `getItemByGenericFieldArray` passou a usar **bind** nos valores. Testado
+   por script: 5 injeções bloqueadas, 3 chamadas legítimas seguem funcionando.
+4. **`AjaxController`**: `updateFilesOrder`/`updateFilesOrdem` com whitelist
+   (`vehicle_images`, `user_networks`); `getAllItensFromGenericTable`
+   **removido** (re-grep: zero chamadas). `updateFilesOrdem` **não** foi
+   removido — o re-grep mostrou que `order/orderList.js:25` o referencia.
+5. **Sessão expirada no front-end**: `script.js` ganhou um
+   `$(document).ajaxComplete` que, ao ver `Invalid session!`, redireciona a
+   `login/logout` — antes a tela quebrava com dado vazio. Login não carrega
+   `script.js`, então não há loop.
+
+**Pendente de teste manual** (logada): a lista no fim desta nota.
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §1.1.
 **Arquivos**: `src/controller/ajax/GlobalController.php`,
@@ -722,6 +751,36 @@ código**: log temporário (já removido) mostrou `error=4`/`name=""` ao escolhe
 `Google Chrome.app` — no macOS um `.app` é uma pasta, e navegadores não enviam
 pastas por campo de arquivo; a mensagem "Nenhum arquivo foi escolhido" estava
 correta. Provavelmente a mesma origem dos anexos nº 3 e nº 4 sem arquivo.
+
+### N3 — Pendências de limpeza registradas durante o C1 (não tratadas)
+
+Levantadas ao executar o C1, deixadas para depois do lançamento:
+
+- **21 métodos sem uso no front-end em `AjaxController`** (depois de exigirem
+  login, estão inertes, mas são superfície morta a remover numa limpeza
+  separada): `compareDate`, `getAccounts`, `getAllBanksPortion`,
+  `getAmountPortionsBySale`, `getAndFilterAccountsPortion`,
+  `getAndFilterAllBankAccounts`, `getAndFilterAllBanks`,
+  `getAndFilterAllCustomer`, `getAndFilterAllUsers`, `getAndFilterBanksPortion`,
+  `getAttendanceById`, `getCustomerByBranch`, `getCustomerTypeResources`,
+  `getItemById8161`, `getLogStatusByIdContrato`, `getPortionById`,
+  `getValueCurrency`, `recursiveCostCenterTree`, `recursiveCostCenterView`,
+  `sumDate`, `updatePortion`. Confirmar caso a caso antes de apagar (alguns
+  podem ser chamados por outro controller PHP, não só pelo front-end).
+- **Chamada morta `ajax/global/toast`** em `public/js/v_01/script.js:150` (e
+  cópia em `application.js`, arquivo órfão): dispara a cada carregamento de
+  página e cai em erro no servidor (`GlobalController` não tem método
+  `toast`) — era a origem do spam `Call to undefined method ...::toast()` no
+  log do Apache. Hoje sem efeito visível (o toast real sai pelo
+  `Toast::render()` no footer). Remover o bloco `$(document).ready` do
+  `script.js` e o `application.js` órfão numa limpeza separada.
+- **Reordenar anexos de veículo está quebrado** (independente do C1):
+  `src/view/vehicles/attachments.php` e `record-vehicle-history/vehicle.php`
+  usam `data-table="products_attachments"`, tabela que não existe, e
+  `vehicle_attachments` não tem coluna de ordenação. Com a whitelist do C1
+  continua sem funcionar (não há regressão). Corrigir exige decidir se a
+  reordenação de anexos de veículo deve existir e, se sim, criar a coluna via
+  migration.
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 

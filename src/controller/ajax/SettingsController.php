@@ -9,11 +9,6 @@ use RR\model\MenuAccess;
 
 class SettingsController extends Ajax
 {
-    public function __construct()
-    {
-        session_start();
-    }
-
     public function getMenus()
     {
         $data = (new Menu)->getWithFiltersAllItems([(object)['columns' => ['id_menu_parent' => (object)['value' => null], 'status' => (object)['value' => 1]]]], [], ['orderBy' => 'menu.item_order ASC']);
