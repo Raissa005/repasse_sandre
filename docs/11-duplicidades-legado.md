@@ -33,8 +33,10 @@ dois é o atual antes de escolher.
 ## `PaginationComponent` vs `PaginationComponent1245`
 
 `PaginationComponent` (sem sufixo) não tem uso encontrado nas views atuais;
-`PaginationComponent1245` tem 37 usos — é o padrão a seguir, combinado com
-`src/libs/Pagination.php::pages()` para montar o dado de entrada.
+`PaginationComponent1245` é usado em 25 views de listagem mais o
+`ListingCardComponent` (recontado em 2026-10-01) — é o padrão a seguir, combinado com
+`src/libs/Pagination.php::pages()` para montar o dado de entrada. Os dois
+escapam a URL dos links de página desde 2026-10-01 (N6 do plano de correções).
 
 ## Padrão geral do sufixo numérico
 

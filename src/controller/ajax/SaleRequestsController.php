@@ -39,9 +39,14 @@ class SaleRequestsController extends Ajax
 
             if (!empty($_POST['name'])) {
                 $customer_filters[] = (object)['where' => " AND (
-                    ucase(this->table.name) LIKE ucase('%" . $_POST['name'] . "%')
-                    OR ucase(this->table.fancy_name_company) LIKE ucase('%" . $_POST['name'] . "%')
-                    OR ucase(this->table.company_name) LIKE ucase('%" . $_POST['name'] . "%'))"];
+                    ucase(this->table.name) LIKE ucase(:busca_1)
+                    OR ucase(this->table.fancy_name_company) LIKE ucase(:busca_2)
+                    OR ucase(this->table.company_name) LIKE ucase(:busca_3))",
+                    'parameters' => [
+                        ':busca_1' => '%' . $_POST['name'] . '%',
+                        ':busca_2' => '%' . $_POST['name'] . '%',
+                        ':busca_3' => '%' . $_POST['name'] . '%'
+                    ]];
             }
 
             if ($_SESSION['RR']->profile->access >= 30 && $branch->restrict_owner_data == 1) {
@@ -100,7 +105,7 @@ class SaleRequestsController extends Ajax
             }
 
             if (!empty($_POST['name'])) {
-                array_push($vehicleFilters, (object)['where' => " AND (ucase(this->table.name) LIKE ucase('%" . $_POST['name'] . "%') OR ucase(this->table.plate) LIKE ucase('%" . $_POST['name'] . "%'))"]);
+                array_push($vehicleFilters, (object)['where' => " AND (ucase(this->table.name) LIKE ucase(:busca_1) OR ucase(this->table.plate) LIKE ucase(:busca_2))", 'parameters' => [':busca_1' => '%' . $_POST['name'] . '%', ':busca_2' => '%' . $_POST['name'] . '%']]);
             }
 
             $response = (new Vehicles)->getWithFiltersAllItems(

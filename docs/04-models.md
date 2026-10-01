@@ -111,7 +111,7 @@ Ver também `docs/11-duplicidades-legado.md`.
         (object)['columns' => ['*']],
         (object)['table' => 'users_profiles', 'columns' => ['name']],
     ],
-    // options (opcional)
+    // options (opcional) — limit/page passam por (int) no Model (LIMIT/OFFSET não têm bind)
     ['orderBy' => 'users_profiles.access ASC', 'limit' => 20, 'page' => 1]
 );
 // retorna (object)['data' => [...], 'count' => int]

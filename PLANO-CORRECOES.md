@@ -92,7 +92,7 @@ tabela/coluna direto de `$_POST`, um deles sem nenhum bind de parâmetro.
    projeto; qualquer mudança de assinatura ou validação interna precisa ser
    testada contra todos os call sites existentes, não só os vulneráveis.
 
-### 🟡 C2 — SQL injection autenticada via filtro "Nome"/pesquisa (13 controllers) — lote 1 concluído 2026-10-01, demais pendentes
+### 🟡 C2 — SQL injection autenticada via filtro "Nome"/pesquisa (13 controllers) — lotes 1 e 2 concluídos 2026-10-01, lote 3 pendente
 
 **✅ Lote 1 CONCLUÍDO 2026-10-01** — `VehiclesController`,
 `RecordOfSoldVehiclesController`, `RecordOfPurchasedVehiclesController`,
@@ -127,9 +127,46 @@ agora lista vazia sem erro. Injeções que funcionavam antes
 (`data_de=2020-01-01' OR '1'='1` e `transfer=1 OR 1=1` devolviam as 7 linhas)
 agora se comportam como o valor literal.
 
-**Restam 9 controllers** (lotes seguintes): `CheckControlController` (project
-e ajax), `PurchaseRequestsController`/`SaleRequestsController` (project e
-ajax), `CustomerController` (ajax) — usar o mesmo `'where'` + `'parameters'`.
+**✅ Lote 2 CONCLUÍDO 2026-10-01** — `PurchaseRequestsController` e
+`SaleRequestsController`, project e ajax.
+- **SQL injection**: 5 pontos, todos de busca (não havia outro `$_GET`/`$_POST`
+  no `'where'` desses arquivos; `competence` vai para `insert()`, que já faz
+  bind): `index()` de Compra e Venda (cliente/razão/fantasia/id/placa com e
+  sem hífen; a remoção de espaços da busca foi mantida),
+  `getCustomersSellerAndBuyer` (ajax, Compra e Venda) e `getVehiclesForSale`
+  (ajax, Venda). Mesmo padrão `'where'` + `'parameters'`.
+- **LIMIT/OFFSET (N7)**: os ajax passavam `$_POST['limit']`/`['page']` crus ao
+  Model, que concatenava `LIMIT`. Corrigido no Model (ver N7).
+- **XSS**: `purchase-requests/index.php` e `sale-requests/index.php` devolviam
+  busca, `data_de` e `data_ate` sem escapar; agora com `htmlspecialchars` (6
+  pontos). Essas telas não têm link de impressão montado de `REQUEST_URI`. As
+  respostas ajax são JSON e não ecoam o termo.
+- **Impressão sem checagem**: não há `print()`. Os 4 métodos de impressão de
+  cada controller (`vehiclePrinting`, `installmentPrinting`,
+  `vehicleInstallmentPrinting`, `commissionInstallmentPrinting`) não tinham
+  checagem nenhuma; receberam a mesma do `index()`
+  (`Secure::individual_menu_access` do menu da rota). **Efeito prático hoje:
+  nenhum**: `menu_access` só tem linhas `status=1` para esses menus (modelo
+  opt-out), então ninguém é bloqueado no `index()` nem na impressão. Ver N8
+  para a lacuna real.
+- **Teste antes × depois** (código original via `git stash`, `curl` com
+  sessão real admin): busca no `index()` (9 termos × ativo/inativo + 3
+  combinações de data), busca ajax (6 termos, p. 1/2, `limit` 3/5, exclusão
+  de veículos já escolhidos), 16 impressões. Mesmas linhas/ids/conteúdo em
+  tudo. Com apóstrofo e `x' OR '1'='1`, antes `SQLSTATE 1064` nas 5 buscas (no
+  ajax o JSON vinha quebrado); agora lista vazia, JSON válido. Payload XSS
+  aparecia cru em busca e datas das 2 telas; agora escapado. A sonda
+  `limit=5 PROCEDURE ANALYSE()` dava erro SQL antes; agora não chega ao SQL
+  (sobra um `Warning: A non-numeric value` do `Pagination::pages()` no
+  controller, só em dev e só com valor não numérico, que o JS nunca envia).
+  **Não deu para testar o bloqueio** da impressão por perfil: exigiria uma
+  linha `status=0` em `menu_access` (escrita no banco, proibida). A chamada é
+  idêntica à do `index()`.
+
+**Restam 5 controllers** (lote 3): `CheckControlController` (project
+e ajax), `CustomerController` (ajax) — usar o mesmo `'where'` + `'parameters'`.
+Os outros 3 que passam `limit`/`page` da requisição (ajax `Customer`, ajax
+`CheckControl`, `BillsToPayInstallment`) já estão cobertos pelo N7.
 **Nos lotes 2 e 3, verificar também em cada controller** (pedido do usuário,
 2026-10-01): (a) XSS refletido no campo de busca e em qualquer filtro devolvido
 na tela, inclusive datas e link de impressão montado de `REQUEST_URI` (ver
@@ -844,7 +881,7 @@ Visto ao testar o C2 lote 1. Já existia antes da correção, sem relação com 
 C2. Aparece em `record-of-sold-vehicles/print` quando há resultados. Não tratado
 (decisão do usuário: só registrar).
 
-### 🟡 N6 — XSS refletido nos filtros das telas de listagem — 4 telas concluídas 2026-10-01
+### ✅ N6 — XSS refletido nos filtros das telas de listagem — CONCLUÍDO 2026-10-01 (4 telas + paginação)
 
 Achado ao testar o C2 lote 1: as views devolviam o valor dos filtros sem
 escapar (`value="<?= $_GET['name'] ?>"`); um link com
@@ -861,12 +898,82 @@ controller. **Teste antes × depois**: o payload aparecia cru em busca, datas e
 link de impressão nas 4 telas; depois, só escapado. Busca normal sem mudança
 (mesmas linhas nas 79 consultas da matriz do C2).
 
-**Pendente (fora do escopo pedido, não tratado)**: `PaginationComponent1245`
-(e `PaginationComponent`) imprimem `$_SERVER['REQUEST_URI']` cru nos links
-de página. É um componente compartilhado por várias telas, então decidir antes
-se a correção vai no componente (mais abrangente). Na prática os navegadores
-codificam `"`/`<`/`>` na URL, o que limita a exploração, mas o padrão é o
-mesmo.
+**✅ Paginação também corrigida (2026-10-01, pedido do usuário)**:
+`PaginationComponent1245` e `PaginationComponent` imprimiam
+`$_SERVER['REQUEST_URI']` cru nos links de página. Agora tiram o `&page=N` da
+URL crua e **depois** a escapam com `htmlspecialchars` (nessa ordem: escapando
+antes, o `&amp;page=` não seria removido e a página duplicaria); o separador
+virou `&amp;page=`. **Levantamento prévio**: `PaginationComponent1245` é usado
+por 25 views de listagem (`bill-receive`, `branch`, `check-control`,
+`countries`, `currencies`, `customer`, `digital-card`, `lead`, `networks-site`,
+`purchase-requests`, `record-of-purchased-vehicles`, `record-of-sold-vehicles`,
+`record-sale-requests`, `record-vehicle-history`, `sale-requests`,
+`user-position`, `users`, `vehicle-brands`, `vehicle-categories`,
+`vehicle-colors`, `vehicle-doors`, `vehicle-fuels`, `vehicle-models`,
+`vehicle-types`, `vehicles`) e pelo `ListingCardComponent`
+(`bill-receive-installment`); `PaginationComponent` tem **zero usos**
+(corrigido mesmo assim). **Sem risco de escape duplo**: nenhuma tela passa
+URL ao componente, os dois leem `REQUEST_URI` direto e nenhum código de
+`src/` ou `public/` reescreve `REQUEST_URI`. **Teste por `curl` antes ×
+depois** (sessão real): Países (`name=á `, 2 páginas; `currency_name=Euro` +
+`name=ç`), Modelos (`name=é`, 4 páginas; `brandName=Volkswagen` abrindo na
+p. 2), Marcas (com e sem filtro, 2 páginas), e o link da p. 1 com datas em
+Veículos, Vendidos e Histórico. Os links de página continuam com todos os
+filtros; seguindo p. 2/3/4, as mesmas linhas e o campo de busca preenchido
+(`á `, `é`), idênticos ao antes. Uma URL com aspas cruas
+(`?x="onmouseover=...`) escapava do `href` antes; agora sai como `&quot;`.
+Nenhum `&amp;amp;` (escape duplo) em nenhuma tela testada.
+**Limite do teste**: nenhuma tela com filtro de data tem mais de 20 registros
+no banco local, então a navegação para a p. 2 com datas não pôde ser exercida,
+só o link da p. 1. Em `bill-receive-installment` o componente renderiza sem
+erro, mas sem links (sem parcelas no filtro padrão).
+**Comportamentos antigos mantidos (não mexi)**: sem filtro na URL, o link sai
+como `/vehicle-brands/&page=2` (sem `?`), e funciona; se `page` for o
+**primeiro** parâmetro (`?page=2&name=x`), o regex não o remove e o link fica
+com `page` duplicado (o último vence no PHP, então a navegação funciona).
+
+### ✅ N7 — SQL injection via `limit`/`page` (LIMIT/OFFSET sem bind) — CONCLUÍDO 2026-10-01
+
+Achado no C2 lote 2: `Model::getWithFiltersAllItems` e `getItemWithFilters`
+montavam `LIMIT {$options['limit']} OFFSET ...` concatenando o valor, e 13
+chamadas em 5 controllers (ajax `PurchaseRequests`, ajax `SaleRequests`, ajax
+`Customer`, ajax `CheckControl`, `BillsToPayInstallment`) passam `limit`/`page`
+direto de `$_POST`/`$_GET`. **Decisão do usuário**: corrigir no Model.
+`limit` e `page` agora passam por `(int)` antes de montar `LIMIT`/`OFFSET`
+(`src/core/Model.php`, os 2 métodos); com valor numérico, nada muda. Testado
+nos 3 endpoints ajax do lote 2 (ver C2). **Não tratado**:
+`ModelGenerico::getItens` também concatena `LIMIT $qtd` e `ORDER BY
+$filters['order']`, mas tem **zero chamadores** (código morto, ver B1).
+
+### N8 — Pedidos de Compra/Venda: métodos sem checagem de perfil (só registrado, decisão pendente)
+
+Achado no C2 lote 2. Em `PurchaseRequestsController` e `SaleRequestsController`
+(project), **não chamam nenhum `Secure::`**: `purchaseVehicles`/`saleVehicles`,
+`deleteVehiclesPurchased`/`deleteVehiclesSale`, `purchaseFinancial`/
+`saleFinancial`, `purchaseCommission`/`saleCommission`, `disableItem`,
+`enableItem`. `handleSubmitAddItem`/`handleSubmitEditItem` só checam o método
+POST, enquanto o formulário (`addItem`/`editItem`) exige `access_admin`. As abas
+Financeiro e Comissão só aparecem para admin (`navTabs`), mas as rotas abrem
+para qualquer logado pela URL, e as impressões de parcela/comissão também. A
+checagem aplicada no lote 2 (`individual_menu_access`) não fecha isso, porque
+`menu_access` não bloqueia ninguém hoje. Mesma família de A5/M2:
+**⚠️ decidir o perfil** de cada ação (ex.: Financeiro/Comissão e suas
+impressões só admin, igual à aba?) antes de corrigir. Também: o `index()` de
+Compra chama `Secure::individual_menu_access(true)` (vira menu id 1, que não
+existe), uma linha sem efeito; não mexi.
+
+### N9 — Erros já existentes vistos nos testes do C2 lote 2 (só registrado)
+
+Já aconteciam antes das correções; não têm relação com o C2:
+- `sale-requests` (listagem): `Warning: Undefined variable $formOfPayments` +
+  `foreach() argument must be of type array|object` em toda carga da tela.
+- `purchase-requests/commissionInstallmentPrinting/4`: **fatal error**
+  (`Attempt to read property "id" on bool` e `Attempt to assign property
+  "numberOfInstallment"`) — a impressão de comissão quebra para o pedido 4.
+- `sale-requests` impressões (`installmentPrinting`/
+  `vehicleInstallmentPrinting` do pedido 7, `commissionInstallmentPrinting`
+  dos pedidos 1 e 7): `Undefined variable $installments`/`$totalInstallments`
+  e `foreach()` em null — imprimem sem as parcelas.
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 
@@ -876,11 +983,12 @@ mesmo.
 | C5 | Criar as tabelas de rateio de comissão de verdade, ou remover a feature? |
 | C7 | Qual o SMTP/e-mail de envio real da Repasse Sandré? |
 | A5/M2 | Quem pode criar/desativar filial, centro de custo, e acessar Compra/Custos de veículo, DRE, Atendimento? |
+| N8 | Pedidos de Compra/Venda: quem pode ver/imprimir Financeiro e Comissão, excluir veículo do pedido, ativar/desativar pedido? |
 | A9 | Qual o telefone de suporte e e-mail de contato reais da Repasse Sandré? |
 | M1 | A aba "Vendas" do cliente deveria virar "Veículo" (usando a tabela `vehicles`) ou ser removida? |
 | M12 | A feature de Moedas deveria ser implementada de verdade ou removida? |
 | B2 | Pode dropar as 6 tabelas/colunas órfãs do domínio imobiliário, ou manter documentado? |
 
-Nenhuma dessas oito decisões foi presumida neste plano — todas exigem
+Nenhuma dessas nove decisões foi presumida neste plano — todas exigem
 resposta do usuário antes de qualquer correção ou migration ser escrita,
 conforme a regra do CLAUDE.md de não presumir regra de negócio.

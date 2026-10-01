@@ -80,6 +80,13 @@ e `$pagination` (retorno de `Pagination::pages()`, `src/libs/Pagination.php`).
 Ver assinatura exata lendo o arquivo antes de montar o objeto — não adivinhar os
 campos.
 
+O `PaginationComponent1245` monta os links de página a partir de
+`$_SERVER['REQUEST_URI']` (mantém os filtros da tela) e **já escapa** a URL com
+`htmlspecialchars` — não passe URL escapada para ele nem escape de novo.
+Valores de filtro devolvidos em campos da view (`value="..."`) e `href`
+montados a partir da query precisam de
+`htmlspecialchars($x, ENT_QUOTES, 'UTF-8')` na própria view/controller.
+
 ### Outros components disponíveis (usar antes de criar HTML solto)
 
 `BadgeComponent`, `BoxInfoComponent`, `BranchLogoComponent`, `ButtonComponent`,

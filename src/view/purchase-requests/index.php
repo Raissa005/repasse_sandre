@@ -22,7 +22,7 @@ use RR\components\TableComponent5432;
                         <div class="col-md-3 col-lg-3">
                             <div class="form-group">
                                 <label for="name">Pesquisar</label>
-                                <input type="text" class="form-control" placeholder="Pesquisar" name="name" value="<?= (isset($_GET['name']) ? $_GET['name'] : ''); ?>">
+                                <input type="text" class="form-control" placeholder="Pesquisar" name="name" value="<?= (isset($_GET['name']) ? htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -37,13 +37,13 @@ use RR\components\TableComponent5432;
                         <div class="col-md-3 col-lg-3">
                             <div class="form-group">
                                 <label for="data_de">Data de</label>
-                                <input type="date" class="form-control" name="data_de" value="<?= (isset($_GET['data_de']) ? $_GET['data_de'] : ''); ?>">
+                                <input type="date" class="form-control" name="data_de" value="<?= (isset($_GET['data_de']) ? htmlspecialchars($_GET['data_de'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                         <div class="col-md-3 col-lg-3">
                             <div class="form-group">
                                 <label for="data_ate">Data até</label>
-                                <input type="date" class="form-control" name="data_ate" value="<?= (isset($_GET['data_ate']) ? $_GET['data_ate'] : ''); ?>">
+                                <input type="date" class="form-control" name="data_ate" value="<?= (isset($_GET['data_ate']) ? htmlspecialchars($_GET['data_ate'], ENT_QUOTES, 'UTF-8') : ''); ?>">
                             </div>
                         </div>
                     </div>

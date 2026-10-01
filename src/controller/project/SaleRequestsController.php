@@ -91,15 +91,26 @@ class SaleRequestsController extends FrontController
         if (isset($_GET['name']) && !empty($_GET['name'])) {
             $_GET['name'] = preg_replace('/\s+/', '', $_GET['name']);
 
+            $busca = '%' . $_GET['name'] . '%';
+            $buscaPlaca = '%' . substr($_GET['name'], 0, 3) . '-' . substr($_GET['name'], 3) . '%';
+
             $filters[] = (object) [
                 'where' => "AND (
-                    ucase(customer.name) LIKE ucase('%" . $_GET['name'] . "%') OR
-                    ucase(customer.company_name) LIKE ucase('%" . $_GET['name'] . "%') OR
-                    ucase(customer.fancy_name_company) LIKE ucase('%" . $_GET['name'] . "%') OR
-                    ucase(sale_requests.id) LIKE ucase('%" . $_GET['name'] . "%') OR
-                    ucase(vehicles.plate) LIKE ucase('%". $_GET['name'] . "%') OR
-                    ucase(vehicles.plate) LIKE ucase('%". substr($_GET['name'], 0, 3) . '-' . substr($_GET['name'], 3) ."%')
-                )"
+                    ucase(customer.name) LIKE ucase(:busca_1) OR
+                    ucase(customer.company_name) LIKE ucase(:busca_2) OR
+                    ucase(customer.fancy_name_company) LIKE ucase(:busca_3) OR
+                    ucase(sale_requests.id) LIKE ucase(:busca_4) OR
+                    ucase(vehicles.plate) LIKE ucase(:busca_5) OR
+                    ucase(vehicles.plate) LIKE ucase(:busca_placa)
+                )",
+                'parameters' => [
+                    ':busca_1' => $busca,
+                    ':busca_2' => $busca,
+                    ':busca_3' => $busca,
+                    ':busca_4' => $busca,
+                    ':busca_5' => $busca,
+                    ':busca_placa' => $buscaPlaca
+                ]
             ];
         }
 
@@ -759,6 +770,9 @@ class SaleRequestsController extends FrontController
 
     public function vehiclePrinting($itemId)
     {
+        $this->page = (new Menu())->getMenuByRoute($this->route);
+        Secure::individual_menu_access($this->page->id);
+
         $item = (new SaleRequests)->getItemById(
             $itemId,
             [
@@ -805,6 +819,9 @@ class SaleRequestsController extends FrontController
 
     public function installmentPrinting($itemId)
     {
+        $this->page = (new Menu())->getMenuByRoute($this->route);
+        Secure::individual_menu_access($this->page->id);
+
         $item = (new SaleRequests)->getItemById(
             $itemId,
             [
@@ -895,6 +912,9 @@ class SaleRequestsController extends FrontController
 
     public function vehicleInstallmentPrinting($itemId)
     {
+        $this->page = (new Menu())->getMenuByRoute($this->route);
+        Secure::individual_menu_access($this->page->id);
+
         $item = (new SaleRequests)->getItemById(
             $itemId,
             [
@@ -1034,6 +1054,9 @@ class SaleRequestsController extends FrontController
 
     public function commissionInstallmentPrinting($itemId)
     {
+        $this->page = (new Menu())->getMenuByRoute($this->route);
+        Secure::individual_menu_access($this->page->id);
+
         $item = (new SaleRequests)->getItemById(
             $itemId,
             [

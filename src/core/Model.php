@@ -291,9 +291,11 @@ class Model
             $sql .= "\nORDER BY {$options['order']}";
         }
 
-        if (isset($options['limit']) && $options['limit'] > 0 && isset($options['page'])) {
-            $offset = ($options['page'] - 1) * $options['limit'];
-            $sql .= "\nLIMIT {$options['limit']} OFFSET $offset ";
+        if (isset($options['limit']) && (int) $options['limit'] > 0 && isset($options['page'])) {
+            // (int): limit/page podem vir de $_POST/$_GET e LIMIT/OFFSET não aceitam bind aqui
+            $limit = (int) $options['limit'];
+            $offset = ((int) $options['page'] - 1) * $limit;
+            $sql .= "\nLIMIT {$limit} OFFSET $offset ";
         }
 
         $query = $this->db->prepare($sql);
@@ -323,9 +325,11 @@ class Model
             $sql .= "\nORDER BY {$options['order']}";
         }
 
-        if (isset($options['limit']) && $options['limit'] > 0 && isset($options['page'])) {
-            $offset = ($options['page'] - 1) * $options['limit'];
-            $sql .= "\nLIMIT {$options['limit']} OFFSET $offset ";
+        if (isset($options['limit']) && (int) $options['limit'] > 0 && isset($options['page'])) {
+            // (int): limit/page podem vir de $_POST/$_GET e LIMIT/OFFSET não aceitam bind aqui
+            $limit = (int) $options['limit'];
+            $offset = ((int) $options['page'] - 1) * $limit;
+            $sql .= "\nLIMIT {$limit} OFFSET $offset ";
         }
 
         $query = $this->db->prepare($sql);
