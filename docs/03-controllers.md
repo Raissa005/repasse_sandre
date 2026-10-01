@@ -82,13 +82,18 @@ Ver `BranchController::handleSubmitImages` como referência do padrão manual ma
 comum (ainda existente em vários lugares, embora `src/libs/FileUploader.php`
 seja a versão mais nova/genérica — checar `docs/11-duplicidades-legado.md` antes
 de escolher qual usar):
+0. Valida tamanho e **tipo** antes de qualquer gravação
+   (`FileUploader::sizeLimitError` + `FileUploader::typeError`) e pega a extensão
+   de `FileUploader::allowedExtension` — nunca do nome do arquivo
+   (ver `docs/09-bibliotecas-libs.md`).
 1. Cria a pasta de destino se não existir (`mkdir(..., 0777, true)`).
-2. Remove o arquivo antigo (`@unlink`).
-3. Incrementa um contador de versão (`logo_menu_cont`) salvo na tabela — usado
-   para invalidar cache do navegador no nome do arquivo.
-4. Redimensiona via `wideImagePhoto()` (`src/libs/FuncaoImagem.php`, biblioteca
+2. Calcula o novo contador de versão (`logo_menu_cont + 1`), usado no nome do
+   arquivo para invalidar cache do navegador.
+3. Redimensiona via `wideImagePhoto()` (`src/libs/wideImage/wide.php`, biblioteca
    WideImage vendorizada) se o tamanho não bater com o esperado; senão só copia.
-5. Persiste os metadados (`*_capa`, `*_cont`, `*_ext`) via `GerenciaPost::update8191`.
+4. **Só depois que o arquivo novo existe**: remove o antigo (`@unlink`) e persiste
+   os metadados (`*_capa`, `*_cont`, `*_ext`) via `GerenciaPost::update8191`.
+   Gravar o banco antes deixava o registro apontando para arquivo inexistente.
 
 ### Transação
 

@@ -40,6 +40,16 @@ Usar para toda formatação de data em pt-BR em vez de `date()`/`DateTime` cru.
 - `FileUploader.php` — API mais nova e genérica: `uploadImg`, `uploadImgSingle`,
   `uploadFiles`, `getFileExtension`. Aceita array de `$sizes` (redimensionamento
   múltiplo).
+  **Tipo de arquivo (C4 etapa 2)**: whitelists `ALLOWED_ATTACHMENT` (pdf, jpg/jpeg,
+  png, xml, docx, xlsx), `ALLOWED_IMAGE` (jpg/jpeg, png) e `ALLOWED_PNG`.
+  `typeError($_FILES['campo'], FileUploader::ALLOWED_...)` devolve a mensagem para
+  o Toast (mesmo uso de `sizeLimitError`, logo depois dele, antes de qualquer
+  gravação); `allowedExtension($nome, $tmp, $whitelist)` devolve a extensão
+  **normalizada** (`jpeg` → `jpg`) a gravar, ou `null`. Confere extensão do nome
+  **e** MIME real (`finfo`), abre a imagem (`getimagesize`) e recusa
+  `php*`/`phtml`/`phar`/`html`/`svg`/`js`/executáveis em qualquer parte do nome.
+  `uploadFiles($files, $paths, FileUploader::ALLOWED_ATTACHMENT)` já usa isso.
+  **Nunca** tirar a extensão do nome enviado (`substr(..., -4)`/`pathinfo`).
 - `UploadFiles.php` — API mais antiga (`upload($files, $path, $table, $arrayInsert)`,
   além de um método claramente de teste/lixo `WOWOW()` — não usar `WOWOW`, é
   resquício de debug).

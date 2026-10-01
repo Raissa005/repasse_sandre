@@ -3,6 +3,7 @@
 namespace RR\model;
 
 use RR\core\Model;
+use RR\libs\FileUploader;
 
 class VehicleAttachments extends Model
 {
@@ -22,14 +23,13 @@ class VehicleAttachments extends Model
         parent::__construct($this->table, $joins);
     }
 
-    private function saveFile(array $file, int $itemId): string
+    private function saveFile(array $file, int $itemId, string $extension): string
     {
         $path = ROOT . "public/vehicle/$itemId/attachments";
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
         }
 
-        $extension = pathinfo($file['fileName'], PATHINFO_EXTENSION);
         $fileName = uniqid() . ".$extension";
         $destination = "$path/$fileName";
         move_uploaded_file($file['tmp_name'], $destination);
@@ -50,14 +50,20 @@ class VehicleAttachments extends Model
 
     public function insertAttachments(array $file, int $itemId)
     {
-        $fileName = $this->saveFile($file, $itemId);
+        $extension = FileUploader::allowedExtension($file['fileName'], $file['tmp_name'], FileUploader::ALLOWED_ATTACHMENT);
+
+        if ($extension === null) {
+            return (object)['error' => true, 'message' => 'Tipo de arquivo não aceito.'];
+        }
+
+        $fileName = $this->saveFile($file, $itemId, $extension);
 
         return (new VehicleAttachments)->insert([
             "id_vehicle" => $itemId,
             "filename" => $fileName,
             "name" => $file['name'],
             "description" => $file['description'],
-            "extencion" => pathinfo($file['fileName'], PATHINFO_EXTENSION),
+            "extencion" => $extension,
         ]);
     }
 }

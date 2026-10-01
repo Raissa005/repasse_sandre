@@ -739,9 +739,15 @@ class CustomerController extends FrontController
             redirect("{$this->route}/attachment/$customerId/");
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['file'] ?? null, FileUploader::ALLOWED_ATTACHMENT)) {
+            Toast::warningToast($typeError);
+            redirect("{$this->route}/attachment/$customerId/");
+        }
+
         $attachments = FileUploader::uploadFiles(
             $_FILES['file'],
-            array_fill(0, count($_FILES['file']) + 1, "attachments/customer/$customerId")
+            array_fill(0, count($_FILES['file']) + 1, "attachments/customer/$customerId"),
+            FileUploader::ALLOWED_ATTACHMENT
         );
 
         $hasError = false;
@@ -775,6 +781,11 @@ class CustomerController extends FrontController
             redirect($this->route . "/image/$customerId");
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['logo'] ?? null, FileUploader::ALLOWED_IMAGE)) {
+            Toast::warningToast($typeError);
+            redirect($this->route . "/image/$customerId");
+        }
+
         if (isset($_FILES)) {
             $gerenciaPost = new GerenciaPost();
             $item = $this->model->getCustomerById($customerId);
@@ -789,19 +800,25 @@ class CustomerController extends FrontController
                     if (!file_exists("img/customer/$customerId/")) {
                         mkdir("img/customer/$customerId/", 0777, true);
                     }
-                    @unlink("img/customer/$customerId/logo-$item->logo_cont.$item->logo_ext");
-
-                    $extension = str_replace(".", "", substr($_FILES['logo']['name'], -4));
-                    $this->model->update(["logo" => 1, "logo_cont" => ++$item->logo_cont, "logo_ext" => $extension], "id", $customerId);
+                    $extension = FileUploader::allowedExtension($_FILES['logo']['name'], $_FILES['logo']['tmp_name'], FileUploader::ALLOWED_IMAGE);
+                    $newCont = $item->logo_cont + 1;
 
                     $filename = $_FILES['logo']['tmp_name'];
                     $path = "img/customer/$customerId/";
 
-                    $size = getimagesize($_FILES['logo']['tmp_name']);
-                    if ($size[0] == 150 && $size[1] == 150) {
-                        copy($_FILES['logo']['tmp_name'], $path . "logo-$item->logo_cont.$extension");
-                    } else {
-                        $logo = wideImagePhoto($filename, $path, 150, 150, "logo-$item->logo_cont", ".$extension", 9);
+                    if ($extension !== null) {
+                        $size = getimagesize($_FILES['logo']['tmp_name']);
+                        if ($size[0] == 150 && $size[1] == 150) {
+                            copy($_FILES['logo']['tmp_name'], $path . "logo-$newCont.$extension");
+                        } else {
+                            $logo = wideImagePhoto($filename, $path, 150, 150, "logo-$newCont", ".$extension", 9);
+                        }
+
+                        // Só aponta o banco para o logo novo depois que o arquivo existe
+                        if (file_exists($path . "logo-$newCont.$extension")) {
+                            @unlink("img/customer/$customerId/logo-$item->logo_cont.$item->logo_ext");
+                            $this->model->update(["logo" => 1, "logo_cont" => $newCont, "logo_ext" => $extension], "id", $customerId);
+                        }
                     }
                 }
 

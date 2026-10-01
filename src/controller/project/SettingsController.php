@@ -110,6 +110,11 @@ class SettingsController extends FrontController
                 Toast::warningToast($sizeError);
                 redirect($this->route . "/images");
             }
+
+            if ($typeError = FileUploader::typeError($_FILES[$field] ?? null, FileUploader::ALLOWED_IMAGE)) {
+                Toast::warningToast($typeError);
+                redirect($this->route . "/images");
+            }
         }
 
         if (isset($_FILES)) {
@@ -125,10 +130,10 @@ class SettingsController extends FrontController
 
                 if (!empty($_FILES['logo_menu']['tmp_name'])) {
 
-                    $extension = str_replace(".", "", substr($_FILES['logo_menu']['name'], -4));
+                    $extension = FileUploader::allowedExtension($_FILES['logo_menu']['name'], $_FILES['logo_menu']['tmp_name'], FileUploader::ALLOWED_IMAGE);
                     $size = @getimagesize($_FILES['logo_menu']['tmp_name']);
 
-                    if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    if ($extension !== null && $size !== false && in_array($size[2], $allowedImageTypes)) {
                         try {
                             if (!file_exists("img/settings/")) {
                                 mkdir("img/settings/", 0777, true);
@@ -157,10 +162,10 @@ class SettingsController extends FrontController
 
                 if (!empty($_FILES['logo_mini']['tmp_name'])) {
 
-                    $extension = str_replace(".", "", substr($_FILES['logo_mini']['name'], -4));
+                    $extension = FileUploader::allowedExtension($_FILES['logo_mini']['name'], $_FILES['logo_mini']['tmp_name'], FileUploader::ALLOWED_IMAGE);
                     $size = @getimagesize($_FILES['logo_mini']['tmp_name']);
 
-                    if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    if ($extension !== null && $size !== false && in_array($size[2], $allowedImageTypes)) {
                         try {
                             if (!file_exists("img/settings/")) {
                                 mkdir("img/settings/", 0777, true);
@@ -189,10 +194,10 @@ class SettingsController extends FrontController
 
                 if (!empty($_FILES['logo_login']['tmp_name'])) {
 
-                    $extension = str_replace(".", "", substr($_FILES['logo_login']['name'], -4));
+                    $extension = FileUploader::allowedExtension($_FILES['logo_login']['name'], $_FILES['logo_login']['tmp_name'], FileUploader::ALLOWED_IMAGE);
                     $size = @getimagesize($_FILES['logo_login']['tmp_name']);
 
-                    if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    if ($extension !== null && $size !== false && in_array($size[2], $allowedImageTypes)) {
                         try {
                             if (!file_exists("img/settings/")) {
                                 mkdir("img/settings/", 0777, true);
@@ -221,10 +226,10 @@ class SettingsController extends FrontController
 
                 if (!empty($_FILES['logo_favicon']['tmp_name'])) {
 
-                    $extension = str_replace(".", "", substr($_FILES['logo_favicon']['name'], -4));
+                    $extension = FileUploader::allowedExtension($_FILES['logo_favicon']['name'], $_FILES['logo_favicon']['tmp_name'], FileUploader::ALLOWED_IMAGE);
                     $size = @getimagesize($_FILES['logo_favicon']['tmp_name']);
 
-                    if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    if ($extension !== null && $size !== false && in_array($size[2], $allowedImageTypes)) {
                         try {
                             if (!file_exists("img/settings/")) {
                                 mkdir("img/settings/", 0777, true);
@@ -253,10 +258,10 @@ class SettingsController extends FrontController
 
                 if (!empty($_FILES['logo_rodape']['tmp_name'])) {
 
-                    $extension = str_replace(".", "", substr($_FILES['logo_rodape']['name'], -4));
+                    $extension = FileUploader::allowedExtension($_FILES['logo_rodape']['name'], $_FILES['logo_rodape']['tmp_name'], FileUploader::ALLOWED_IMAGE);
                     $size = @getimagesize($_FILES['logo_rodape']['tmp_name']);
 
-                    if ($size !== false && in_array($size[2], $allowedImageTypes)) {
+                    if ($extension !== null && $size !== false && in_array($size[2], $allowedImageTypes)) {
                         try {
                             if (!file_exists("img/settings/")) {
                                 mkdir("img/settings/", 0777, true);

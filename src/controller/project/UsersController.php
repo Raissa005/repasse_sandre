@@ -252,6 +252,11 @@ class UsersController extends FrontController
             redirect($this->route . "/editItem/" . $itemId);
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['profile_picture'] ?? null, FileUploader::ALLOWED_IMAGE)) {
+            Toast::warningToast($typeError);
+            redirect($this->route . "/editItem/" . $itemId);
+        }
+
         $response = $this->model->submitEditForm($itemId, $_POST, $_FILES);
 
         Toast::checkResponse($response->error, $response->message);
@@ -392,6 +397,11 @@ class UsersController extends FrontController
             redirect("{$this->route}/digital-card/$itemId");
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['profile_picture'] ?? null, FileUploader::ALLOWED_IMAGE)) {
+            Toast::warningToast($typeError);
+            redirect("{$this->route}/digital-card/$itemId");
+        }
+
         $modelGenerico = new ModelGenerico();
         $gerenciaPost = new GerenciaPost();
         $userModel = new User();
@@ -421,21 +431,27 @@ class UsersController extends FrontController
                 if (!file_exists("img/users/$itemId/")) {
                     mkdir("img/users/$itemId/", 0777, true);
                 }
-                @unlink("img/users/$itemId/$itemId-dp-$item->card_digital_cont.$item->card_digital_ext");
-
-                $extension = str_replace(".", "", substr($_FILES['profile_picture']['name'], -4));
-                $gerenciaPost->update8191(["card_digital_capa" => true, "card_digital_cont" => ++$item->card_digital_cont, "card_digital_ext" => $extension], $this->table, "id", $itemId, false);
+                $extension = FileUploader::allowedExtension($_FILES['profile_picture']['name'], $_FILES['profile_picture']['tmp_name'], FileUploader::ALLOWED_IMAGE);
+                $newCont = $item->card_digital_cont + 1;
 
                 $filename = $_FILES['profile_picture']['tmp_name'];
                 $path = "img/users/$itemId/";
 
-                $size = getimagesize($_FILES['profile_picture']['tmp_name']);
-                if ($size[0] == 600 && $size[1] == 600) {
-                    copy($_FILES['profile_picture']['tmp_name'], $path . "$itemId-dc-$item->card_digital_cont.$extension");
-                } else if ($extension == "jpg" || $extension == "JPG" || $extension == "jpeg" || $extension == "JPEG") {
-                    $profilePicture = wideImagePhoto($filename, $path, 600, 600, "$itemId-dc-$item->card_digital_cont", ".$extension", 100);
-                } else if ($extension == "png" || $extension == "PNG") {
-                    $profilePicture = wideImagePhoto($filename, $path, 600, 600, "$itemId-dc-$item->card_digital_cont", ".$extension", 9);
+                if ($extension !== null) {
+                    $size = getimagesize($_FILES['profile_picture']['tmp_name']);
+                    if ($size[0] == 600 && $size[1] == 600) {
+                        copy($_FILES['profile_picture']['tmp_name'], $path . "$itemId-dc-$newCont.$extension");
+                    } else if ($extension == "jpg") {
+                        $profilePicture = wideImagePhoto($filename, $path, 600, 600, "$itemId-dc-$newCont", ".$extension", 100);
+                    } else if ($extension == "png") {
+                        $profilePicture = wideImagePhoto($filename, $path, 600, 600, "$itemId-dc-$newCont", ".$extension", 9);
+                    }
+
+                    // Só aponta o banco para a foto nova depois que o arquivo existe
+                    if (file_exists($path . "$itemId-dc-$newCont.$extension")) {
+                        @unlink("img/users/$itemId/$itemId-dp-$item->card_digital_cont.$item->card_digital_ext");
+                        $gerenciaPost->update8191(["card_digital_capa" => true, "card_digital_cont" => $newCont, "card_digital_ext" => $extension], $this->table, "id", $itemId, false);
+                    }
                 }
             }
 

@@ -826,10 +826,16 @@ class AttendanceController extends FrontController
             redirect($this->route . "/attendance/$attendanceId");
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['attachment'] ?? null, FileUploader::ALLOWED_ATTACHMENT)) {
+            Toast::warningToast($typeError);
+            redirect($this->route . "/attendance/$attendanceId");
+        }
+
         try {
             $attachments = FileUploader::uploadFiles(
                 $_FILES['attachment'],
-                array_fill(0, count($_FILES['attachment']) + 1, "attachments/attendance/$attendanceId")
+                array_fill(0, count($_FILES['attachment']) + 1, "attachments/attendance/$attendanceId"),
+                FileUploader::ALLOWED_ATTACHMENT
             );
 
             foreach ($attachments as $attachment) {

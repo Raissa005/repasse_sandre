@@ -1127,8 +1127,13 @@ class BillReceiveInstallmentController extends FrontController
             redirect($this->route . "/attachment/$itemId");
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['attachmentEntry'] ?? null, FileUploader::ALLOWED_ATTACHMENT)) {
+            Toast::warningToast($typeError);
+            redirect($this->route . "/attachment/$itemId");
+        }
+
         try {
-            $attachments = FileUploader::uploadFiles($_FILES['attachmentEntry'], array_fill(0, count($_FILES['attachmentEntry']) + 1, "attachments/bill-receive/$itemId"));
+            $attachments = FileUploader::uploadFiles($_FILES['attachmentEntry'], array_fill(0, count($_FILES['attachmentEntry']) + 1, "attachments/bill-receive/$itemId"), FileUploader::ALLOWED_ATTACHMENT);
 
             foreach ($attachments as $attachment) {
                 $arrayPost = array(

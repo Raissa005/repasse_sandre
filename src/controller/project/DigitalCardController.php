@@ -68,6 +68,12 @@ class DigitalCardController extends FrontController
                 header('location:' . URL . $this->route . "/addItem");
                 exit;
             }
+
+            if ($typeError = FileUploader::typeError($_FILES[$field] ?? null, FileUploader::ALLOWED_IMAGE)) {
+                Toast::warningToast($typeError);
+                header('location:' . URL . $this->route . "/addItem");
+                exit;
+            }
         }
 
         $gerenciaPost = new GerenciaPost();
@@ -107,21 +113,26 @@ class DigitalCardController extends FrontController
                         mkdir("img/card_digital/$itemId/", 0777, true);
                     }
 
-                    $extension = str_replace(".", "", substr($_FILES['imageFundo']['name'], -4));
-
-                    $arrImage = array("ext_fundo" => $extension, "capa_fundo" => true);
-                    $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                    $extension = FileUploader::allowedExtension($_FILES['imageFundo']['name'], $_FILES['imageFundo']['tmp_name'], FileUploader::ALLOWED_IMAGE);
 
                     $filename = $_FILES['imageFundo']['tmp_name'];
                     $path = "img/card_digital/$itemId/";
 
-                    $size = getimagesize($_FILES['imageFundo']['tmp_name']);
-                    if ($size[0] == 1490 && $size[1] == 2130) {
-                        copy($_FILES['imageFundo']['tmp_name'], $path . "fundo-1" . ".$extension");
-                    } else if ($extension == "jpg" || $extension == "JPG" || $extension == "jpeg" || $extension == "JPEG") {
-                        $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-1", ".{$extension}", 100);
-                    } else if ($extension == "png" || $extension == "PNG") {
-                        $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-1", ".{$extension}", 9);
+                    if ($extension !== null) {
+                        $size = getimagesize($_FILES['imageFundo']['tmp_name']);
+                        if ($size[0] == 1490 && $size[1] == 2130) {
+                            copy($_FILES['imageFundo']['tmp_name'], $path . "fundo-1" . ".$extension");
+                        } else if ($extension == "jpg") {
+                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-1", ".{$extension}", 100);
+                        } else if ($extension == "png") {
+                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-1", ".{$extension}", 9);
+                        }
+
+                        // Só grava a imagem no banco depois que o arquivo existe
+                        if (file_exists($path . "fundo-1.$extension")) {
+                            $arrImage = array("ext_fundo" => $extension, "capa_fundo" => true);
+                            $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                        }
                     }
                 }
 
@@ -130,21 +141,26 @@ class DigitalCardController extends FrontController
                         mkdir("img/card_digital/$itemId/", 0777, true);
                     }
 
-                    $extension = str_replace(".", "", substr($_FILES['imageLogo']['name'], -4));
-
-                    $arrImage = array("ext_logo" => $extension, "capa_logo" => true);
-                    $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                    $extension = FileUploader::allowedExtension($_FILES['imageLogo']['name'], $_FILES['imageLogo']['tmp_name'], FileUploader::ALLOWED_IMAGE);
 
                     $filename = $_FILES['imageLogo']['tmp_name'];
                     $path = "img/card_digital/$itemId/";
 
-                    $size = getimagesize($_FILES['imageLogo']['tmp_name']);
-                    if ($size[0] == 600 && $size[1] == 280) {
-                        copy($_FILES['imageLogo']['tmp_name'], $path . "logo-1" . ".$extension");
-                    } else if ($extension == "jpg" || $extension == "JPG" || $extension == "jpeg" || $extension == "JPEG") {
-                        $logo = wideImagePhoto($filename, $path, 600, 280, "logo-1", ".{$extension}", 100);
-                    } else if ($extension == "png" || $extension == "PNG") {
-                        $logo = wideImagePhoto($filename, $path, 600, 280, "logo-1", ".{$extension}", 9);
+                    if ($extension !== null) {
+                        $size = getimagesize($_FILES['imageLogo']['tmp_name']);
+                        if ($size[0] == 600 && $size[1] == 280) {
+                            copy($_FILES['imageLogo']['tmp_name'], $path . "logo-1" . ".$extension");
+                        } else if ($extension == "jpg") {
+                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-1", ".{$extension}", 100);
+                        } else if ($extension == "png") {
+                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-1", ".{$extension}", 9);
+                        }
+
+                        // Só grava a imagem no banco depois que o arquivo existe
+                        if (file_exists($path . "logo-1.$extension")) {
+                            $arrImage = array("ext_logo" => $extension, "capa_logo" => true);
+                            $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                        }
                     }
                 }
             }
@@ -176,6 +192,12 @@ class DigitalCardController extends FrontController
         foreach (['imageFundo', 'imageLogo'] as $field) {
             if ($sizeError = FileUploader::sizeLimitError($_FILES[$field] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
                 Toast::warningToast($sizeError);
+                header('location:' . URL . $this->route . "/editItem/$itemId");
+                exit;
+            }
+
+            if ($typeError = FileUploader::typeError($_FILES[$field] ?? null, FileUploader::ALLOWED_IMAGE)) {
+                Toast::warningToast($typeError);
                 header('location:' . URL . $this->route . "/editItem/$itemId");
                 exit;
             }
@@ -221,23 +243,29 @@ class DigitalCardController extends FrontController
                     if (!file_exists("img/card_digital/$itemId/")) {
                         mkdir("img/card_digital/$itemId/", 0777, true);
                     }
-                    @unlink("img/card_digital/$itemId/fundo-$item->cont_fundo.$item->ext_fundo");
-
-                    $extension = str_replace(".", "", substr($_FILES['imageFundo']['name'], -4));
-
-                    $arrImage = array("cont_fundo" => ++$item->cont_fundo, "ext_fundo" => $extension, "capa_fundo" => true);
-                    $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                    $extension = FileUploader::allowedExtension($_FILES['imageFundo']['name'], $_FILES['imageFundo']['tmp_name'], FileUploader::ALLOWED_IMAGE);
+                    $newCont = $item->cont_fundo + 1;
 
                     $filename = $_FILES['imageFundo']['tmp_name'];
                     $path = "img/card_digital/$itemId/";
 
-                    $size = getimagesize($_FILES['imageFundo']['tmp_name']);
-                    if ($size[0] == 1490 && $size[1] == 2130) {
-                        copy($_FILES['imageFundo']['tmp_name'], $path . "fundo-$item->cont_fundo" . ".$extension");
-                    } else if ($extension == "jpg" || $extension == "JPG" || $extension == "jpeg" || $extension == "JPEG") {
-                        $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-$item->cont_fundo", ".{$extension}", 100);
-                    } else if ($extension == "png" || $extension == "PNG") {
-                        $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-$item->cont_fundo", ".{$extension}", 9);
+                    if ($extension !== null) {
+                        $size = getimagesize($_FILES['imageFundo']['tmp_name']);
+                        if ($size[0] == 1490 && $size[1] == 2130) {
+                            copy($_FILES['imageFundo']['tmp_name'], $path . "fundo-$newCont" . ".$extension");
+                        } else if ($extension == "jpg") {
+                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-$newCont", ".{$extension}", 100);
+                        } else if ($extension == "png") {
+                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-$newCont", ".{$extension}", 9);
+                        }
+
+                        // Só aponta o banco para a imagem nova depois que o arquivo existe
+                        if (file_exists($path . "fundo-$newCont.$extension")) {
+                            @unlink("img/card_digital/$itemId/fundo-$item->cont_fundo.$item->ext_fundo");
+
+                            $arrImage = array("cont_fundo" => $newCont, "ext_fundo" => $extension, "capa_fundo" => true);
+                            $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                        }
                     }
                 }
 
@@ -245,23 +273,29 @@ class DigitalCardController extends FrontController
                     if (!file_exists("img/card_digital/$itemId/")) {
                         mkdir("img/card_digital/$itemId/", 0777, true);
                     }
-                    @unlink("img/card_digital/$itemId/logo-$item->cont_logo.$item->ext_logo");
-
-                    $extension = str_replace(".", "", substr($_FILES['imageLogo']['name'], -4));
-
-                    $arrImage = array("cont_logo" => ++$item->cont_logo, "ext_logo" => $extension, "capa_logo" => true);
-                    $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                    $extension = FileUploader::allowedExtension($_FILES['imageLogo']['name'], $_FILES['imageLogo']['tmp_name'], FileUploader::ALLOWED_IMAGE);
+                    $newCont = $item->cont_logo + 1;
 
                     $filename = $_FILES['imageLogo']['tmp_name'];
                     $path = "img/card_digital/$itemId/";
 
-                    $size = getimagesize($_FILES['imageLogo']['tmp_name']);
-                    if ($size[0] == 600 && $size[1] == 280) {
-                        copy($_FILES['imageLogo']['tmp_name'], $path . "logo-$item->cont_logo" . ".$extension");
-                    } else if ($extension == "jpg" || $extension == "JPG" || $extension == "jpeg" || $extension == "JPEG") {
-                        $logo = wideImagePhoto($filename, $path, 600, 280, "logo-$item->cont_logo", ".{$extension}", 100);
-                    } else if ($extension == "png" || $extension == "PNG") {
-                        $logo = wideImagePhoto($filename, $path, 600, 280, "logo-$item->cont_logo", ".{$extension}", 9);
+                    if ($extension !== null) {
+                        $size = getimagesize($_FILES['imageLogo']['tmp_name']);
+                        if ($size[0] == 600 && $size[1] == 280) {
+                            copy($_FILES['imageLogo']['tmp_name'], $path . "logo-$newCont" . ".$extension");
+                        } else if ($extension == "jpg") {
+                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-$newCont", ".{$extension}", 100);
+                        } else if ($extension == "png") {
+                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-$newCont", ".{$extension}", 9);
+                        }
+
+                        // Só aponta o banco para a imagem nova depois que o arquivo existe
+                        if (file_exists($path . "logo-$newCont.$extension")) {
+                            @unlink("img/card_digital/$itemId/logo-$item->cont_logo.$item->ext_logo");
+
+                            $arrImage = array("cont_logo" => $newCont, "ext_logo" => $extension, "capa_logo" => true);
+                            $gerenciaPost->update8191($arrImage, $this->table, "id", $itemId, false);
+                        }
                     }
                 }
             }

@@ -36,6 +36,58 @@ Nenhuma correção foi aplicada. Este é só o plano.
 
 ---
 
+## Ordem de execução
+
+Organização em ondas combinada com o usuário fora deste documento e
+registrada aqui em 2026-10-01. O detalhe de cada item continua na seção dele,
+mais abaixo. Itens de deploy ficam em `DEPLOY-CHECKLIST.md`.
+
+**✅ Onda 1 — concluída** (2026-09-30 a 2026-10-01): C6, A6, A7, A8, C4
+etapa 1, A11, M5, M6, M8, M11, e os achados N1 e N2 (corrigidos no mesmo
+período).
+
+**✅ Onda 2 — concluída** (2026-10-01): C1, C2 (lotes 1, 2 e 3), N4, N6, N7,
+N8, C4 etapa 2.
+
+**Onda 3 — depende de decisão do usuário**:
+- C3 (+ popular `menu_access`, que hoje não bloqueia ninguém — ver C2 lote 2 e N8)
+- Junto com C3/M2: sobra do N2 (excluir anexo de atendimento sem checagem de
+  perfil) e N10, 3º item (endpoints ajax de leitura de cheque sem checagem de
+  perfil; `getBillReceiveById` sem chamador)
+- C5
+- C7
+- A5 / M2 / B5
+- A9
+- M1
+
+**Onda 4 — antes do lançamento**:
+- A2
+- A3 + M3
+- A4
+- A10
+- M4
+- N9
+- Chamada morta `ajax/global/toast` em `script.js:150` (N3, 2º item)
+- Botões Ativar/Inativar da listagem de Cheques (N10, 1º item)
+- Anexo de veículo que só grava o primeiro arquivo (N11)
+- Sobra do N1: anexos de veículo e de Contas a Pagar/Receber gravam registro
+  quebrado se enviados sem arquivo
+- N12: trocar o WideImage pelo Imagine em avatar, cartões, logos e marca
+  d'água (proposta no N12, ainda não aplicada), mais os demais itens do N12
+
+**Pós-lançamento**:
+- A1 completo
+- Grupo B: B1, B3, B4, B6 a B11 (o B5 vai na Onda 3, com A5/M2; o B2 fica fora das ondas)
+- M7, M9, M10
+- M12: **remover** a feature de moedas (decisão do usuário, 2026-10-01)
+- Métodos sem uso do `AjaxController` (N3, 1º item)
+- N5
+- Reordenação de anexos de veículo (N3, 3º item)
+- `getCustomersSuppliersAndBuilders` sem chamador e com ids fixos (N10, 2º item)
+
+**Fora das ondas**: B2 — decisão do usuário (2026-10-01): **manter
+documentado, não dropar** as tabelas/colunas órfãs. Nenhuma migration.
+
 ## CRÍTICO
 
 ### ✅ C1 — Endpoints ajax genéricos sem autenticação + SQL injection sem bind — CONCLUÍDO 2026-10-01
@@ -268,7 +320,7 @@ código — o modelo atual é opt-out (sem linha = liberado), então a proteçã
 no código sozinha não cobre o caso de outra rota nova esquecer a mesma
 checagem no futuro.
 
-### 🟡 C4 — Upload de arquivo arbitrário → execução remota de código (RCE) — etapa 1 concluída 2026-09-30, etapa 2 pendente
+### ✅ C4 — Upload de arquivo arbitrário → execução remota de código (RCE) — CONCLUÍDO (etapa 1 2026-09-30, etapa 2 2026-10-01)
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §7 (causa-raiz + achados 7.1-7.4).
 **Arquivos**: `public/.htaccess` (+ pastas de upload sem `.htaccess`
@@ -307,6 +359,72 @@ em `User.php`, `UsersController.php`, `SettingsController.php`,
    Levantar quais extensões são realmente esperadas em cada tela
    (anexo de veículo, foto de veículo, anexos financeiros, logos) antes de
    travar a whitelist, e testar upload real de cada tipo esperado depois.
+   **✅ Etapa 2 CONCLUÍDA 2026-10-01.**
+   - **Levantamento** (só leitura): 14 handlers em 12 telas. Nenhum validava
+     tipo; todos tiravam a extensão do **nome enviado** (`pathinfo`,
+     `getFileExtension` ou `substr(nome, -4)`, que transformava `foto.phtml` em
+     `html`). Os nomes de arquivo já eram gerados pelo sistema (`uniqid` ou
+     nome fixo + contador), só a extensão vinha do usuário. Banco local e
+     pastas só têm dado de teste; o dump/seed não tem nenhum anexo.
+   - **Decisões do usuário**: anexos (veículo, Contas a Pagar/Receber,
+     cliente, atendimento) = pdf, jpg/jpeg, png, xml, docx, xlsx
+     (`application/zip` aceito como MIME **só** para docx/xlsx; zip, heic, txt
+     e csv recusados); logos, avatar, cartões e logo do cliente = jpg/jpeg,
+     png; marca d'água = png; foto de veículo = jpg/jpeg, png.
+   - **Implementado** em `src/libs/FileUploader.php`: whitelists
+     `ALLOWED_ATTACHMENT`/`ALLOWED_IMAGE`/`ALLOWED_PNG`;
+     `allowedExtension()` confere extensão **e** MIME real (`finfo`), abre a
+     imagem (`getimagesize`), recusa `php*`/`phtml`/`phar`/`pht`/`phps`/
+     `html`/`htm`/`svg`/`js`/executáveis **em qualquer parte do nome**
+     (`foto.php.jpg`) e devolve a extensão normalizada (`jpeg` → `jpg`), que
+     é a gravada no disco e no banco; `typeError()` devolve a mensagem do
+     Toast (mesmo uso do `sizeLimitError` do M6). Aplicado nos 14 handlers,
+     logo depois da checagem de tamanho e antes de qualquer gravação, e na
+     extensão gravada por `uploadFiles`, `VehicleAttachments`,
+     `VehicleImages`, `User` (avatar), `UsersController` (foto do cartão),
+     `DigitalCardController` (fundo/logo, cadastro e edição),
+     `CustomerController` (logo), `SettingsController` (5 logos),
+     `BranchController` (3 logos) e `WaterMarkController`. Padrão documentado
+     em `docs/09-bibliotecas-libs.md` e `docs/03-controllers.md`.
+   - **Cabeçalhos dos anexos** (`public/.htaccess`, dentro de
+     `<IfModule mod_headers.c>`): `X-Content-Type-Options: nosniff` em
+     `attachments/<tipo>/<id>/<arquivo>` e `vehicle/<id>/attachments/<arquivo>`;
+     `Content-Disposition: attachment` nesses mesmos caminhos para tudo que não
+     é jpg/jpeg/png (pdf, xml, docx, xlsx e também arquivos antigos como
+     txt/zip). Expressão presa ao caminho exato, para não pegar rotas como
+     `vehicles/attachments/1`. `mod_headers` está ativo no Apache local
+     (2.4.56); **precisa ser testado no servidor** (ver `DEPLOY-CHECKLIST.md`
+     §3 e §7.2).
+   - **Corrigido junto (pedido do usuário)**: avatar 160×160 era gravado como
+     `-dc-` em vez de `-profile-` (`User.php`) e a foto não aparecia; avatar,
+     foto do cartão, cartão digital (fundo/logo) e logo do cliente gravavam
+     `*_ext`/`*_cont` no banco **antes** de salvar o arquivo (o registro
+     ficava apontando para arquivo inexistente, ex.: `digital_card.ext_fundo =
+     'avif'` sem arquivo). Agora o banco só é atualizado, e o arquivo antigo
+     só é apagado, depois que o novo existe. Configurações, Filial e marca
+     d'água já gravavam depois.
+   - **Teste antes × depois** (sem gravar no banco): 33 arquivos de teste
+     (válidos, disfarçados e maliciosos) passados pela lógica antiga e pela
+     nova. Antes, todos os caminhos aceitavam `php`, `html`, `svg`, `exe`,
+     `js`, `zip`, e as telas de logo (que já checavam `getimagesize`) gravavam
+     um JPEG válido com extensão `html`. Depois: aceitos só os tipos decididos,
+     com extensão normalizada; recusados php disfarçado de jpg/pdf, `foto.php.jpg`,
+     `foto.phtml`, html, svg, js, exe, zip, heic (mesmo com conteúdo JPEG), txt,
+     csv, PNG renomeado para `.txt`, JPEG com nome `.png` (e vice-versa), PDF
+     vazio e arquivo de zeros. Um JPEG válido com PHP no fim (polyglota)
+     passa, mas é gravado como `.jpg` e não executa. `typeError` conferido
+     com campo múltiplo, campo vazio, campo ausente e nome com XSS (escapado).
+     Redimensionadores com a extensão normalizada: Imagine (fotos de veículo),
+     cópia de dimensão exata e `resize1` (marca d'água) ok. Cabeçalhos por
+     `curl` antes × depois, com e sem `/public`: 9 anexos mudaram como
+     esperado; fotos de veículo, logos, rotas do sistema e login ficaram
+     idênticos (16 linhas); bloqueio de `.php` da etapa 1 continua 403.
+     **Não executados** (gravam no banco): os 14 handlers; conferido
+     estaticamente que a checagem vem antes de qualquer gravação.
+     **Limites**: o WideImage local não funciona no PHP 8 (ver N12), então o
+     redimensionamento de avatar/logos/cartões fora da dimensão exata não pôde
+     ser testado — já falhava antes; XML sem a linha `<?xml ...?>` é visto pelo
+     `finfo` como `text/plain` e é recusado.
 
 ### C5 — Registro de pagamento de parcela corrompido (tabelas de rateio de comissão inexistentes, sem transação)
 
@@ -718,6 +836,17 @@ deve ser implementada de verdade (criar a tabela `currencies` via migration
 + terminar o CRUD) ou removida por completo (controller, model, rotas
 órfãs). Não é uma correção de bug, é uma decisão de escopo de produto.
 
+**✅ Decisão do usuário (2026-10-01): remover a feature de moedas,
+pós-lançamento.** Levantamento para quando for executar: a tabela
+`currencies` e um item de menu para ela não existem no banco local, mas 16
+arquivos citam moeda — além de `CurrenciesController`, `Currencies` (model) e
+`src/view/currencies/`, também **Países** (`CountriesController`, `Countries`
+model e as 3 views de `countries/`, com o filtro `currency_name`),
+`Util.php:244` (`use RR\model\Currencies`), `AjaxController`
+(`getValueCurrency`, já listado no N3), `ajax/PaymentAgreementController`,
+`SalesChargePaymentAgreement`, `SummarySale` e `script.js`/`application.js`.
+Conferir cada um antes de apagar: a parte de Países está em uso.
+
 ---
 
 ## BAIXO
@@ -747,6 +876,9 @@ operação irreversível (perda de dado, inclusive as 7 linhas reais de
 qualquer migration de remoção ser sequer redigida, mesmo com zero código
 apontando pra elas hoje (regra do CLAUDE.md vale ainda mais para operação
 destrutiva). Manter documentado como loose end é a opção de risco zero.
+
+**✅ Decisão do usuário (2026-10-01): manter documentado, não dropar.**
+Nenhuma migration de remoção será escrita.
 
 ### B3 — Namespace/case inconsistente (`ManagerPost.php`, 3 controllers ajax)
 
@@ -852,7 +984,8 @@ removidos pela lixeira da própria tela, depois da correção N2 — sem migrati
 de veículo (`VehiclesController::handleSubmitAddAttachments`), de Contas a
 Pagar e de Contas a Receber (`handleSubmitAddAttachmentItem`) também gravam
 registro quebrado quando enviados sem arquivo; anexos de cliente não gravam,
-mas a mensagem não explica o motivo.
+mas a mensagem não explica o motivo. **Sobra agendada para a Onda 4**
+(decisão do usuário, 2026-10-01).
 
 ### ✅ N2 — Excluir anexo de atendimento nunca funcionava e travava a tela — CONCLUÍDO 2026-09-30
 
@@ -870,7 +1003,8 @@ id não existir. Os anexos sem arquivo (nº 3 e nº 4) podem ser excluídos pela
 própria tela (`DeleteFile` usa `@unlink`), dispensando migration. **Não
 corrigido (mesma família do grupo M2)**: o método de exclusão não checa
 perfil — a tela só mostra a lixeira para admin, mas a rota aceita qualquer
-usuário logado.
+usuário logado. **Sobra agendada para a Onda 3, junto com C3/M2** (decisão do
+usuário, 2026-10-01).
 
 **Causa do botão "Escolha um Anexo" não abrir — resolvido, não era código**:
 o diagnóstico no navegador provou o HTML correto (1 campo, rótulo ligado, nada
@@ -1106,6 +1240,72 @@ Já aconteciam antes; não têm relação com o C2:
   (que pediu checagem em impressões e gravações). `getBillReceiveById` não tem
   chamador e não faz nada (monta um array e não usa).
 
+### N11 — Anexo de veículo grava só o primeiro arquivo (só registrado, Onda 4)
+
+Visto no levantamento do C4 etapa 2. O campo de anexo de veículo
+(`src/view/vehicles/attachments.php`) é `attachments[]`, mas
+`VehiclesController::handleSubmitAddAttachments` só lê
+`$_FILES['attachments']['name'][0]`/`['tmp_name'][0]`: se o usuário escolher
+vários arquivos, só o primeiro é gravado, sem aviso. A validação de tipo do
+C4 confere **todos** os arquivos enviados (recusa o envio se qualquer um for
+inválido), mas continua gravando só o primeiro.
+
+### N12 — Coisas já existentes vistas no C4 etapa 2 (só registrado)
+
+Já aconteciam antes; não têm relação com a whitelist:
+- **WideImage local não funciona no PHP 8** (o mais grave): `wideImagePhoto()`
+  (`src/libs/wideImage/wide.php`) usa a cópia antiga em
+  `src/libs/wideImage/lib/`, cujo `isValidImageHandle()` exige `is_resource`;
+  no PHP 8 o GD devolve objeto `GdImage`, então **toda** carga de imagem cai
+  num erro fatal (`Class "WideImage_vendor_de77_BMP" not found`). Efeito:
+  avatar, foto do cartão do usuário, cartão digital e logo do cliente **só
+  funcionam com imagem na dimensão exata** (caminho de cópia); fora dela, erro
+  fatal. Configurações e Filial capturam o erro e mostram "extensão
+  inválida". A cópia do `vendor/smottt/wideimage` (namespace `WideImage\`)
+  já trata `GdImage` e é a que o `FileUploader` usa. Depois do C4, pelo menos
+  o banco não fica mais apontando para arquivo que não foi criado.
+- Foto do cartão do usuário (`UsersController::handleSubmitDigitalCard`):
+  apaga a foto antiga com o nome `-dp-`, mas grava com `-dc-`, então a antiga
+  nunca é apagada (sobra arquivo no disco).
+- Marca d'água: `resize1()` grava o conteúdo em JPEG dentro de um arquivo
+  `.png` (perde a transparência).
+- Banco local × disco divergem (teste): `customer_attachments` tem 10 registros
+  e 9 arquivos; `system_config` diz que há logo mini e rodapé, sem os arquivos.
+
+**Decisão do usuário (2026-10-01)**: Onda 4. Trocar o WideImage pelo Imagine
+(`imagine/imagine`, já no `composer.json` e usado nas fotos de veículo por
+`Util::resizeImageWithCanvas`). **Proposta, ainda não aplicada:**
+- **Onde**: as 21 chamadas de `wideImagePhoto()` — `User.php` (avatar, 2),
+  `UsersController::handleSubmitDigitalCard` (2), `DigitalCardController`
+  (fundo/logo, cadastro e edição, 8), `CustomerController::handleSubmitImage`
+  (1), `SettingsController::handleSubmitImages` (5), `BranchController::handleSubmitImages`
+  (3) — e a de `resize1()` em `WaterMarkController` (1).
+- **Como**: um método novo em `src/libs/Util.php`, ao lado do
+  `resizeImageWithCanvas` (mesmo `Imagine\Gd\Imagine`), em vez de uma 5ª
+  função no `Resizer.php`. Para as imagens: `thumbnail(new Box($w, $h),
+  THUMBNAIL_OUTBOUND | THUMBNAIL_FLAG_UPSCALE)`, que equivale ao
+  `resize('outside') + crop('center')` do `wideImagePhoto`; qualidade pelos
+  mesmos valores de hoje (`jpeg_quality` 100, `png_compression_level` 9). Para a
+  marca d'água: `thumbnail(new Box(200, 100), THUMBNAIL_INSET)` (cabe dentro
+  de 200×100, mantém proporção).
+- **Prova de conceito** (só no scratchpad, 2026-10-01): JPG → 230×50 e
+  600×280, PNG → 1490×2130 saíram nas dimensões exatas; marca d'água PNG com
+  transparência → 133×100, **transparência preservada** (hoje o `resize1`
+  grava JPEG dentro do `.png` e perde a transparência; com o Imagine isso se
+  resolve junto).
+- **A decidir na execução**: (1) manter o caminho "dimensão exata → `copy()`
+  do arquivo cru" ou recodificar sempre (recodificar descarta metadados e
+  qualquer conteúdo extra embutido na imagem; o custo é perder a cópia
+  idêntica byte a byte); (2) aproveitar para corrigir o `-dp-` → `-dc-` da foto
+  do cartão (item acima).
+- **Fora desta troca**: `FileUploader::uploadImg`/`uploadImgSingle` usam o
+  WideImage do `vendor/` (que funciona no PHP 8) e não têm chamador;
+  `UploadFiles.php` é a lib legada do B6. `src/libs/wideImage/` só pode ser
+  removida depois de confirmar que nada mais chama `wide.php`.
+- **Teste depois**: upload em cada uma das 12 telas com imagem fora da
+  dimensão exata (hoje erro fatal), na dimensão exata, JPG e PNG, e marca
+  d'água com PNG transparente.
+
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 
 | Grupo | Decisão pendente |
@@ -1116,9 +1316,9 @@ Já aconteciam antes; não têm relação com o C2:
 | A5/M2 | Quem pode criar/desativar filial, centro de custo, e acessar Compra/Custos de veículo, DRE, Atendimento? |
 | A9 | Qual o telefone de suporte e e-mail de contato reais da Repasse Sandré? |
 | M1 | A aba "Vendas" do cliente deveria virar "Veículo" (usando a tabela `vehicles`) ou ser removida? |
-| M12 | A feature de Moedas deveria ser implementada de verdade ou removida? |
-| B2 | Pode dropar as 6 tabelas/colunas órfãs do domínio imobiliário, ou manter documentado? |
+| ~~M12~~ | ✅ Decidido 2026-10-01: remover a feature (pós-lançamento). |
+| ~~B2~~ | ✅ Decidido 2026-10-01: manter documentado, não dropar. |
 
-Nenhuma dessas oito decisões foi presumida neste plano — todas exigem
+Nenhuma das decisões ainda pendentes foi presumida neste plano — todas exigem
 resposta do usuário antes de qualquer correção ou migration ser escrita,
 conforme a regra do CLAUDE.md de não presumir regra de negócio.

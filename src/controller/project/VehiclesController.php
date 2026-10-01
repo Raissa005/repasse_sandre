@@ -430,6 +430,11 @@ class VehiclesController extends FrontController
             redirect($this->route . "/attachments/$itemId");
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['attachments'] ?? null, FileUploader::ALLOWED_ATTACHMENT)) {
+            Toast::warningToast($typeError);
+            redirect($this->route . "/attachments/$itemId");
+        }
+
         $file = [
             'name' => $_POST['name'],
             'description' => $_POST['description'],
@@ -590,6 +595,11 @@ class VehiclesController extends FrontController
 
         if ($sizeError = FileUploader::sizeLimitError($_FILES['photos'] ?? null, FileUploader::MAX_SIZE_VEHICLE_PHOTO)) {
             Toast::warningToast($sizeError);
+            redirect($this->route . "/photos/$itemId");
+        }
+
+        if ($typeError = FileUploader::typeError($_FILES['photos'] ?? null, FileUploader::ALLOWED_IMAGE)) {
+            Toast::warningToast($typeError);
             redirect($this->route . "/photos/$itemId");
         }
 

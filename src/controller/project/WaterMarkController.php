@@ -48,6 +48,12 @@ class WaterMarkController extends FrontController
             exit;
         }
 
+        if ($typeError = FileUploader::typeError($_FILES['water_mark'] ?? null, FileUploader::ALLOWED_PNG)) {
+            Toast::warningToast($typeError);
+            header('location:' . URL . $this->route);
+            exit;
+        }
+
         $item = (new WaterMark())->getItemById8161(1);
 
         require_once APP . 'libs/wideImage/lib/WideImage.php';
@@ -55,12 +61,15 @@ class WaterMarkController extends FrontController
         require_once APP . 'libs/Resizer.php';
 
         try {
-            if (!empty($_FILES['water_mark']['tmp_name'])) {
+            $extension = !empty($_FILES['water_mark']['tmp_name'])
+                ? FileUploader::allowedExtension($_FILES['water_mark']['name'], $_FILES['water_mark']['tmp_name'], FileUploader::ALLOWED_PNG)
+                : null;
+
+            if ($extension !== null) {
                 if (!file_exists("img/more/")) {
                     mkdir("img/more/", 0777, true);
                 }
                 @unlink("img/more/water_mark-$item->cont.$item->ext");
-                $extension = str_replace(".", "", substr($_FILES['water_mark']['name'], -4));
 
                 $arrPost = array("water_mark_capa" => true, "water_mark_cont" => ++$item->cont, "water_mark_ext" => $extension,);
 

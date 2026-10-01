@@ -11,6 +11,98 @@ class FileUploader
     public const MAX_SIZE_ATTACHMENT = 20 * 1024 * 1024;
 
     /**
+     * Whitelists por tipo de upload: extensão aceita => tipos reais aceitos (MIME detectado
+     * pelo conteúdo, via finfo). O arquivo só passa se a extensão E o MIME baterem.
+     */
+    public const ALLOWED_ATTACHMENT = [
+        'pdf' => ['application/pdf'],
+        'jpg' => ['image/jpeg'],
+        'jpeg' => ['image/jpeg'],
+        'png' => ['image/png'],
+        'xml' => ['text/xml', 'application/xml'],
+        // Alguns servidores identificam docx/xlsx só como zip; zip puro continua recusado (não está na lista)
+        'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'],
+        'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip'],
+    ];
+    public const ALLOWED_IMAGE = [
+        'jpg' => ['image/jpeg'],
+        'jpeg' => ['image/jpeg'],
+        'png' => ['image/png'],
+    ];
+    public const ALLOWED_PNG = [
+        'png' => ['image/png'],
+    ];
+
+    // Extensão gravada no disco/banco
+    private const NORMALIZED_EXTENSIONS = ['jpeg' => 'jpg'];
+
+    // Recusadas em qualquer parte do nome (ex.: foto.php.jpg), independente da whitelist
+    private const BLOCKED_EXTENSIONS = '/^(php\d*|phtml|phar|pht|phps|s?html?|xhtml|svgz?|m?js|exe|com|bat|cmd|sh|msi|dll|jar|vbs|ps1|scr|cgi|pl|py|asp|aspx|jsp|htaccess)$/';
+
+    /**
+     * Extensão normalizada (jpeg -> jpg) se o arquivo passa na whitelist $allowed, ou null.
+     * Confere a extensão do nome, o tipo real do conteúdo (finfo) e, para imagem, se ela abre.
+     */
+    public static function allowedExtension(string $name, string $tmpName, array $allowed): ?string
+    {
+        $parts = explode('.', strtolower($name));
+        array_shift($parts);
+
+        foreach ($parts as $part) {
+            if (preg_match(self::BLOCKED_EXTENSIONS, $part)) {
+                return null;
+            }
+        }
+
+        $extension = self::getFileExtension($name);
+
+        if (empty($parts) || !isset($allowed[$extension]) || !is_file($tmpName)) {
+            return null;
+        }
+
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($tmpName);
+
+        if (!in_array($mime, $allowed[$extension], true)) {
+            return null;
+        }
+
+        if (strpos($mime, 'image/') === 0 && @getimagesize($tmpName) === false) {
+            return null;
+        }
+
+        return self::NORMALIZED_EXTENSIONS[$extension] ?? $extension;
+    }
+
+    /**
+     * Returns a user-facing message if any file in a $_FILES field (single or multiple)
+     * is not allowed by $allowed (see allowedExtension), otherwise null.
+     */
+    public static function typeError(?array $field, array $allowed): ?string
+    {
+        if (empty($field['name'])) {
+            return null;
+        }
+
+        $names = (array) $field['name'];
+        $tmpNames = (array) ($field['tmp_name'] ?? []);
+        $errors = (array) ($field['error'] ?? []);
+
+        foreach ($names as $i => $name) {
+            if ($name === '' || ($errors[$i] ?? UPLOAD_ERR_OK) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            if (self::allowedExtension($name, (string) ($tmpNames[$i] ?? ''), $allowed) === null) {
+                $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                $types = implode(', ', array_map('strtoupper', array_keys($allowed)));
+                return "O arquivo \"{$safeName}\" não é de um tipo aceito. Tipos aceitos: {$types}.";
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Returns a user-facing message if any file in a $_FILES field (single or multiple)
      * is over $maxBytes (or over the server's upload_max_filesize), otherwise null.
      */
@@ -202,19 +294,20 @@ class FileUploader
 
             $fileExtension = self::getFileExtension($files['name'][$i]);
 
+            // $acceptedFormats: uma das whitelists acima (ex.: self::ALLOWED_ATTACHMENT)
             if (!empty($acceptedFormats)) {
-                $fileExtension = array_search($fileExtension, $acceptedFormats);
+                $fileExtension = self::allowedExtension($files['name'][$i], $files['tmp_name'][$i], $acceptedFormats);
 
-                if ($fileExtension === false) {
+                if ($fileExtension === null) {
                     $messages[] = [
                         'error' => true,
-                        'message' => 'Extensão do arquivo não aceito'
+                        'message' => 'Extensão do arquivo não aceito',
+                        'filename' => null,
+                        'extension' => null
                     ];
 
                     continue;
                 }
-
-                $fileExtension = $acceptedFormats[$fileExtension];
             }
 
             $newName = uniqid(time());

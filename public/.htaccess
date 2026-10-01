@@ -11,6 +11,14 @@ Options -Indexes
 # Block scripts in upload folders (only applies while they have no .htaccess with RewriteEngine of their own)
 RewriteRule ^(img|attachments|vehicle)/.*\.(php[0-9]?|phtml|phar|pht|phps)(/|\.|$) - [NC,F,L]
 
+# Upload attachments (attachments/<type>/<id>/<file> and vehicle/<id>/attachments/<file>):
+# never let the browser guess the type, and force download of everything that is not an image.
+# Anchored to those exact paths so app routes like vehicles/attachments/1 are not affected.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff" "expr=%{REQUEST_URI} =~ m#/(attachments/(billsToPay|bill-receive|attendance|customer)/[0-9]+|vehicle/[0-9]+/attachments)/[^/]+$#"
+    Header always set Content-Disposition "attachment" "expr=%{REQUEST_URI} =~ m#/(attachments/(billsToPay|bill-receive|attendance|customer)/[0-9]+|vehicle/[0-9]+/attachments)/[^/]+$# && ! %{REQUEST_URI} =~ m#\.(jpe?g|png)$#i"
+</IfModule>
+
 # If the following conditions are true, then rewrite the URL:
 # If the requested filename is not a directory,
 RewriteCond %{REQUEST_FILENAME} !-d

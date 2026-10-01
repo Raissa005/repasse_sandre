@@ -6,6 +6,7 @@ use PDOException;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use RR\core\Model;
 use RR\libs\Secure;
+use RR\libs\FileUploader;
 use RR\libs\Util;
 
 use function RR\Controller\redirect;
@@ -165,27 +166,35 @@ class User extends Model
                     mkdir("img/users/$itemId/", 0777, true);
                 }
 
-                if (file_exists("img/users/$itemId/$itemId-profile-$item->profile_cont.$item->profile_ext")) {
-                    unlink("img/users/$itemId/$itemId-profile-$item->profile_cont.$item->profile_ext");
-                }
+                $extension = FileUploader::allowedExtension($files['profile_picture']['name'], $files['profile_picture']['tmp_name'], FileUploader::ALLOWED_IMAGE);
 
-                $extension = str_replace(".", "", substr($files['profile_picture']['name'], -4));
-                $this->update(["profile_capa" => true, "profile_cont" => ++$item->profile_cont, "profile_ext" => $extension], 'id', $itemId);
+                if ($extension !== null) {
+                    $newCont = $item->profile_cont + 1;
+                    $filename = $files['profile_picture']['tmp_name'];
+                    $path = "img/users/$itemId/";
 
-                if ($itemId == $_SESSION['RR']->user->id) {
-                    $_SESSION['RR']->user->profileURL = "img/users/{$item->id}/{$item->id}-profile-{$item->profile_cont}.{$extension}";
-                }
+                    $size = getimagesize($files['profile_picture']['tmp_name']);
+                    if ($size[0] == 160 && $size[1] == 160) {
+                        copy($files['profile_picture']['tmp_name'], $path . "$itemId-profile-$newCont.$extension");
+                    } else if ($extension == "jpg") {
+                        $profilePicture = wideImagePhoto($filename, $path, 160, 160, "$itemId-profile-$newCont", ".$extension", 100);
+                    } else if ($extension == "png") {
+                        $profilePicture = wideImagePhoto($filename, $path, 160, 160, "$itemId-profile-$newCont", ".$extension", 9);
+                    }
 
-                $filename = $files['profile_picture']['tmp_name'];
-                $path = "img/users/$itemId/";
+                    // Só aponta o banco para a foto nova depois que o arquivo existe
+                    if (file_exists($path . "$itemId-profile-$newCont.$extension")) {
+                        if (file_exists("img/users/$itemId/$itemId-profile-$item->profile_cont.$item->profile_ext")) {
+                            unlink("img/users/$itemId/$itemId-profile-$item->profile_cont.$item->profile_ext");
+                        }
 
-                $size = getimagesize($files['profile_picture']['tmp_name']);
-                if ($size[0] == 160 && $size[1] == 160) {
-                    copy($files['profile_picture']['tmp_name'], $path . "$itemId-dc-$item->profile_cont.$extension");
-                } else if ($extension == "jpg" || $extension == "JPG" || $extension == "jpeg" || $extension == "JPEG") {
-                    $profilePicture = wideImagePhoto($filename, $path, 160, 160, "$itemId-profile-$item->profile_cont", ".$extension", 100);
-                } else if ($extension == "png" || $extension == "PNG") {
-                    $profilePicture = wideImagePhoto($filename, $path, 160, 160, "$itemId-profile-$item->profile_cont", ".$extension", 9);
+                        $item->profile_cont = $newCont;
+                        $this->update(["profile_capa" => true, "profile_cont" => $newCont, "profile_ext" => $extension], 'id', $itemId);
+
+                        if ($itemId == $_SESSION['RR']->user->id) {
+                            $_SESSION['RR']->user->profileURL = "img/users/{$item->id}/{$item->id}-profile-{$item->profile_cont}.{$extension}";
+                        }
+                    }
                 }
             }
             $this->db->commit();

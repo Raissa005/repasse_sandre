@@ -4,6 +4,7 @@ namespace RR\model;
 
 use RR\libs\Util;
 use RR\core\Model;
+use RR\libs\FileUploader;
 
 class VehicleImages extends Model
 {
@@ -17,14 +18,13 @@ class VehicleImages extends Model
         parent::__construct($this->table, $joins);
     }
 
-    private function saveFile(array $file, int $itemId): string
+    private function saveFile(array $file, int $itemId, string $extension): string
     {
         $path = ROOT . "public/vehicle/$itemId/images";
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
         }
 
-        $extension = pathinfo($file['fileName'], PATHINFO_EXTENSION);
         $fileName = uniqid();
         $destination = "$path/$fileName.$extension";
         move_uploaded_file($file['tmp_name'], $destination);
@@ -73,7 +73,13 @@ class VehicleImages extends Model
 
     public function insertImages(array $file, int $itemId)
     {
-        $fileName = $this->saveFile($file, $itemId);
+        $extension = FileUploader::allowedExtension($file['fileName'], $file['tmp_name'], FileUploader::ALLOWED_IMAGE);
+
+        if ($extension === null) {
+            return (object)['error' => true, 'message' => 'Tipo de arquivo não aceito.'];
+        }
+
+        $fileName = $this->saveFile($file, $itemId, $extension);
 
         $vehicleImage = end((new VehicleImages)->getWithFiltersAllItems([(object)['columns' => ['id_vehicle' => (object)['comparison' => 'EQUAL', 'value' => $itemId]]]])->data);
 
@@ -81,7 +87,7 @@ class VehicleImages extends Model
             "id_vehicle" => $itemId,
             "filename" => $fileName,
             "status_site" => $file['websiteStatus'] ?? 0,
-            "extension" => pathinfo($file['fileName'], PATHINFO_EXTENSION),
+            "extension" => $extension,
             "item_order" => !empty($vehicleImage->item_order) ? $vehicleImage->item_order + 1 : 1
         ]);
     }
