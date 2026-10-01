@@ -6,6 +6,7 @@ use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\libs\Toast;
 use RR\libs\Secure;
+use RR\libs\FileUploader;
 use RR\model\WaterMark;
 use PDOException;
 
@@ -40,6 +41,12 @@ class WaterMarkController extends FrontController
     public function handleSubmitWaterMark()
     {
         Secure::check_post_method($this->route);
+
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['water_mark'] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+            Toast::warningToast($sizeError);
+            header('location:' . URL . $this->route);
+            exit;
+        }
 
         $item = (new WaterMark())->getItemById8161(1);
 

@@ -7,6 +7,7 @@ use RR\model\ModelGenerico;
 use RR\model\Branch;
 use RR\libs\Util;
 use RR\libs\Toast;
+use RR\libs\FileUploader;
 use RR\libs\Secure;
 use RR\libs\Pagination;
 use RR\libs\CommissionArrangement;
@@ -255,6 +256,13 @@ class BranchController extends FrontController
     {
         if (empty($_FILES)) {
             redirect($this->route . "/images/$itemId");
+        }
+
+        foreach (['logo_menu', 'logo_mini', 'logo_rodape'] as $field) {
+            if ($sizeError = FileUploader::sizeLimitError($_FILES[$field] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+                Toast::warningToast($sizeError);
+                redirect($this->route . "/images/$itemId");
+            }
         }
 
         $gerenciaPost = new GerenciaPost();

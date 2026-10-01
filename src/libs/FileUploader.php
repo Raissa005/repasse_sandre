@@ -6,6 +6,86 @@ use WideImage\WideImage;
 
 class FileUploader
 {
+    public const MAX_SIZE_VEHICLE_PHOTO = 8 * 1024 * 1024;
+    public const MAX_SIZE_IMAGE = 2 * 1024 * 1024;
+    public const MAX_SIZE_ATTACHMENT = 20 * 1024 * 1024;
+
+    /**
+     * Returns a user-facing message if any file in a $_FILES field (single or multiple)
+     * is over $maxBytes (or over the server's upload_max_filesize), otherwise null.
+     */
+    public static function sizeLimitError(?array $field, int $maxBytes): ?string
+    {
+        if (empty($field['name'])) {
+            return null;
+        }
+
+        $limit = min($maxBytes, self::serverUploadLimit());
+        $names = (array) $field['name'];
+        $sizes = (array) ($field['size'] ?? []);
+        $errors = (array) ($field['error'] ?? []);
+
+        foreach ($names as $i => $name) {
+            if ($name === '' || ($errors[$i] ?? UPLOAD_ERR_OK) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $overServerLimit = in_array($errors[$i] ?? UPLOAD_ERR_OK, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+
+            if ($overServerLimit || ($sizes[$i] ?? 0) > $limit) {
+                $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                return "O arquivo \"{$safeName}\" é maior que o limite de " . self::formatMegabytes($limit) . " por arquivo. Reduza o tamanho e envie novamente.";
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * True if at least one file was chosen in a $_FILES field (single or multiple).
+     * An empty file input still arrives as ['name' => [''], 'error' => [UPLOAD_ERR_NO_FILE]].
+     */
+    public static function hasSelectedFile(?array $field): bool
+    {
+        if (empty($field['name'])) {
+            return false;
+        }
+
+        $errors = (array) ($field['error'] ?? []);
+
+        foreach ((array) $field['name'] as $i => $name) {
+            if ($name !== '' && ($errors[$i] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_NO_FILE) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function serverUploadLimit(): int
+    {
+        $value = trim((string) ini_get('upload_max_filesize'));
+        $bytes = (float) $value;
+
+        switch (strtoupper(substr($value, -1))) {
+            case 'G':
+                $bytes *= 1024;
+            case 'M':
+                $bytes *= 1024;
+            case 'K':
+                $bytes *= 1024;
+        }
+
+        return $bytes > 0 ? (int) $bytes : PHP_INT_MAX;
+    }
+
+    private static function formatMegabytes(int $bytes): string
+    {
+        $megabytes = $bytes / (1024 * 1024);
+
+        return (floor($megabytes) == $megabytes ? (string) (int) $megabytes : number_format($megabytes, 1, ',', '')) . ' MB';
+    }
+
     public static function uploadImg($imgs, $paths = [], $acceptedFormats = [], $sizes = [['ext' => 'MD', 'width' => 600, 'height' => 400]])
     {
         $messages = [];

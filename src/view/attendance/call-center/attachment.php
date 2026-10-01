@@ -28,7 +28,7 @@ use RR\libs\Secure;
                                             <div class="text-center">
                                                 <a href="<?= URL . "attachments/attendance/$attachment->id_attendance/$attachment->filename.$attachment->extension" ?>" title="Donwload do Anexo" class="btn btn-warning btn-sm" download=""><i class="fas fa-file-download"></i></a>
                                                 <?php if (Secure::access_admin()) { ?>
-                                                    <a class="btn btn-danger btn-sm" href="<?= URL . $this->route . "/handleSubmitDeleteAttachment/$attachment->id" ?>"><i class="fas fa-trash-alt"></i></a>
+                                                    <button type="button" id="<?= $attachment->id ?>" class="btn btn-danger btn-sm btn-disable-item" sendTo="<?= $this->route . "/handleSubmitDeleteAttachment/" ?>"><i class="fas fa-trash-alt"></i></button>
                                                 <?php } ?>
                                             </div>
                                         </td>

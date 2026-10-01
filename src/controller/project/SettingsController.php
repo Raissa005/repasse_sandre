@@ -7,6 +7,7 @@ use RR\libs\Util;
 use RR\model\User;
 use RR\libs\Secure;
 use RR\libs\Toast;
+use RR\libs\FileUploader;
 use RR\model\MenuAccess;
 use RR\model\GerenciaPost;
 use RR\model\SystemSettings;
@@ -104,6 +105,13 @@ class SettingsController extends FrontController
 
     public function handleSubmitImages()
     {
+        foreach (['logo_menu', 'logo_mini', 'logo_login', 'logo_favicon', 'logo_rodape'] as $field) {
+            if ($sizeError = FileUploader::sizeLimitError($_FILES[$field] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+                Toast::warningToast($sizeError);
+                redirect($this->route . "/images");
+            }
+        }
+
         if (isset($_FILES)) {
             $gerenciaPost = new GerenciaPost();
             $setting = (new SystemSettings())->getItemById8161();

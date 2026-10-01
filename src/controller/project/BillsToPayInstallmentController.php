@@ -699,7 +699,13 @@ class BillsToPayInstallmentController extends FrontController
     public function printReceipt($id)
     {
         $installment = (new Contract)->getInstalmentToPayPrintReceipt($id);
-        $receipt = (new StandardContract)->getItemById($_POST['id_standard_contract']);
+        $receipt = (new StandardContract)->getItemById($_POST['id_standard_contract'] ?? 0);
+
+        if (!$receipt || (int) $receipt->type_contract !== 4 || !$receipt->status) {
+            Toast::warningToast('Modelo de recibo inválido.');
+            redirect($this->route . "/editItem/$id");
+        }
+
         $contractText = str_replace("breakPage", "<span class='break-page-print-after'></span>", $receipt->text);
 
         foreach ($installment as $key => &$value) {
@@ -846,6 +852,11 @@ class BillsToPayInstallmentController extends FrontController
 
         if (empty($_FILES)) {
             Toast::genericError();
+            redirect($this->route . "/attachment/$itemId");
+        }
+
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['attachmentEntry'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
+            Toast::warningToast($sizeError);
             redirect($this->route . "/attachment/$itemId");
         }
 

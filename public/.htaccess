@@ -8,6 +8,9 @@ RewriteEngine On
 # Prevent people from looking directly into folders
 Options -Indexes
 
+# Block scripts in upload folders (only applies while they have no .htaccess with RewriteEngine of their own)
+RewriteRule ^(img|attachments|vehicle)/.*\.(php[0-9]?|phtml|phar|pht|phps)(/|\.|$) - [NC,F,L]
+
 # If the following conditions are true, then rewrite the URL:
 # If the requested filename is not a directory,
 RewriteCond %{REQUEST_FILENAME} !-d

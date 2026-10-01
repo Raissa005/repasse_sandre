@@ -295,8 +295,12 @@ class BillReceive extends Model
             return $response;
         } catch (PDOException $error) {
             $this->db->rollBack();
-            echo $error->getMessage();
-            // exit;
+            if (ENVIRONMENT === 'development') {
+                echo $error->getMessage();
+                exit;
+            }
+            \RR\libs\Toast::genericError();
+            return (object)['error' => true, 'message' => 'Erro ao salvar o lançamento.'];
         }
     }
 

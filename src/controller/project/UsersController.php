@@ -5,6 +5,7 @@ namespace RR\controller\project;
 use RR\libs\Util;
 use RR\libs\Secure;
 use RR\libs\Toast;
+use RR\libs\FileUploader;
 use RR\model\User;
 use RR\model\Branch;
 use RR\model\Customer;
@@ -246,6 +247,11 @@ class UsersController extends FrontController
         Secure::access_seller(true);
         Secure::check_post_method($this->route);
 
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['profile_picture'] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+            Toast::warningToast($sizeError);
+            redirect($this->route . "/editItem/" . $itemId);
+        }
+
         $response = $this->model->submitEditForm($itemId, $_POST, $_FILES);
 
         Toast::checkResponse($response->error, $response->message);
@@ -380,6 +386,11 @@ class UsersController extends FrontController
     {
         Secure::access_seller(true);
         Secure::check_post_method($this->route . "/digital-card/$itemId");
+
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['profile_picture'] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+            Toast::warningToast($sizeError);
+            redirect("{$this->route}/digital-card/$itemId");
+        }
 
         $modelGenerico = new ModelGenerico();
         $gerenciaPost = new GerenciaPost();

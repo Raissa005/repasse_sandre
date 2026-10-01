@@ -165,7 +165,7 @@ class AttendanceController extends FrontController
             $arrPost["return_date"] = $_POST["return_date"];
         }
 
-        if (Secure::access_secretary()) {
+        if (Secure::access_secretary() && !empty($_POST['created_by'])) {
             $arrPost["created_by"] = $_POST['created_by'];
         }
 
@@ -210,6 +210,12 @@ class AttendanceController extends FrontController
         $attendanceModel = new Attendance();
 
         $attendance = $attendanceModel->getAttendanceById($attendanceId);
+
+        if (!$attendance) {
+            Toast::warningToast('Atendimento não encontrado.');
+            redirect($this->route);
+        }
+
         /**Formatação de data */
         $attendance->opening_date2 = Date::date_hour($attendance->opening_date);
         $attendance->return_date1 = Date::date($attendance->return_date);
@@ -399,7 +405,7 @@ class AttendanceController extends FrontController
             "updated_by" => $_SESSION['RR']->user->id,
         );
 
-        if (Secure::access_admin()) {
+        if (Secure::access_secretary() && !empty($_POST['created_by'])) {
             $arrPost['created_by'] = $_POST['created_by'];
         }
 
@@ -810,7 +816,13 @@ class AttendanceController extends FrontController
     {
         Secure::check_post_method($this->route . "/attendance/$attendanceId");
 
-        if (empty($_FILES['attachment']["tmp_name"])) {
+        if (!FileUploader::hasSelectedFile($_FILES['attachment'] ?? null)) {
+            Toast::warningToast('Nenhum arquivo foi escolhido. Clique em "Escolha um Anexo", selecione o arquivo e depois em "Adicionar".');
+            redirect($this->route . "/attendance/$attendanceId");
+        }
+
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['attachment'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
+            Toast::warningToast($sizeError);
             redirect($this->route . "/attendance/$attendanceId");
         }
 
@@ -855,11 +867,16 @@ class AttendanceController extends FrontController
         }
     }
 
-    public function handleSubmitDeleteAttachment($attendanceId)
+    public function handleSubmitDeleteAttachment($attachmentId)
     {
-        Secure::check_post_method($this->route . "/attendance/$attendanceId");
+        $attachment = (new ModelGenerico())->getItemById8161($attachmentId, "attendance_attachments");
 
-        $attachment = (new ModelGenerico())->getItemById8161($attendanceId, "attendance_attachments");
+        if (!$attachment) {
+            Toast::warningToast('Anexo não encontrado.');
+            redirect($this->route);
+        }
+
+        Secure::check_post_method($this->route . "/attendance/$attachment->id_attendance");
 
         $arrTimeline = [
             "id_attendance" => $attachment->id_attendance,
@@ -873,7 +890,7 @@ class AttendanceController extends FrontController
             (new GerenciaPost())->insert7181($arrTimeline, "attendance_timeline", null, false);
 
             DeleteFile::deleteFile(
-                [$attendanceId],
+                [$attachmentId],
                 "attendance_attachments",
                 ["attachments/attendance/$attachment->id_attendance/$attachment->filename.$attachment->extension"]
             );

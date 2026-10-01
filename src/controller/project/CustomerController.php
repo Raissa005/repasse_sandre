@@ -734,6 +734,11 @@ class CustomerController extends FrontController
 
     public function handleSubmitAddAttachment($customerId)
     {
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['file'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
+            Toast::warningToast($sizeError);
+            redirect("{$this->route}/attachment/$customerId/");
+        }
+
         $attachments = FileUploader::uploadFiles(
             $_FILES['file'],
             array_fill(0, count($_FILES['file']) + 1, "attachments/customer/$customerId")
@@ -765,6 +770,11 @@ class CustomerController extends FrontController
 
     public function handleSubmitImage($customerId)
     {
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['logo'] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+            Toast::warningToast($sizeError);
+            redirect($this->route . "/image/$customerId");
+        }
+
         if (isset($_FILES)) {
             $gerenciaPost = new GerenciaPost();
             $item = $this->model->getCustomerById($customerId);

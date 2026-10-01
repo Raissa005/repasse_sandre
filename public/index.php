@@ -25,6 +25,13 @@ require ROOT . 'vendor/autoload.php';
 // load application config (error reporting etc.)
 require APP . 'config/config.php';
 
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_samesite', 'Lax');
+// "secure" only over HTTPS, otherwise the browser drops the cookie and login breaks on plain http
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+ini_set('session.cookie_secure', $isHttps ? 1 : 0);
+
 // load application class
 use RR\core\Application;
 

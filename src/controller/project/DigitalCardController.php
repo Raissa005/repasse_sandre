@@ -6,6 +6,7 @@ use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\libs\Util;
 use RR\libs\Toast;
+use RR\libs\FileUploader;
 use RR\libs\Secure;
 use RR\model\DigitalCard;
 use PDOException;
@@ -60,6 +61,14 @@ class DigitalCardController extends FrontController
     {
         Secure::access_admin(true);
         Secure::check_post_method($this->route . "/addItem");
+
+        foreach (['imageFundo', 'imageLogo'] as $field) {
+            if ($sizeError = FileUploader::sizeLimitError($_FILES[$field] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+                Toast::warningToast($sizeError);
+                header('location:' . URL . $this->route . "/addItem");
+                exit;
+            }
+        }
 
         $gerenciaPost = new GerenciaPost();
 
@@ -163,6 +172,14 @@ class DigitalCardController extends FrontController
     public function handleSubmitEditItem($itemId)
     {
         Secure::check_post_method($this->route . "/editItem/$itemId");
+
+        foreach (['imageFundo', 'imageLogo'] as $field) {
+            if ($sizeError = FileUploader::sizeLimitError($_FILES[$field] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
+                Toast::warningToast($sizeError);
+                header('location:' . URL . $this->route . "/editItem/$itemId");
+                exit;
+            }
+        }
 
         $modelGenerico = new ModelGenerico();
         $gerenciaPost = new GerenciaPost();

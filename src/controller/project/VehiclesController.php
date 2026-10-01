@@ -6,6 +6,7 @@ use RR\libs\Util;
 use RR\model\User;
 use RR\libs\Secure;
 use RR\libs\Toast;
+use RR\libs\FileUploader;
 use PDOException;
 use RR\model\States;
 use RR\model\Cities;
@@ -411,6 +412,11 @@ class VehiclesController extends FrontController
             redirect($this->route . "/attachment/$itemId");
         }
 
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['attachments'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
+            Toast::warningToast($sizeError);
+            redirect($this->route . "/attachments/$itemId");
+        }
+
         $file = [
             'name' => $_POST['name'],
             'description' => $_POST['description'],
@@ -566,6 +572,11 @@ class VehiclesController extends FrontController
 
         if (empty($_FILES)) {
             Toast::genericError();
+            redirect($this->route . "/photos/$itemId");
+        }
+
+        if ($sizeError = FileUploader::sizeLimitError($_FILES['photos'] ?? null, FileUploader::MAX_SIZE_VEHICLE_PHOTO)) {
+            Toast::warningToast($sizeError);
             redirect($this->route . "/photos/$itemId");
         }
 

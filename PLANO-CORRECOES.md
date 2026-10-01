@@ -110,7 +110,7 @@ código — o modelo atual é opt-out (sem linha = liberado), então a proteçã
 no código sozinha não cobre o caso de outra rota nova esquecer a mesma
 checagem no futuro.
 
-### C4 — Upload de arquivo arbitrário → execução remota de código (RCE)
+### 🟡 C4 — Upload de arquivo arbitrário → execução remota de código (RCE) — etapa 1 concluída 2026-09-30, etapa 2 pendente
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §7 (causa-raiz + achados 7.1-7.4).
 **Arquivos**: `public/.htaccess` (+ pastas de upload sem `.htaccess`
@@ -131,6 +131,18 @@ em `User.php`, `UsersController.php`, `SettingsController.php`,
    de produção permite `.htaccess` nessas pastas (se o vhost usar
    `AllowOverride None`, a regra não teria efeito e precisaria ir direto no
    `httpd.conf`/vhost).
+   **✅ Etapa 1 CONCLUÍDA 2026-09-30** — com ajuste de abordagem: em vez
+   de um `.htaccess` por pasta, a regra foi posta em `public/.htaccess`
+   (`RewriteRule ^(img|attachments|vehicle)/...\.php... - [F]`), porque
+   `public/attachments/` e `public/vehicle/` pertencem ao usuário do Apache
+   e não aceitam escrita sem `sudo`. Usa só `mod_rewrite`, que o próprio
+   arquivo já exigia, então não há risco de erro 500 por `AllowOverride`
+   restrito em produção. Testado localmente: um `.php` de teste em
+   `public/img/` **executava** antes (HTTP 200) e passou a dar 403;
+   imagens e rotas do sistema seguem com 200/302 normais, pelas duas
+   formas de acesso (com e sem `/public`). Ressalva: se alguma pasta de
+   upload ganhar um `.htaccess` próprio com `RewriteEngine`, a regra deixa
+   de valer nela.
 2. **Whitelist de extensão por vetor** — risco **MÉDIO**: restringir
    extensão aceita pode rejeitar algum tipo de arquivo que hoje "funciona"
    por acidente (extensão não padrão já usada por algum usuário/tela).
@@ -271,6 +283,14 @@ explicitamente no código (a inconsistência dentro do próprio
 **Arquivos**: `src/model/Contract.php` (`getInstalmentReceivePrintReceipt`,
 `getInstalmentToPayPrintReceipt`).
 
+**Nota de execução (2026-09-30)**: ao preparar o teste manual, confirmei
+que o cenário é **menos comum do que a Auditoria 2 descreveu**: o formulário
+de cadastro de cliente (`customer/add.php`) sempre envia profissão (padrão
+"AUTÔNOMO") e estado civil (padrão id 1) como campos obrigatórios, inclusive
+para PJ, e hoje nenhum cliente no banco tem esses campos nulos. O bug só
+aconteceria com dado importado/migrado sem esses campos. A correção continua
+válida como defesa, mas não é reproduzível pela tela hoje.
+
 **Risco da correção**: BAIXO. Trocar os dois `INNER JOIN` (profissão,
 estado civil) por `LEFT JOIN` é mudança pequena e seguramente mais
 permissiva, não mais restritiva. Testar a geração do recibo para os 3
@@ -332,7 +352,7 @@ afetada, precisa mapear todas antes). BAIXO se a correção for pontual só no
 de montar o JSON, sem tocar na lib) — abordagem recomendada por ser mais
 isolada.
 
-### A11 — Vazamento de erro PDO sem gate de ambiente (Contas a Pagar/Receber)
+### ✅ A11 — Vazamento de erro PDO sem gate de ambiente (Contas a Pagar/Receber) — CONCLUÍDO 2026-09-30
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §8.1.
 **Arquivos**: `src/model/BillsToPay.php:256-259`,
@@ -401,7 +421,14 @@ de recuperação de senha já enviado e não usado** no momento do deploy —
 comunicar isso ao time antes de trocar, ainda que o risco técnico seja
 baixo.
 
-### M5 — Config/debug: blocos dependentes de ambiente de produção não verificável
+### ✅ M5 — Config/debug: blocos dependentes de ambiente de produção não verificável — CONCLUÍDO 2026-09-30 (parte de código)
+
+**Nota de execução**: `else` adicionado em `config.example.php` (versionado)
+e no `config.php` local. Em vez de `error_reporting(0)`, o `else` desliga só
+a **exibição** (`display_errors=0`) e mantém o **log** (`log_errors=1`), para
+os erros continuarem diagnosticáveis no log do servidor. **Pendente, fora do
+código**: o `config.php` de produção não é versionado — aplicar o mesmo
+`else` lá manualmente e confirmar que `ENVIRONMENT` está como `'production'`.
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §8.2, §8.3.
 **Arquivos**: ~20 blocos em `src/model/*.php`, `src/config/config.php:16-19`.
@@ -413,7 +440,32 @@ blocos "gated" não é uma correção de código em si; é uma recomendação de
 **confirmar com o usuário** qual é o `ENVIRONMENT` real do `config.php` de
 produção (não está neste repositório, que não é versionado).
 
-### M6 — Sem limite de tamanho de upload + sem hardening de cookie de sessão
+### ✅ M6 — Sem limite de tamanho de upload + sem hardening de cookie de sessão — CONCLUÍDO 2026-09-30
+
+**Limite de upload (decidido pelo usuário)**: fotos de veículo 8 MB;
+logos/avatar/cartão digital 2 MB; anexos de veículo e financeiros 20 MB.
+Verificação única em `FileUploader::sizeLimitError()` (constantes
+`MAX_SIZE_VEHICLE_PHOTO`/`MAX_SIZE_IMAGE`/`MAX_SIZE_ATTACHMENT`), chamada no
+início de 11 handlers, **antes** de qualquer gravação: Vehicles (fotos,
+anexos), BillsToPay/BillReceive Installment (anexos), Users (avatar, foto do
+cartão), Settings (5 logos), Branch (3 logos), DigitalCard (fundo/logo, add e
+edit), Customer (logo). Mensagem com nome do arquivo (escapado) e o limite;
+se o `upload_max_filesize` do servidor for menor que o limite do sistema, a
+mensagem usa o menor. **Complemento (decisão do usuário)**: marca d'água 2 MB
+(`WaterMarkController`), anexos de cliente e de atendimento 20 MB
+(`CustomerController::handleSubmitAddAttachment`,
+`AttendanceController::handleSubmitAddAttachments`) — agora os 14 handlers
+de upload do sistema têm limite. **Limitação**: se o
+envio inteiro passar do `post_max_size` do servidor (40M local), o PHP descarta
+o formulário antes de chegar ao código e aparece o erro genérico "Tente
+novamente".
+
+**Nota de execução**: flags de cookie aplicadas em `public/index.php` (versionado,
+roda antes de todos os `session_start()`): `HttpOnly`, `SameSite=Lax`, e `secure`
+**só quando a requisição é HTTPS** (inclusive atrás de proxy via
+`X-Forwarded-Proto`) — ligar `secure` sempre quebraria o login em `http://`.
+Verificado no cabeçalho `Set-Cookie`. Nenhum JS do projeto lê o cookie de
+sessão, então `HttpOnly` não quebra nada.
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §7.5, §9.
 
@@ -434,7 +486,20 @@ específico ainda não usado em produção) — testar no ambiente de deploy rea
 (não só XAMPP local), já que o achado #12 é justamente sobre diferença de
 topologia de servidor.
 
-### M8 — `$_POST['created_by']` sem `isset()` no cadastro de Atendimento
+### ✅ M8 — `$_POST['created_by']` sem `isset()` no cadastro de Atendimento — CONCLUÍDO 2026-09-30
+
+**Nota de execução**: em vez de `?? null` (que ainda gravaria `NULL`, que é
+justamente o que esconde o atendimento), a sobrescrita agora só acontece se
+vier valor (`!empty($_POST['created_by'])`); sem valor, fica o usuário logado,
+que já era o padrão da linha 157.
+
+**✅ Edição também corrigida (2026-09-30, pedido do usuário)**:
+`handleSubmitEditAttendance()` (`AttendanceController.php:402`) agora só
+troca o dono se vier valor; campo vazio não entra no `UPDATE` e o dono atual é
+mantido. **✅ Inconsistência resolvida (decisão do usuário)**: Secretária,
+Gerentes e Administrador podem reatribuir — o controller de edição passou de
+`access_admin()` para `access_secretary()`, a mesma regra que a tela já usava
+para mostrar o campo (Vendedor continua sem o campo e sem poder trocar).
 
 **Fontes**: `AUDITORIA-2-tecnica.md`, achado MÉDIO #13.
 **Arquivos**: `src/controller/project/AttendanceController.php:168-170`.
@@ -466,7 +531,15 @@ migration de coluna + atualizar coerentemente 4 arquivos, testando a
 geração do cartão digital depois). BAIXO/zero se optar só por documentar a
 confusão sem renomear (nenhuma ação de código).
 
-### M11 — Templates de contrato imobiliário acessíveis via manipulação de POST
+### ✅ M11 — Templates de contrato imobiliário acessíveis via manipulação de POST — CONCLUÍDO 2026-09-30
+
+**Nota de execução**: em vez de mudar a consulta, a validação foi feita logo
+após buscar o modelo, nos dois `printReceipt()`: se o id não existir, não for
+`type_contract = 4` (mesmo filtro do dropdown) ou estiver com `status = 0`,
+mostra "Modelo de recibo inválido." e volta para a parcela
+(`bill-receive-installment/edit/{id}` / `bills-to-pay-installment/editItem/{id}`,
+nomes de rota conferidos). `redirect()` encerra com `exit`, então o contrato
+não chega a ser montado.
 
 **Fontes**: `AUDITORIA-4-identidade.md` §3.
 **Arquivos**: `BillReceiveInstallmentController.php:962`,
@@ -604,6 +677,51 @@ correção pontual. Incluído aqui só por completude do rastreamento, não como
 pendência a agendar.
 
 ---
+
+## Achados novos durante a execução
+
+### ✅ N1 — Anexo de atendimento gravado sem arquivo — CONCLUÍDO 2026-09-30
+
+Reportado em uso real: o registro nº 3 de `attendance_attachments`
+(atendimento 1) foi gravado sem arquivo (extensão `NULL`, nada no disco), e
+entrou na linha do tempo como "Adicionou um novo anexo". Causa: um campo de
+arquivo vazio chega como `tmp_name = ['']`, e a checagem
+`empty($_FILES['attachment']['tmp_name'])` não barrava isso. Corrigido em
+`AttendanceController::handleSubmitAddAttachments` com a nova
+`FileUploader::hasSelectedFile()`: sem arquivo escolhido, nada é gravado e
+aparece mensagem clara. Os registros nº 3 e nº 4 (sem arquivo) podem ser
+removidos pela lixeira da própria tela, depois da correção N2 — sem migration. **Mesmo defeito, NÃO corrigido**: anexos
+de veículo (`VehiclesController::handleSubmitAddAttachments`), de Contas a
+Pagar e de Contas a Receber (`handleSubmitAddAttachmentItem`) também gravam
+registro quebrado quando enviados sem arquivo; anexos de cliente não gravam,
+mas a mensagem não explica o motivo.
+
+### ✅ N2 — Excluir anexo de atendimento nunca funcionava e travava a tela — CONCLUÍDO 2026-09-30
+
+Reportado em uso real (erro fatal ao clicar na lixeira). Dois defeitos
+antigos somados: (1) a lixeira era um link GET, mas
+`handleSubmitDeleteAttachment` exige POST (`check_post_method`) — a exclusão
+nunca acontecia; (2) nessa falha, redirecionava para
+`attendance/attendance/{id}` usando o **id do anexo** (parâmetro mal nomeado
+`$attendanceId`), abrindo um atendimento inexistente, e `attendance()` não
+tratava id inexistente → fatal. Corrigido: lixeira no padrão do projeto
+(`btn-disable-item` + modal de confirmação POST, igual aos anexos de Contas a
+Pagar/Receber); método com `$attachmentId` e redirecionando sempre para o
+atendimento dono do anexo; `attendance()` volta para a listagem com aviso se o
+id não existir. Os anexos sem arquivo (nº 3 e nº 4) podem ser excluídos pela
+própria tela (`DeleteFile` usa `@unlink`), dispensando migration. **Não
+corrigido (mesma família do grupo M2)**: o método de exclusão não checa
+perfil — a tela só mostra a lixeira para admin, mas a rota aceita qualquer
+usuário logado.
+
+**Causa do botão "Escolha um Anexo" não abrir — resolvido, não era código**:
+o diagnóstico no navegador provou o HTML correto (1 campo, rótulo ligado, nada
+cobrindo). Era uma janela de seleção de arquivo presa naquela aba do Chrome;
+em aba nova abriu normalmente. **Arquivo "sumindo" no envio — também não era
+código**: log temporário (já removido) mostrou `error=4`/`name=""` ao escolher
+`Google Chrome.app` — no macOS um `.app` é uma pasta, e navegadores não enviam
+pastas por campo de arquivo; a mensagem "Nenhum arquivo foi escolhido" estava
+correta. Provavelmente a mesma origem dos anexos nº 3 e nº 4 sem arquivo.
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 
