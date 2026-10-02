@@ -277,9 +277,6 @@ class BranchController extends FrontController
         $item = $this->model->getItemById8161($itemId);
 
         try {
-            require_once APP . 'libs/wideImage/lib/WideImage.php';
-            require_once APP . 'libs/wideImage/wide.php';
-            require_once APP . 'libs/Resizer.php';
 
             $allowedImageTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
             $invalidExtension = false;
@@ -299,15 +296,14 @@ class BranchController extends FrontController
                         $path = "img/branch/$itemId/";
                         $newCont = $item->logo_menu_cont + 1;
 
-                        if ($size[0] == 230 && $size[1] == 50) {
-                            copy($_FILES['logo_menu']['tmp_name'], $path . "logo_menu-$newCont.$extension");
+                        // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                        if (Util::resizeImageCrop($filename, 230, 50, $path . "logo_menu-$newCont.$extension")) {
+                            @unlink("img/branch/$itemId/logo_menu-$item->logo_menu_cont.$item->logo_menu_ext");
+                            $item->logo_menu_cont = $newCont;
+                            $gerenciaPost->update8191(["logo_menu_capa" => 1, "logo_menu_cont" => $newCont, "logo_menu_ext" => $extension], $this->table, "id", $itemId, false);
                         } else {
-                            wideImagePhoto($filename, $path, 230, 50, "logo_menu-$newCont", ".$extension", 9);
+                            $invalidExtension = true;
                         }
-
-                        @unlink("img/branch/$itemId/logo_menu-$item->logo_menu_cont.$item->logo_menu_ext");
-                        $item->logo_menu_cont = $newCont;
-                        $gerenciaPost->update8191(["logo_menu_capa" => 1, "logo_menu_cont" => $newCont, "logo_menu_ext" => $extension], $this->table, "id", $itemId, false);
                     } catch (\Throwable $error) {
                         $invalidExtension = true;
                     }
@@ -331,15 +327,14 @@ class BranchController extends FrontController
                         $path = "img/branch/$itemId/";
                         $newCont = $item->logo_mini_cont + 1;
 
-                        if ($size[0] == 50 && $size[1] == 50) {
-                            copy($_FILES['logo_mini']['tmp_name'], $path . "logo_mini-$newCont.$extension");
+                        // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                        if (Util::resizeImageCrop($filename, 50, 50, $path . "logo_mini-$newCont.$extension")) {
+                            @unlink("img/branch/$itemId/logo_mini-$item->logo_mini_cont.$item->logo_mini_ext");
+                            $item->logo_mini_cont = $newCont;
+                            $gerenciaPost->update8191(["logo_mini_capa" => 1, "logo_mini_cont" => $newCont, "logo_mini_ext" => $extension], $this->table, "id", $itemId, false);
                         } else {
-                            wideImagePhoto($filename, $path, 50, 50, "logo_mini-$newCont", ".$extension", 9);
+                            $invalidExtension = true;
                         }
-
-                        @unlink("img/branch/$itemId/logo_mini-$item->logo_mini_cont.$item->logo_mini_ext");
-                        $item->logo_mini_cont = $newCont;
-                        $gerenciaPost->update8191(["logo_mini_capa" => 1, "logo_mini_cont" => $newCont, "logo_mini_ext" => $extension], $this->table, "id", $itemId, false);
                     } catch (\Throwable $error) {
                         $invalidExtension = true;
                     }
@@ -363,15 +358,14 @@ class BranchController extends FrontController
                         $path = "img/branch/$itemId/";
                         $newCont = $item->logo_rodape_cont + 1;
 
-                        if ($size[0] == 220 && $size[1] == 100) {
-                            copy($_FILES['logo_rodape']['tmp_name'], $path . "logo_rodape-$newCont.$extension");
+                        // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                        if (Util::resizeImageCrop($filename, 220, 100, $path . "logo_rodape-$newCont.$extension")) {
+                            @unlink("img/branch/$itemId/logo_rodape-$item->logo_rodape_cont.$item->logo_rodape_ext");
+                            $item->logo_rodape_cont = $newCont;
+                            $gerenciaPost->update8191(["logo_rodape_capa" => 1, "logo_rodape_cont" => $newCont, "logo_rodape_ext" => $extension], $this->table, "id", $itemId, false);
                         } else {
-                            wideImagePhoto($filename, $path, 220, 100, "logo_rodape-$newCont", ".$extension", 9);
+                            $invalidExtension = true;
                         }
-
-                        @unlink("img/branch/$itemId/logo_rodape-$item->logo_rodape_cont.$item->logo_rodape_ext");
-                        $item->logo_rodape_cont = $newCont;
-                        $gerenciaPost->update8191(["logo_rodape_capa" => 1, "logo_rodape_cont" => $newCont, "logo_rodape_ext" => $extension], $this->table, "id", $itemId, false);
                     } catch (\Throwable $error) {
                         $invalidExtension = true;
                     }

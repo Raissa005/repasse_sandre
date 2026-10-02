@@ -788,9 +788,6 @@ class CustomerController extends FrontController
             $item = $this->model->getCustomerById($customerId);
 
             try {
-                require_once APP . 'libs/wideImage/lib/WideImage.php';
-                require_once APP . 'libs/wideImage/wide.php';
-                require_once APP . 'libs/Resizer.php';
 
                 if (!empty($_FILES['logo']['tmp_name'])) {
 
@@ -804,12 +801,7 @@ class CustomerController extends FrontController
                     $path = "img/customer/$customerId/";
 
                     if ($extension !== null) {
-                        $size = getimagesize($_FILES['logo']['tmp_name']);
-                        if ($size[0] == 150 && $size[1] == 150) {
-                            copy($_FILES['logo']['tmp_name'], $path . "logo-$newCont.$extension");
-                        } else {
-                            $logo = wideImagePhoto($filename, $path, 150, 150, "logo-$newCont", ".$extension", 9);
-                        }
+                        Util::resizeImageCrop($filename, 150, 150, $path . "logo-$newCont.$extension");
 
                         // Só aponta o banco para o logo novo depois que o arquivo existe
                         if (file_exists($path . "logo-$newCont.$extension")) {

@@ -173,9 +173,6 @@ class User extends Model
             }
 
             if (!empty($files['profile_picture']['tmp_name'])) {
-                require_once APP . 'libs/wideImage/lib/WideImage.php';
-                require_once APP . 'libs/wideImage/wide.php';
-                require_once APP . 'libs/Resizer.php';
 
                 if (!file_exists("img/users/$itemId/")) {
                     mkdir("img/users/$itemId/", 0777, true);
@@ -188,14 +185,7 @@ class User extends Model
                     $filename = $files['profile_picture']['tmp_name'];
                     $path = "img/users/$itemId/";
 
-                    $size = getimagesize($files['profile_picture']['tmp_name']);
-                    if ($size[0] == 160 && $size[1] == 160) {
-                        copy($files['profile_picture']['tmp_name'], $path . "$itemId-profile-$newCont.$extension");
-                    } else if ($extension == "jpg") {
-                        $profilePicture = wideImagePhoto($filename, $path, 160, 160, "$itemId-profile-$newCont", ".$extension", 100);
-                    } else if ($extension == "png") {
-                        $profilePicture = wideImagePhoto($filename, $path, 160, 160, "$itemId-profile-$newCont", ".$extension", 9);
-                    }
+                    Util::resizeImageCrop($filename, 160, 160, $path . "$itemId-profile-$newCont.$extension");
 
                     // Só aponta o banco para a foto nova depois que o arquivo existe
                     if (file_exists($path . "$itemId-profile-$newCont.$extension")) {

@@ -126,9 +126,6 @@ class SettingsController extends FrontController
             $gerenciaPost = new GerenciaPost();
             $setting = (new SystemSettings())->getItemById8161();
             try {
-                require_once APP . 'libs/wideImage/lib/WideImage.php';
-                require_once APP . 'libs/wideImage/wide.php';
-                require_once APP . 'libs/Resizer.php';
 
                 $allowedImageTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
                 $invalidExtension = false;
@@ -148,15 +145,14 @@ class SettingsController extends FrontController
                             $path = "img/settings/";
                             $newCont = $setting->logo_menu_cont + 1;
 
-                            if ($size[0] == 230 && $size[1] == 50) {
-                                copy($_FILES['logo_menu']['tmp_name'], $path . "logo_menu-" . $newCont . ".$extension");
+                            // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                            if (Util::resizeImageCrop($filename, 230, 50, $path . "logo_menu-" . $newCont . ".$extension")) {
+                                @unlink("img/settings/logo_menu-$setting->logo_menu_cont.$setting->logo_menu_ext");
+                                $setting->logo_menu_cont = $newCont;
+                                $gerenciaPost->update8191(["logo_menu_cont" => $newCont, "logo_menu_ext" => $extension, "logo_menu_capa" => true], $this->table, "id", 1, false);
                             } else {
-                                wideImagePhoto($filename, $path, 230, 50, "logo_menu-" . $newCont, ".$extension", 9);
+                                $invalidExtension = true;
                             }
-
-                            @unlink("img/settings/logo_menu-$setting->logo_menu_cont.$setting->logo_menu_ext");
-                            $setting->logo_menu_cont = $newCont;
-                            $gerenciaPost->update8191(["logo_menu_cont" => $newCont, "logo_menu_ext" => $extension, "logo_menu_capa" => true], $this->table, "id", 1, false);
                         } catch (\Throwable $error) {
                             $invalidExtension = true;
                         }
@@ -180,15 +176,14 @@ class SettingsController extends FrontController
                             $path = "img/settings/";
                             $newCont = $setting->logo_mini_cont + 1;
 
-                            if ($size[0] == 50 && $size[1] == 50) {
-                                copy($_FILES['logo_mini']['tmp_name'], $path . "logo_mini-" . $newCont . ".$extension");
+                            // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                            if (Util::resizeImageCrop($filename, 50, 50, $path . "logo_mini-" . $newCont . ".$extension")) {
+                                @unlink("img/settings/logo_mini-$setting->logo_mini_cont.$setting->logo_mini_ext");
+                                $setting->logo_mini_cont = $newCont;
+                                $gerenciaPost->update8191(["logo_mini_cont" => $newCont, "logo_mini_ext" => $extension, "logo_mini_capa" => true], $this->table, "id", 1, false);
                             } else {
-                                wideImagePhoto($filename, $path, 50, 50, "logo_mini-" . $newCont, ".$extension", 9);
+                                $invalidExtension = true;
                             }
-
-                            @unlink("img/settings/logo_mini-$setting->logo_mini_cont.$setting->logo_mini_ext");
-                            $setting->logo_mini_cont = $newCont;
-                            $gerenciaPost->update8191(["logo_mini_cont" => $newCont, "logo_mini_ext" => $extension, "logo_mini_capa" => true], $this->table, "id", 1, false);
                         } catch (\Throwable $error) {
                             $invalidExtension = true;
                         }
@@ -212,15 +207,14 @@ class SettingsController extends FrontController
                             $path = "img/settings/";
                             $newCont = $setting->logo_login_cont + 1;
 
-                            if ($size[0] == 320 && $size[1] == 100) {
-                                copy($_FILES['logo_login']['tmp_name'], $path . "logo_login-" . $newCont . ".$extension");
+                            // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                            if (Util::resizeImageCrop($filename, 320, 100, $path . "logo_login-" . $newCont . ".$extension")) {
+                                @unlink("img/settings/logo_login-$setting->logo_login_cont.$setting->logo_login_ext");
+                                $setting->logo_login_cont = $newCont;
+                                $gerenciaPost->update8191(["logo_login_cont" => $newCont, "logo_login_ext" => $extension, "logo_login_capa" => true], $this->table, "id", 1, false);
                             } else {
-                                wideImagePhoto($filename, $path, 320, 100, "logo_login-" . $newCont, ".$extension", 9);
+                                $invalidExtension = true;
                             }
-
-                            @unlink("img/settings/logo_login-$setting->logo_login_cont.$setting->logo_login_ext");
-                            $setting->logo_login_cont = $newCont;
-                            $gerenciaPost->update8191(["logo_login_cont" => $newCont, "logo_login_ext" => $extension, "logo_login_capa" => true], $this->table, "id", 1, false);
                         } catch (\Throwable $error) {
                             $invalidExtension = true;
                         }
@@ -244,15 +238,14 @@ class SettingsController extends FrontController
                             $path = "img/settings/";
                             $newCont = $setting->logo_favicon_cont + 1;
 
-                            if ($size[0] == 20 && $size[1] == 20) {
-                                copy($_FILES['logo_favicon']['tmp_name'], $path . "logo_favicon-" . $newCont . ".$extension");
+                            // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                            if (Util::resizeImageCrop($filename, 20, 20, $path . "logo_favicon-" . $newCont . ".$extension")) {
+                                @unlink("img/settings/logo_favicon-$setting->logo_favicon_cont.$setting->logo_favicon_ext");
+                                $setting->logo_favicon_cont = $newCont;
+                                $gerenciaPost->update8191(["logo_favicon_cont" => $newCont, "logo_favicon_ext" => $extension, "logo_favicon_capa" => true], $this->table, "id", 1, false);
                             } else {
-                                wideImagePhoto($filename, $path, 20, 20, "logo_favicon-" . $newCont, ".$extension", 9);
+                                $invalidExtension = true;
                             }
-
-                            @unlink("img/settings/logo_favicon-$setting->logo_favicon_cont.$setting->logo_favicon_ext");
-                            $setting->logo_favicon_cont = $newCont;
-                            $gerenciaPost->update8191(["logo_favicon_cont" => $newCont, "logo_favicon_ext" => $extension, "logo_favicon_capa" => true], $this->table, "id", 1, false);
                         } catch (\Throwable $error) {
                             $invalidExtension = true;
                         }
@@ -276,15 +269,14 @@ class SettingsController extends FrontController
                             $path = "img/settings/";
                             $newCont = $setting->logo_rodape_cont + 1;
 
-                            if ($size[0] == 220 && $size[1] == 115) {
-                                copy($_FILES['logo_rodape']['tmp_name'], $path . "logo_rodape-" . $newCont . ".$extension");
+                            // Só apaga a imagem antiga e aponta o banco para a nova depois que o arquivo existe
+                            if (Util::resizeImageCrop($filename, 220, 115, $path . "logo_rodape-" . $newCont . ".$extension")) {
+                                @unlink("img/settings/logo_rodape-$setting->logo_rodape_cont.$setting->logo_rodape_ext");
+                                $setting->logo_rodape_cont = $newCont;
+                                $gerenciaPost->update8191(["logo_rodape_cont" => $newCont, "logo_rodape_ext" => $extension, "logo_rodape_capa" => true], $this->table, "id", 1, false);
                             } else {
-                                wideImagePhoto($filename, $path, 220, 115, "logo_rodape-" . $newCont, ".$extension", 9);
+                                $invalidExtension = true;
                             }
-
-                            @unlink("img/settings/logo_rodape-$setting->logo_rodape_cont.$setting->logo_rodape_ext");
-                            $setting->logo_rodape_cont = $newCont;
-                            $gerenciaPost->update8191(["logo_rodape_cont" => $newCont, "logo_rodape_ext" => $extension, "logo_rodape_capa" => true], $this->table, "id", 1, false);
                         } catch (\Throwable $error) {
                             $invalidExtension = true;
                         }

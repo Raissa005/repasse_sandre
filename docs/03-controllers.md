@@ -89,9 +89,13 @@ de escolher qual usar):
 1. Cria a pasta de destino se não existir (`mkdir(..., 0777, true)`).
 2. Calcula o novo contador de versão (`logo_menu_cont + 1`), usado no nome do
    arquivo para invalidar cache do navegador.
-3. Redimensiona via `wideImagePhoto()` (`src/libs/wideImage/wide.php`, biblioteca
-   WideImage vendorizada) se o tamanho não bater com o esperado; senão só copia.
-4. **Só depois que o arquivo novo existe**: remove o antigo (`@unlink`) e persiste
+3. Grava via `Util::resizeImageCrop($tmp, $largura, $altura, $destino)` (Imagine:
+   redimensiona e corta pelo centro na dimensão exata). **Sempre** recodifica, mesmo
+   se a imagem já vier na dimensão certa — nunca `copy()` do arquivo cru (descarta
+   metadados e conteúdo embutido). Retorna `false` se não conseguiu gravar. Para
+   "caber dentro" sem cortar nem ampliar (marca d'água): `Util::resizeImageInside`.
+   (`wideImagePhoto()`/`resize1()` foram removidos no N12.)
+4. **Só depois que o arquivo novo existe** (retorno `true`/`file_exists`): remove o antigo (`@unlink`) e persiste
    os metadados (`*_capa`, `*_cont`, `*_ext`) via `GerenciaPost::update8191`.
    Gravar o banco antes deixava o registro apontando para arquivo inexistente.
 

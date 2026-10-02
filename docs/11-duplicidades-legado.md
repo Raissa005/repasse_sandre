@@ -47,16 +47,16 @@ numérico "porque é o padrão"** — isso é dívida técnica existente, não u
 convenção a perpetuar. Se for necessário versionar algo de propósito, alinhar
 com o usuário um nome descritivo em vez de outro número aleatório.
 
-## `Resizer.php` — 4 funções de resize concorrentes
+## Redimensionamento de imagem — `Resizer.php`/WideImage removidos (N12)
 
-`resize`, `resize1`, `resize3`, `resize4` (não existe `resize2` — sinal de que
-uma versão foi removida no meio do caminho). Antes de usar qualquer uma, `grep`
-por qual é chamada no controller do módulo que está sendo tocado — não presumir
-que a de número mais alto é "a mais nova e correta". Para upload/resize de
-imagem novo, considerar também `src/libs/FuncaoImagem.php::wideImagePhoto()`
-(usado no fluxo mais recente observado, ver `BranchController::handleSubmitImages`)
-e `src/libs/FileUploader.php` (API genérica mais nova) antes de escolher entre as
-4 variantes do `Resizer`.
+O `Resizer.php` (4 funções concorrentes `resize`, `resize1`, `resize3`,
+`resize4`), o `foto.class.php`, a `ImageThumb.class.php`, o `FuncaoImagem.php` e a cópia local
+`src/libs/wideImage/` foram **removidos em 2026-10-02** (N12). Para upload/resize
+de imagem, usar `Util::resizeImageCrop` (dimensão exata, corte central) ou
+`Util::resizeImageInside` (cabe dentro, sem ampliar), ambos com Imagine e sempre
+recodificando; fotos de veículo seguem em `Util::resizeImageWithCanvas`. Não
+recriar variantes. Restos conhecidos: `UploadFiles.php` (legada, sem chamador,
+ainda chama `resize1`/`wideImagePhoto` inexistentes); `FileUploader::uploadImg*` usa o `smottt/wideimage` do vendor (sem chamador).
 
 ## `Model` base vs `ModelGenerico` vs `GerenciaPost`
 

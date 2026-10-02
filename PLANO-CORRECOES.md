@@ -74,9 +74,8 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - Anexo de veículo que só grava o primeiro arquivo (N11)
 - Sobra do N1: anexos de veículo e de Contas a Pagar/Receber gravam registro
   quebrado se enviados sem arquivo
-- N12: trocar o WideImage pelo Imagine em avatar, cartões, logos e marca
-  d'água, recodificando sempre, e corrigir o `-dp-` da foto do cartão
-  (proposta no N12, ainda não aplicada), mais os demais itens do N12
+- ✅ N12 (2026-10-02): WideImage trocado pelo Imagine em avatar, cartões, logos e
+  marca d'água, recodificando sempre; `-dp-` da foto do cartão corrigido
 - M12: esconder Moedas do menu e bloquear a rota `currencies`
 - N18 + N17 (`card-pdf`) + A2 no botão do cartão: trocar o dompdf 0.8.3 embutido por
   `dompdf/dompdf` ^3.1.6 via composer, escape dos dados do cartão, chroot correto, link do
@@ -86,7 +85,10 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 **Pós-lançamento**:
 - A1 completo
 - N18: `firebase/php-jwt` e `phpmailer/phpmailer` em releases estáveis (hoje
-  `dev-main`/`dev-master`); `smottt/wideimage` sai depois da troca pelo Imagine (N12)
+  `dev-main`/`dev-master`), e junto o `smottt/wideimage` (`dev-master`): depois do
+  N12 o único que ainda depende dele é o `FileUploader` (`uploadImg`/`uploadImgSingle`,
+  `use WideImage\WideImage`, sem chamador) — trocar por Imagine ou remover esses
+  métodos antes de tirar o pacote do `composer.json`
 - Grupo B: B1, B3, B4, B6 a B11 (o B5 vai na Onda 3, com A5/M2; o B2 fica fora das ondas)
 - M7, M9, M10
 - M12, limpeza opcional: remover as referências a moedas no código (o
@@ -1723,7 +1725,7 @@ vários arquivos, só o primeiro é gravado, sem aviso. A validação de tipo do
 C4 confere **todos** os arquivos enviados (recusa o envio se qualquer um for
 inválido), mas continua gravando só o primeiro.
 
-### N12 — Coisas já existentes vistas no C4 etapa 2 (só registrado)
+### ✅ N12 — Coisas já existentes vistas no C4 etapa 2 — CONCLUÍDO 2026-10-02 (WideImage → Imagine)
 
 Já aconteciam antes; não têm relação com a whitelist:
 - **WideImage local não funciona no PHP 8** (o mais grave): `wideImagePhoto()`
@@ -1780,6 +1782,60 @@ Já aconteciam antes; não têm relação com a whitelist:
 - **Teste depois**: upload em cada uma das 12 telas com imagem fora da
   dimensão exata (hoje erro fatal), na dimensão exata, JPG e PNG, e marca
   d'água com PNG transparente.
+
+**Execução (2026-10-02)**:
+- `src/libs/Util.php`: `resizeImageCrop($origem, $largura, $altura, $destino)`
+  (`THUMBNAIL_OUTBOUND | THUMBNAIL_FLAG_UPSCALE`) e `resizeImageInside(...)`
+  (`THUMBNAIL_INSET`, sem ampliar), com um `saveThumbnail` privado em comum
+  (`FILTER_LANCZOS`, `jpeg_quality` 90 — decisão do usuário 2026-10-02, era 100 na
+  proposta —, `png_compression_level` 9). O Imagine
+  sempre recodifica e faz `strip()` dos metadados. Erro do Imagine (imagem que
+  passa no `getimagesize` mas o GD não abre) → retorna `false`, sem arquivo.
+- 15 blocos "dimensão exata → `copy()`, senão `wideImagePhoto()`" (o plano
+  contava 12 telas; são 15 campos: avatar, foto do cartão, cartão digital
+  fundo/logo × cadastro/edição, logo do cliente, 5 de Configurações, 3 de
+  Filial) viraram uma chamada a `Util::resizeImageCrop`. Os `require_once` de
+  `wideImage/lib/WideImage.php`, `wideImage/wide.php` e `Resizer.php` saíram
+  dos 7 arquivos (`User.php`, `UsersController`, `CustomerController`,
+  `SettingsController`, `BranchController`, `DigitalCardController`,
+  `WaterMarkController`).
+- Efeito colateral corrigido: Cliente, Configurações e Filial passavam
+  qualidade `9` também para JPG (no WideImage = JPEG qualidade 9); agora todo
+  JPG sai com 90.
+- Configurações e Filial apagavam a imagem antiga e gravavam no banco **sem
+  conferir** se a nova tinha sido criada; agora só fazem isso se
+  `resizeImageCrop` retornar `true` (senão, a mesma mensagem "extensão ou
+  dimensão inválida"). As demais telas já conferiam com `file_exists`.
+- Marca d'água: `resize1` → `Util::resizeImageInside(..., 200, 100, ...)`. A
+  antiga era apagada **antes** de gerar a nova e o banco era atualizado mesmo
+  se a geração falhasse; agora a antiga só é apagada, e `water_mark_cont/ext/capa`
+  só entram no update, se a nova existir (posição/obrigatoriedade continuam
+  sendo gravadas sempre, como antes).
+- `-dp-` → `-dc-` na exclusão da foto antiga do cartão do usuário.
+- **Teste antes × depois** (scratchpad, sem banco): **antes**, `wideImagePhoto`
+  com JPG 800×600 → erro fatal `WideImage_vendor_de77_BMP`; `copy()` de JPEG
+  160×160 com comentário "GPS" e `<?php ... ?>` no fim → os dois mantidos;
+  `resize1` com PNG transparente → JPEG dentro do `.png`. **Depois**: 66
+  combinações (11 dimensões de tela × paisagem, retrato, minúscula 100×30
+  com ampliação, PNG, exata JPG, exata PNG) → todas na dimensão exata e no
+  tipo certo; poliglota recodificado sem o PHP e sem o comentário; JPEG
+  corrompido → `false` e nenhum arquivo; marca d'água 400×200 → 200×100 PNG com
+  transparência e 150×60 → mantida (não amplia). 71/71. `php -l` nos 8 arquivos.
+  **Não executados** (gravam no banco): os handlers em si — teste manual.
+- **Remoção das libs antigas (decisão do usuário, 2026-10-02)**: removidos
+  `src/libs/wideImage/` (289 arquivos), `Resizer.php`, `foto.class.php` e
+  `FuncaoImagem.php`. Conferido antes por `grep` em todo o projeto (PHP, views,
+  JS, `.htaccess`, `composer.json` e classmap do composer, fora `vendor/`):
+  nenhuma referência a não ser entre eles mesmos, comentários em
+  `VehicleImages.php:36-37` e `Util.php` e a `UploadFiles.php` (legada do B6,
+  sem chamador, chama `resize1`/`wideImagePhoto` sem nunca ter incluído os
+  arquivos — já não funcionava). A `ImageThumb.class.php`, que ficou órfã (só era
+  carregada pelo `foto.class.php`; nome fora do PSR-4), também foi removida
+  depois de conferida por `grep` (2026-10-02). Depois da remoção:
+  `php -l` e teste 71/71 de novo, com JPG em 90.
+- `smottt/wideimage` (vendor) **continua**: o `FileUploader` ainda depende dele
+  — pós-lançamento, junto com JWT e PHPMailer (N18). A divergência banco × disco
+  do item 4 é dado local de teste — sem ação no código.
 
 ### ✅ N13 — Excluir anexo de veículo sem checagem de perfil — CONCLUÍDO 2026-10-02
 
@@ -1891,6 +1947,9 @@ Visto ao instalar o HTMLPurifier (A3, 2026-10-02). Sem relação com A3/M4:
   release) e emite `Deprecated: Using ${var} in strings` no PHP 8.2 (só aviso).
   Recomendação: fixar numa release estável e testar a recuperação de senha.
 - `phpmailer/phpmailer` e `smottt/wideimage` também estão em `dev-master`.
+  Depois do N12 (2026-10-02) o `smottt/wideimage` só é usado pelo `FileUploader`
+  (`uploadImg`/`uploadImgSingle`, sem chamador); sai no pós-lançamento, junto
+  com JWT e PHPMailer.
 Decidir em conjunto (pós-lançamento ou antes, conforme o risco do PDF).
 
 **Avaliação do alerta crítico da php-svg-lib (2026-10-02, só leitura)**:

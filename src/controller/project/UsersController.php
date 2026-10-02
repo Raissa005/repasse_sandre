@@ -475,9 +475,6 @@ class UsersController extends FrontController
             'card_digital' => $_POST['card_digital'],
         );
 
-        require_once APP . 'libs/wideImage/lib/WideImage.php';
-        require_once APP . 'libs/wideImage/wide.php';
-        require_once APP . 'libs/Resizer.php';
 
         try {
             $gerenciaPost->update8191($arrayPost, $this->table, "id", $itemId, false);
@@ -499,18 +496,11 @@ class UsersController extends FrontController
                 $path = "img/users/$itemId/";
 
                 if ($extension !== null) {
-                    $size = getimagesize($_FILES['profile_picture']['tmp_name']);
-                    if ($size[0] == 600 && $size[1] == 600) {
-                        copy($_FILES['profile_picture']['tmp_name'], $path . "$itemId-dc-$newCont.$extension");
-                    } else if ($extension == "jpg") {
-                        $profilePicture = wideImagePhoto($filename, $path, 600, 600, "$itemId-dc-$newCont", ".$extension", 100);
-                    } else if ($extension == "png") {
-                        $profilePicture = wideImagePhoto($filename, $path, 600, 600, "$itemId-dc-$newCont", ".$extension", 9);
-                    }
+                    Util::resizeImageCrop($filename, 600, 600, $path . "$itemId-dc-$newCont.$extension");
 
                     // Só aponta o banco para a foto nova depois que o arquivo existe
                     if (file_exists($path . "$itemId-dc-$newCont.$extension")) {
-                        @unlink("img/users/$itemId/$itemId-dp-$item->card_digital_cont.$item->card_digital_ext");
+                        @unlink("img/users/$itemId/$itemId-dc-$item->card_digital_cont.$item->card_digital_ext");
                         $gerenciaPost->update8191(["card_digital_capa" => true, "card_digital_cont" => $newCont, "card_digital_ext" => $extension], $this->table, "id", $itemId, false);
                     }
                 }

@@ -513,6 +513,38 @@ class Util
         $image->resize(new Box($targetWidth, $targetHeight), ImageInterface::FILTER_LANCZOS)->save($outputName);
     }
 
+    /**
+     * N12: redimensiona e corta pelo centro na dimensão exata $targetWidth x $targetHeight (substitui o wideImagePhoto).
+     * Sempre recodifica a imagem, mesmo já na dimensão exata: descarta metadados e qualquer conteúdo extra embutido.
+     * Retorna false se a imagem não pôde ser aberta ou gravada.
+     */
+    public static function resizeImageCrop($sourceImage, $targetWidth, $targetHeight, $outputName): bool
+    {
+        return self::saveThumbnail($sourceImage, new Box($targetWidth, $targetHeight), ImageInterface::THUMBNAIL_OUTBOUND | ImageInterface::THUMBNAIL_FLAG_UPSCALE, $outputName);
+    }
+
+    /**
+     * N12: reduz a imagem para caber dentro de $maxWidth x $maxHeight mantendo a proporção, sem ampliar (substitui o
+     * resize1 da marca d'água). Sempre recodifica a imagem; PNG mantém a transparência.
+     */
+    public static function resizeImageInside($sourceImage, $maxWidth, $maxHeight, $outputName): bool
+    {
+        return self::saveThumbnail($sourceImage, new Box($maxWidth, $maxHeight), ImageInterface::THUMBNAIL_INSET, $outputName);
+    }
+
+    private static function saveThumbnail($sourceImage, Box $size, $settings, $outputName): bool
+    {
+        try {
+            (new Imagine())->open($sourceImage)
+                ->thumbnail($size, $settings, ImageInterface::FILTER_LANCZOS)
+                ->save($outputName, ['jpeg_quality' => 90, 'png_compression_level' => 9]);
+        } catch (\Imagine\Exception\Exception $error) {
+            return false;
+        }
+
+        return file_exists($outputName);
+    }
+
     private static $purifier = null;
 
     /**

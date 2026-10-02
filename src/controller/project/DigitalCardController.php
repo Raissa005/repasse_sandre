@@ -104,9 +104,6 @@ class DigitalCardController extends FrontController
             $itemId = $gerenciaPost->insert7181($arrPost, $this->table, true, false);
 
             if (!empty($_FILES)) {
-                require_once APP . 'libs/wideImage/lib/WideImage.php';
-                require_once APP . 'libs/wideImage/wide.php';
-                require_once APP . 'libs/Resizer.php';
 
                 if (!empty($_FILES['imageFundo']['tmp_name'])) {
                     if (!file_exists("img/card_digital/$itemId/")) {
@@ -119,14 +116,7 @@ class DigitalCardController extends FrontController
                     $path = "img/card_digital/$itemId/";
 
                     if ($extension !== null) {
-                        $size = getimagesize($_FILES['imageFundo']['tmp_name']);
-                        if ($size[0] == 1490 && $size[1] == 2130) {
-                            copy($_FILES['imageFundo']['tmp_name'], $path . "fundo-1" . ".$extension");
-                        } else if ($extension == "jpg") {
-                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-1", ".{$extension}", 100);
-                        } else if ($extension == "png") {
-                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-1", ".{$extension}", 9);
-                        }
+                        Util::resizeImageCrop($filename, 1490, 2130, $path . "fundo-1.$extension");
 
                         // Só grava a imagem no banco depois que o arquivo existe
                         if (file_exists($path . "fundo-1.$extension")) {
@@ -147,14 +137,7 @@ class DigitalCardController extends FrontController
                     $path = "img/card_digital/$itemId/";
 
                     if ($extension !== null) {
-                        $size = getimagesize($_FILES['imageLogo']['tmp_name']);
-                        if ($size[0] == 600 && $size[1] == 280) {
-                            copy($_FILES['imageLogo']['tmp_name'], $path . "logo-1" . ".$extension");
-                        } else if ($extension == "jpg") {
-                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-1", ".{$extension}", 100);
-                        } else if ($extension == "png") {
-                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-1", ".{$extension}", 9);
-                        }
+                        Util::resizeImageCrop($filename, 600, 280, $path . "logo-1.$extension");
 
                         // Só grava a imagem no banco depois que o arquivo existe
                         if (file_exists($path . "logo-1.$extension")) {
@@ -235,9 +218,6 @@ class DigitalCardController extends FrontController
             if (isset($_FILES)) {
                 $item = $modelGenerico->getItemById8161($itemId, $this->table);
 
-                require_once APP . 'libs/wideImage/lib/WideImage.php';
-                require_once APP . 'libs/wideImage/wide.php';
-                require_once APP . 'libs/Resizer.php';
 
                 if (!empty($_FILES['imageFundo']['tmp_name'])) {
                     if (!file_exists("img/card_digital/$itemId/")) {
@@ -250,14 +230,7 @@ class DigitalCardController extends FrontController
                     $path = "img/card_digital/$itemId/";
 
                     if ($extension !== null) {
-                        $size = getimagesize($_FILES['imageFundo']['tmp_name']);
-                        if ($size[0] == 1490 && $size[1] == 2130) {
-                            copy($_FILES['imageFundo']['tmp_name'], $path . "fundo-$newCont" . ".$extension");
-                        } else if ($extension == "jpg") {
-                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-$newCont", ".{$extension}", 100);
-                        } else if ($extension == "png") {
-                            $fundo = wideImagePhoto($filename, $path, 1490, 2130, "fundo-$newCont", ".{$extension}", 9);
-                        }
+                        Util::resizeImageCrop($filename, 1490, 2130, $path . "fundo-$newCont.$extension");
 
                         // Só aponta o banco para a imagem nova depois que o arquivo existe
                         if (file_exists($path . "fundo-$newCont.$extension")) {
@@ -280,14 +253,7 @@ class DigitalCardController extends FrontController
                     $path = "img/card_digital/$itemId/";
 
                     if ($extension !== null) {
-                        $size = getimagesize($_FILES['imageLogo']['tmp_name']);
-                        if ($size[0] == 600 && $size[1] == 280) {
-                            copy($_FILES['imageLogo']['tmp_name'], $path . "logo-$newCont" . ".$extension");
-                        } else if ($extension == "jpg") {
-                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-$newCont", ".{$extension}", 100);
-                        } else if ($extension == "png") {
-                            $logo = wideImagePhoto($filename, $path, 600, 280, "logo-$newCont", ".{$extension}", 9);
-                        }
+                        Util::resizeImageCrop($filename, 600, 280, $path . "logo-$newCont.$extension");
 
                         // Só aponta o banco para a imagem nova depois que o arquivo existe
                         if (file_exists($path . "logo-$newCont.$extension")) {

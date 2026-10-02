@@ -19,7 +19,10 @@ Inversas/limpeza: `unmaskMoney`, `removeNumberFormatting`,
 (avalia expressão matemática em string), `coalesce`, `likePHP` (simula `LIKE`
 SQL em PHP), `debug($var, $titulo, $die)` (var_dump formatado, usar em vez de
 `var_dump`/`print_r` cru ao debugar), `gererateToken($tamanho)`,
-`getIp()`, `resizeImageWithCanvas(...)`. Escape para view (A3):
+`getIp()`, `resizeImageWithCanvas(...)` (fotos de veículo), `resizeImageCrop(...)`
+(avatar, cartões, logos: dimensão exata com corte central) e `resizeImageInside(...)`
+(marca d'água: cabe dentro, sem ampliar) — os três com Imagine; os dois últimos
+sempre recodificam e retornam `bool` (N12). Escape para view (A3):
 `richText($html)` (HTMLPurifier, campos do CKEditor) e
 `escapeSystemHtml($texto)` (escape que preserva o HTML gravado pelo sistema) —
 quando usar cada um: `docs/05-views-componentes.md`.
@@ -56,20 +59,16 @@ Usar para toda formatação de data em pt-BR em vez de `date()`/`DateTime` cru.
 - `UploadFiles.php` — API mais antiga (`upload($files, $path, $table, $arrayInsert)`,
   além de um método claramente de teste/lixo `WOWOW()` — não usar `WOWOW`, é
   resquício de debug).
-- `FuncaoImagem.php` — `wideImagePhoto(...)`, wrapper direto sobre a lib WideImage
-  vendorizada (`src/libs/wideImage/`). É o método efetivamente usado hoje pelos
-  controllers de upload de logo/imagem (ver `BranchController::handleSubmitImages`).
-- `Resizer.php` — tem **4 funções de resize concorrentes** (`resize`, `resize1`,
-  `resize3`, `resize4`) — ver `docs/11-duplicidades-legado.md` antes de usar
-  qualquer uma; não criar uma 5ª variante.
+- `FuncaoImagem.php`, `src/libs/wideImage/` (`wideImagePhoto`), `Resizer.php`
+  (`resize`/`resize1`/`resize3`/`resize4`) e `foto.class.php` — **removidos no N12**
+  (2026-10-02). Para redimensionar imagem: `Util::resizeImageCrop`/`resizeImageInside`.
 - `FuncaoArray.php::reArrayFiles($_FILES)` — reorganiza `$_FILES` de um input
   `name="foo[]"` (array de arquivos) para um array por índice em vez de por
   propriedade. Usar sempre que for tratar upload múltiplo de arquivos.
 - `DeleteFile.php::deleteFile($ids, $table, $paths)` — exclusão de arquivo(s)
   físico(s) + registro(s) vinculados, genérico por tabela.
-- `foto.class.php` / `ImageThumb.class.php` — classes antigas de manipulação de
-  imagem (estilo pré-namespace); confirmar se ainda estão em uso antes de
-  estender (podem já ter sido substituídas por WideImage/`FileUploader`).
+- `ImageThumb.class.php` — classe antiga de manipulação de imagem, **removida no
+  N12** (2026-10-02) junto com o `foto.class.php`, que era quem a carregava.
 
 ## PDF
 

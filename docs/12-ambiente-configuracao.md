@@ -48,8 +48,9 @@
 
 ## Dependências Composer relevantes
 
-`smottt/wideimage` (redimensionamento de imagem, vendorizado também via cópia em
-`src/libs/wideImage`), `phpmailer/phpmailer` (e-mail), `phenx/php-font-lib` +
+`smottt/wideimage` (só usado pelo `FileUploader::uploadImg*`, sem chamador; a cópia
+local `src/libs/wideImage` foi removida no N12 e o pacote sai no pós-lançamento),
+`phpmailer/phpmailer` (e-mail), `phenx/php-font-lib` +
 `phenx/php-svg-lib` (suporte do dompdf), `firebase/php-jwt` (recuperação de
 senha), `symfony/cache` (cache de menu, `FilesystemAdapter`), `imagine/imagine`
 (processamento de imagem). Dev-only: `almasaeed2010/adminlte` (tema AdminLTE 2).

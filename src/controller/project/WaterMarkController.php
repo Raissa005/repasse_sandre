@@ -7,6 +7,7 @@ use RR\model\ModelGenerico;
 use RR\libs\Toast;
 use RR\libs\Secure;
 use RR\libs\FileUploader;
+use RR\libs\Util;
 use RR\model\WaterMark;
 use PDOException;
 
@@ -56,10 +57,6 @@ class WaterMarkController extends FrontController
 
         $item = (new WaterMark())->getItemById8161(1);
 
-        require_once APP . 'libs/wideImage/lib/WideImage.php';
-        require_once APP . 'libs/wideImage/wide.php';
-        require_once APP . 'libs/Resizer.php';
-
         try {
             $extension = !empty($_FILES['water_mark']['tmp_name'])
                 ? FileUploader::allowedExtension($_FILES['water_mark']['name'], $_FILES['water_mark']['tmp_name'], FileUploader::ALLOWED_PNG)
@@ -69,14 +66,16 @@ class WaterMarkController extends FrontController
                 if (!file_exists("img/more/")) {
                     mkdir("img/more/", 0777, true);
                 }
-                @unlink("img/more/water_mark-$item->cont.$item->ext");
-
-                $arrPost = array("water_mark_capa" => true, "water_mark_cont" => ++$item->cont, "water_mark_ext" => $extension,);
+                $newCont = $item->cont + 1;
 
                 $filename = $_FILES['water_mark']['tmp_name'];
                 $path = "img/more/";
 
-                $water_mark = resize1($path, "water_mark", 200, 100, 1, "-$item->cont", $filename, $extension);
+                // Só apaga a marca antiga e aponta o banco para a nova depois que o arquivo existe
+                if (Util::resizeImageInside($filename, 200, 100, $path . "water_mark-$newCont.$extension")) {
+                    @unlink("img/more/water_mark-$item->cont.$item->ext");
+                    $arrPost = array("water_mark_capa" => true, "water_mark_cont" => $newCont, "water_mark_ext" => $extension,);
+                }
             }
             $arrPost['water_mark_required'] = $_POST['water_mark_required'];
             $arrPost['water_mark_horizontal'] = $_POST['horizontal'];
