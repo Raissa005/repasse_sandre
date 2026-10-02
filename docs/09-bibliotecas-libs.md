@@ -73,12 +73,13 @@ Usar para toda formatação de data em pt-BR em vez de `date()`/`DateTime` cru.
 
 ## PDF
 
-- `src/libs/dompdf/` — build vendorizado do dompdf (não é gerenciado pelo
-  Composer do projeto raiz, é uma cópia dentro do repo). Usado pelas views
-  `print*.php` de cada módulo para gerar contrato/recibo/relatório em PDF.
-  Não vendorizar uma segunda lib de PDF — todo PDF novo deve seguir o padrão das
-  views `print*.php` existentes (ex.: `src/view/sales/printContract.php`,
-  `src/view/property/print.php`).
+- `src/libs/dompdf/` — build vendorizado do dompdf **0.8.3** (cópia dentro do
+  repo, não gerenciada pelo Composer; a pasta `lib/fonts` está no `.gitignore`
+  e não existe, então ele não inicia). Único uso: o PDF do cartão digital
+  (`CardPDFController`). As impressões dos módulos (`print*.php`) são HTML
+  para o navegador imprimir, não PDF gerado no servidor. Versão com vários
+  alertas de segurança — troca por `dompdf/dompdf` ^3.1.6 planejada na Onda 4
+  (N18 do `PLANO-CORRECOES.md`). Não vendorizar uma segunda lib de PDF.
 
 ## E-mail
 

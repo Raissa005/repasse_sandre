@@ -58,7 +58,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - ✅ C3 + "sem linha = negado" + N15 (2026-10-02). **Não** popular
   `menu_access` com negações: o Sandré configura pela tela (DEPLOY-CHECKLIST §9)
 - ✅ A5 / M2 / B5, N13, sobra do N2, N10 3º item (2026-10-02)
-- ⚠️ N17 — 11 rotas sem item de menu: proposta feita, **aguardando aprovação**
+- ⚠️ N17 — 11 rotas sem item de menu: proposta feita, **aguardando aprovação** (exceto `card-pdf`, decidido 2026-10-02 → Onda 4, com N18)
 - C7 — ⚠️ bloqueado (dado real)
 - A9 — ⚠️ bloqueado (dado real)
 
@@ -78,9 +78,15 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
   d'água, recodificando sempre, e corrigir o `-dp-` da foto do cartão
   (proposta no N12, ainda não aplicada), mais os demais itens do N12
 - M12: esconder Moedas do menu e bloquear a rota `currencies`
+- N18 + N17 (`card-pdf`) + A2 no botão do cartão: trocar o dompdf 0.8.3 embutido por
+  `dompdf/dompdf` ^3.1.6 via composer, escape dos dados do cartão, chroot correto, link do
+  botão, e **exigir login** — cada usuário gera só o próprio cartão; Admin/Superadm, o de
+  qualquer usuário (ver N17 e N18)
 
 **Pós-lançamento**:
 - A1 completo
+- N18: `firebase/php-jwt` e `phpmailer/phpmailer` em releases estáveis (hoje
+  `dev-main`/`dev-master`); `smottt/wideimage` sai depois da troca pelo Imagine (N12)
 - Grupo B: B1, B3, B4, B6 a B11 (o B5 vai na Onda 3, com A5/M2; o B2 fica fora das ondas)
 - M7, M9, M10
 - M12, limpeza opcional: remover as referências a moedas no código (o
@@ -1861,9 +1867,20 @@ exigir Admin:
 | `notification` | Notificações | Cada usuário vê as próprias; gerente, as da filial | **Não aplicar** — tiraria as notificações dos demais perfis |
 | `lead`, `lead-config` | Leads (módulo desativado) | Já redirecionam todos para a home | Aplicar Admin (sem efeito prático) ou nada |
 | `lead-redirect` | Distribuição de leads (desativado) | Responde 404 a todos | Nada |
-| `card-pdf` | PDF do cartão digital de um usuário, por id na URL | **Sem login nenhum** (não estende `Controller`): qualquer pessoa na internet baixa o cartão de qualquer usuário trocando o id | ⚠️ Decidir: é para clientes (público)? Senão, exigir login |
+| `card-pdf` | PDF do cartão digital de um usuário, por id na URL | **Sem login nenhum** (não estende `Controller`): qualquer pessoa na internet baixa o cartão de qualquer usuário trocando o id | ✅ **Decidido (2026-10-02)**: exigir login; cada usuário gera só o próprio cartão; Superadm/Administrador (e Desenvolvedor) geram o de qualquer usuário. Onda 4, junto com o N18 |
 
-### N18 — Dependências desatualizadas apontadas pelo `composer audit` (só registrado)
+**Decisão do usuário sobre o `card-pdf` (2026-10-02)**: os vendedores não mandam o
+cartão para clientes — o PDF não precisa ser público. Regra: **exigir login**; o
+usuário logado só gera o **próprio** cartão (`{id}` igual ao da sessão);
+`Secure::access_admin()` (Superadm, Administrador, Desenvolvedor) gera o de qualquer
+usuário. Como o `CardPDFController` não estende o `Controller` base (não tem sessão nem
+checagem de login), a execução precisa: abrir a sessão, mandar para o `login` quem não
+estiver logado, e recusar (voltar para a `home`) quem pedir o cartão de outro usuário sem
+ser admin — tudo antes de carregar qualquer dado. Executar na Onda 4 junto com o N18
+(troca do dompdf) e o link do botão (A2). As demais linhas desta tabela continuam
+aguardando aprovação.
+
+### N18 — Dependências desatualizadas apontadas pelo `composer audit` — PDF na Onda 4, JWT/PHPMailer pós-lançamento
 
 Visto ao instalar o HTMLPurifier (A3, 2026-10-02). Sem relação com A3/M4:
 - `phenx/php-svg-lib` (usado pelo gerador de PDF): 3 alertas — 1 crítico
@@ -1875,6 +1892,68 @@ Visto ao instalar o HTMLPurifier (A3, 2026-10-02). Sem relação com A3/M4:
   Recomendação: fixar numa release estável e testar a recuperação de senha.
 - `phpmailer/phpmailer` e `smottt/wideimage` também estão em `dev-master`.
 Decidir em conjunto (pós-lançamento ou antes, conforme o risco do PDF).
+
+**Avaliação do alerta crítico da php-svg-lib (2026-10-02, só leitura)**:
+- **Quem usa**: só o PDF do cartão digital (`CardPDFController`, rota
+  `card-pdf`, **sem login** — ver N17). Nenhuma impressão do sistema usa o
+  dompdf (são HTML; o `docs/09` dizia o contrário e foi corrigido). Usa o
+  **dompdf 0.8.3 embutido** em `src/libs/dompdf`; a php-svg-lib carregada de
+  fato é a da `vendor` (`phenx/php-svg-lib` 0.3.4, o autoload do composer tem
+  prioridade). Nada mais no código usa `phenx/php-svg-lib` nem
+  `phenx/php-font-lib` — estão no `composer.json` só por causa dessa cópia.
+- **Hoje o caminho vulnerável não é alcançável**: o cartão está quebrado em
+  dois pontos — o botão "Gerar Cartão Digital" (`users/digital-card.php`)
+  aponta para `cardPDF/{id}`, que cai no bug de rota A2 (erro fatal); e,
+  mesmo pela rota certa (`card-pdf/index/{id}`), o dompdf não inicia porque a
+  pasta de fontes `src/libs/dompdf/lib/fonts/` está no `.gitignore` e não
+  existe (erro fatal ao carregar `dompdf_font_family_cache.dist.php`) —
+  verificado gerando o cartão numa cópia no scratchpad. Opções em vigor:
+  recursos remotos desligados, PHP desligado, chroot na pasta do dompdf.
+- **Se o cartão for consertado sem atualizar, o risco passa a ser real**:
+  nome, ocupação e links das redes do cartão entram **sem escape** no HTML do
+  PDF, e qualquer usuário logado edita o próprio cartão; com a rota pública,
+  qualquer pessoa dispara a geração. O alerta crítico da svg-lib (e o
+  CVE-2024-25117) precisa de um SVG controlado pelo atacante: upload de SVG
+  não é aceito (whitelist do C4: jpg/jpeg/png) e o dompdf não busca remoto,
+  mas um SVG embutido como `data:` no HTML injetado é um caminho
+  (CVE-2026-56722). O RCE descrito nesses alertas depende de desserialização
+  via `phar://`, que o PHP 8 deixou de fazer automaticamente — os demais
+  efeitos (leitura de arquivo local, XXE, DoS) não dependem disso.
+- **O problema maior é o dompdf 0.8.3 em si** (base pública de alertas do
+  Packagist, consultada em 2026-10-02): afetado por CVE-2021-3902 (XXE,
+  crítico, < 2.0.0), CVE-2021-3838 (desserialização, crítico, < 2.0.0),
+  CVE-2022-28368 (fontes remotas, crítico, < 1.2.1 — exige remoto ligado),
+  CVE-2023-23924/24813 (URI em SVG, críticos, < 2.0.2/=2.0.2), CVE-2022-41343,
+  CVE-2022-2400, CVE-2022-0085, CVE-2023-50262 e os de 2026 (< 3.1.6).
+- **Versão que corrige**: a php-svg-lib isolada corrige em **0.5.2**, mas não
+  é compatível com o dompdf 0.8.3 — atualizar só ela não resolve. A correção é
+  trocar o dompdf embutido por **`dompdf/dompdf` ^3.1.6** via composer (última
+  release; corrige todos os alertas acima; exige PHP 7.1/8.x, `ext-dom`,
+  `ext-mbstring` — ativos), que traz `dompdf/php-svg-lib` ^1.0 e
+  `dompdf/php-font-lib` ^1.0 no lugar dos `phenx/*`.
+- **É seguro atualizar? Sim, risco baixo**: um único consumidor, que já não
+  funciona (não há comportamento atual a quebrar), e dá para testar gerando o
+  PDF (só leitura do banco).
+
+**Decisão do usuário (2026-10-02)**: PDF na **Onda 4**; `firebase/php-jwt` e
+`phpmailer/phpmailer` **pós-lançamento**. Escopo proposto para a Onda 4 (a
+executar):
+1. `composer require dompdf/dompdf:^3.1.6` e remover `phenx/php-svg-lib` e
+   `phenx/php-font-lib` do `composer.json` (mesmos namespaces `Svg\`/`FontLib\`).
+2. `CardPDFController`: usar o autoload do composer (sem o `require_once` da
+   cópia embutida), `loadHtml`/`setPaper`, e `Options` com `chroot` na pasta
+   `public/` (hoje as imagens `../public/img/...` ficam fora do chroot) e
+   remoto desligado.
+3. `cardPDF/index.php`: escapar nome, ocupação, links e cores do cartão
+   (`htmlspecialchars`, padrão do A3).
+4. Botão do cartão: link para `cardPDF/index/{id}` (ou resolver junto com o A2).
+5. Remover `src/libs/dompdf/` e a linha do `.gitignore` depois de testado.
+6. N17 `card-pdf` (decidido 2026-10-02): exigir login; o usuário gera só o próprio
+   cartão; `access_admin()` gera o de qualquer um (ver a tabela do N17).
+**Teste**: gerar o cartão de um usuário com foto e redes (antes: erro fatal;
+depois: PDF com imagens), e um cartão com HTML no nome (deve sair como texto);
+sem login → tela de login; Vendedor pedindo o cartão de outro id → recusado;
+Vendedor pedindo o próprio → PDF; Administrador pedindo o de qualquer um → PDF.
 
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
@@ -1888,7 +1967,7 @@ Decidir em conjunto (pós-lançamento ou antes, conforme o risco do PDF).
 | A9 | Qual o telefone de suporte e e-mail de contato reais da Repasse Sandré? |
 | ~~M1~~ | ✅ Decidido e aplicado 2026-10-01: aba escondida, código mantido. |
 | ~~N14~~ | ✅ Decidido e aplicado 2026-10-02. |
-| N17 | Aprovar a proposta para as 11 rotas sem item de menu; o `card-pdf` deve ser público? |
+| N17 | Aprovar a proposta para as demais rotas sem item de menu (o `card-pdf` foi decidido em 2026-10-02: exigir login, Onda 4). |
 | ~~M12~~ | ✅ Decidido 2026-10-01: esconder do menu e bloquear a rota (Onda 4); remoção completa é limpeza opcional. |
 | ~~B2~~ | ✅ Decidido 2026-10-01: manter documentado, não dropar. |
 
