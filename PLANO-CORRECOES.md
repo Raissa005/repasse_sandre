@@ -65,7 +65,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 **Onda 4 — antes do lançamento**:
 - A2
 - ✅ A3 + M3 (2026-10-02)
-- A4
+- 🔄 A4 — migration criada e mensagem neutra na recuperação aplicada (2026-10-02); **contador aguarda o usuário rodar a migration** `2026_10_02_0921_criar_tabela_login_attempts.sql`
 - ✅ A10 (2026-10-02)
 - ✅ M4 (2026-10-02) — inclui a correção da recuperação de senha, que estava quebrada (N19)
 - N9
@@ -811,7 +811,7 @@ sem mudança visual. Nenhum erro PHP novo.
 cidades etc.) continua sem escape — a auditoria listou só os campos de texto
 livre acima; um varrimento geral fica para o pós-lançamento.
 
-### A4 — Login sem rate-limiting/lockout contra força bruta
+### 🔄 A4 — Login sem rate-limiting/lockout contra força bruta — migration criada 2026-10-02; código aguarda a migration rodar
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §4.2.
 **Arquivos**: `src/controller/project/LoginController.php:45-101`.
@@ -822,6 +822,39 @@ usuário legítimo por engano se o limite for mal calibrado (ex.: usuário que
 erra a senha 3x seguidas por esquecimento normal) — calibrar o limite e o
 tempo de bloqueio com o usuário, e testar o fluxo de "esqueci a senha"
 combinado com o lockout (recuperar senha deveria resetar o contador).
+
+**Decisões do usuário (2026-10-02)**: 5 tentativas erradas **em até 15
+minutos** bloqueiam o login daquele e-mail por 15 minutos; **concluir** a
+recuperação de senha (definir a nova senha pelo link) zera o contador — não o
+simples pedido do e-mail, que anularia a proteção; a mensagem não revela se o
+usuário existe; e a tela "Esqueci a senha" também passa a responder de forma
+neutra.
+
+**Feito (2026-10-02)**:
+- Migration `db/migrations/2026_10_02_0921_criar_tabela_login_attempts.sql`
+  (tabela por **e-mail digitado**, exista ou não o usuário — contar e-mails
+  inexistentes é o que mantém a mensagem neutra).
+- `LoginController::sendRecoverPasswordMail`: mesma mensagem para e-mail
+  existente e inexistente ("Se o e-mail estiver cadastrado, você receberá o
+  link de recuperação."). **Teste**: e-mail inexistente, antes "Ops! Usuário
+  não encontrado!", depois a mensagem neutra (o caso de e-mail existente grava
+  token e envia e-mail — não executado). Observação: o tempo de resposta ainda
+  difere (envio de e-mail), diferença pequena.
+
+**⚠️ Aguardando o usuário rodar a migration** (regra de `db/migrations/README.md`:
+o código que depende dela só muda depois). Planejado para depois:
+- Model novo `LoginAttempt` (tabela `login_attempts`): ler a linha do e-mail,
+  gravar (upsert pelo índice único) e apagar.
+- `signIn()`: e-mail normalizado (minúsculo, sem espaços); se `locked_until` >
+  agora → recusa, **mesmo com a senha certa**, com "Muitas tentativas. Tente
+  novamente em alguns minutos." (vale para qualquer e-mail, então não revela
+  existência); senha certa → apaga a linha e loga; senha errada → soma 1
+  (recomeça do 1 se o último erro foi há mais de 15 min); no 5º erro grava
+  `locked_until` = agora + 15 min e já mostra a mensagem de bloqueio; nos
+  demais, a mensagem atual "E-mail ou senha invalido!".
+- `handleSubmitChangePassWord`: ao concluir a troca, apaga a linha do e-mail
+  do token.
+- Ordem de deploy no `DEPLOY-CHECKLIST.md` §5 (migration antes do código).
 
 ### ✅ A5 — Controllers administrativos/financeiros sem checagem de perfil consistente — CONCLUÍDO 2026-10-02
 

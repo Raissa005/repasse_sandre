@@ -111,6 +111,9 @@ Ordem (cronológica, pelo nome do arquivo):
       (ver cabeçalho do arquivo). Antes, corrigir nele o `branch.email`
       (item A9, abaixo).
 - [ ] `2026_09_25_1500_seed_dados_faltantes.sql` (idempotente)
+- [ ] `2026_10_02_0921_criar_tabela_login_attempts.sql` — **antes** de
+      publicar o código do A4 (bloqueio de login): o login passa a usar esta
+      tabela e quebra sem ela. *(Plano: A4)*
 - [ ] Qualquer migration nova criada depois desta lista (conferir a pasta).
 
 ## 6. Dados reais (bloqueados até o usuário informar)
@@ -212,6 +215,9 @@ Com um usuário Administrador e, onde indicado, um usuário Vendedor:
 - [ ] Como Vendedor: telas administrativas redirecionam para a home.
 - [ ] Observações do veículo: as observações antigas aparecem **com a
       formatação** (negrito, listas, tabela). *(Plano: A3)*
+- [ ] Recuperar senha com um e-mail que **não** existe → mesma mensagem de
+      sucesso de um e-mail existente. Com um e-mail real, o link abre e aceita
+      nova senha de 8+ caracteres; com menos, recusa. *(Plano: M4/A4)*
 - [ ] Log de erros do PHP/Apache sem erro novo durante o teste.
 
 ## 9. Permissões por perfil — antes de liberar os usuários *(Plano: C3)*

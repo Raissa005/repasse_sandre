@@ -227,8 +227,11 @@ class LoginController extends FrontController
     {
         $user = (new User())->getUserByEmail($_POST['email']);
 
+        // A4: mesma resposta exista ou não o e-mail, para não revelar quais e-mails têm conta
+        $neutralMessage = 'Se o e-mail estiver cadastrado, você receberá o link de recuperação.';
+
         if (!$user) {
-            Toast::errorToast('Ops! Usuário não encontrado!');
+            Toast::successToast($neutralMessage);
             header('location: ' . URL . 'login/index');
             exit;
         }
@@ -266,7 +269,7 @@ class LoginController extends FrontController
 
         MoreMailer::enviarEmail($email);
 
-        Toast::successToast('Acabamos de enviar um email de recuperação para você!');
+        Toast::successToast($neutralMessage);
         header('location:' . URL . 'login/index');
         exit;
     }
