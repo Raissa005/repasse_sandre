@@ -18,8 +18,10 @@
 --   no INSERT.
 -- ============================================================
 
+-- Idempotente (2026-10-02): IF NOT EXISTS — num banco criado a partir da
+--   estrutura do banco local (que já tem a tabela) não faz nada.
 -- >>> UP
-CREATE TABLE `linked_check_control` (
+CREATE TABLE IF NOT EXISTS `linked_check_control` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_check` int(11) NOT NULL,
   `id_installment` int(11) NOT NULL,

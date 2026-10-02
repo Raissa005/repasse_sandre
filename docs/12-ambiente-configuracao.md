@@ -53,7 +53,13 @@ local `src/libs/wideImage` foi removida no N12 e o pacote sai no pós-lançament
 `phpmailer/phpmailer` (e-mail), `dompdf/dompdf` (PDF do cartão digital; traz
 `dompdf/php-svg-lib`/`php-font-lib`), `firebase/php-jwt` (recuperação de
 senha), `symfony/cache` (cache de menu, `FilesystemAdapter`), `imagine/imagine`
-(processamento de imagem). Dev-only: `almasaeed2010/adminlte` (tema AdminLTE 2).
+(processamento de imagem; fixado na release 1.5.4 com `^1.5.4@stable`). Dev-only:
+`almasaeed2010/adminlte` (tema AdminLTE 2).
+
+O `composer.json` tem `"minimum-stability": "dev"`: sem uma flag de estabilidade
+no pacote, o composer pode instalar um branch de desenvolvimento em vez de uma
+release. Para fixar um pacote em release estável sem mudar isso, usar
+`"pacote": "^X.Y@stable"` (como no Imagine).
 
 O dompdf vem do Composer (`dompdf/dompdf` ^3.1.6, N18 em 2026-10-02); a antiga cópia
 vendorizada `src/libs/dompdf/` foi removida. Em deploy, rodar `composer install`.

@@ -68,6 +68,10 @@ e vá para a seção **Plano de volta**.
 - [ ] Ela também precisa conter **`dompdf/dompdf` 3.1.x** (e **não** mais
       `phenx/*`): a cópia antiga `src/libs/dompdf/` saiu do código. Sem o
       pacote, o PDF do Cartão Digital dá erro fatal. *(Plano: N18)*
+- [ ] E **`imagine/imagine` 1.5.4** (release estável; antes era o branch de
+      desenvolvimento): conferir com `composer show imagine/imagine`. Ele
+      redimensiona todas as imagens enviadas (fotos, logos, avatar, cartões,
+      marca d'água). *(Plano: N18)*
 - [ ] Pasta **`storage/dompdf-fonts/`** (raiz do projeto, fora de `public/`)
       existe e é **gravável pelo usuário do Apache** — o dompdf instala ali as
       fontes do cartão na primeira geração. O conteúdo não é versionado (só o
@@ -103,42 +107,99 @@ e vá para a seção **Plano de volta**.
       (DevTools → Rede → resposta do login). Sem HTTPS o cookie sai sem
       `secure`. *(Plano: M6)*
 
-## 5. Banco: migrations pendentes, na ordem
+## 5. Banco e código, na ordem
 
-Nenhuma migration roda sozinha (ver `db/migrations/README.md`). Antes de rodar
-qualquer uma, **confirmar no banco de produção quais já foram aplicadas**: o
-repositório não registra isso, e as anotações divergem (a de 25/09 15h diz
-"produção já rodando, com dados reais"; o item A9 do plano diz que o seed
-inicial "ainda não rodou"). Os arquivos `OK_*` são de antes de 25/09 e
-presume-se que já rodaram — confirmar também.
+Nenhuma migration roda sozinha (ver `db/migrations/README.md`). Rodar cada
+arquivo com `mysql -u USUARIO -p BANCO < db/migrations/ARQUIVO.sql`. Todas as
+migrations desta lista são **idempotentes**: se já tiverem sido aplicadas,
+rodar de novo não faz nada nem dá erro. Os arquivos `OK_*` são de antes de 25/09
+e presume-se que já rodaram — num banco existente, confirmar.
 
-Ordem (cronológica, pelo nome do arquivo):
+Primeiro, **decidir qual dos dois casos é a produção** (as anotações divergem:
+a migration de 25/09 15h diz "produção já rodando, com dados reais"; o A9 do
+plano diz que o seed inicial "ainda não rodou"):
+- **Caso A — banco novo** (vazio): fazer §5.1, depois §5.2 a §5.4.
+- **Caso B — banco existente**, com dados: pular §5.1 e o seed inicial; fazer
+  §5.2 a §5.4.
 
-- [ ] `2026_09_18_1615_criar_tabela_linked_check_control.sql`
+### 5.1 Estrutura do banco (só Caso A)
+
+A estrutura vem do **banco de desenvolvimento local** (`veiculos_repasse`),
+**nunca** do `db/realize_repasse.sql`, que é o schema antigo do sistema
+imobiliário (`docs/07-banco-de-dados.md`, `docs/12-ambiente-configuracao.md`).
+
+- [ ] No banco local, confirmar que todas as migrations desta lista já foram
+      aplicadas nele (é a referência da estrutura).
+- [ ] Exportar **só a estrutura**, sem dados e sem os contadores de id:
+      `mysqldump --no-data --routines --triggers -u root -p veiculos_repasse | sed -E 's/ AUTO_INCREMENT=[0-9]+//' > estrutura.sql`
+- [ ] Conferir: o arquivo tem `CREATE TABLE` e nenhum `INSERT`
+      (`grep -c 'INSERT INTO' estrutura.sql` → 0).
+- [ ] Criar o banco de produção vazio com o mesmo padrão do local
+      (`CREATE DATABASE BANCO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;`)
+      e importar:
+      `mysql -u USUARIO -p BANCO < estrutura.sql`.
+
+### 5.2 Migrations — ANTES de publicar o código
+
+Ordem cronológica, pelo nome do arquivo:
+
+- [ ] `2026_09_18_1615_criar_tabela_linked_check_control.sql` (no Caso A não faz
+      nada: a tabela já veio na estrutura)
 - [ ] `2026_09_21_1000_remover_menu_integration_config.sql`
 - [ ] `2026_09_21_1010_desativar_standard_contract_imovel.sql`
-- [ ] `2026_09_21_1020_remover_campo_creci.sql`
-- [ ] `2026_09_25_1000_seed_inicial_producao.sql` — **só em banco novo/vazio**
-      (ver cabeçalho do arquivo). Rodar como está: o `branch.email` e o CNPJ
+- [ ] `2026_09_25_1000_seed_inicial_producao.sql` — **só no Caso A** (ver
+      cabeçalho do arquivo). Rodar como está: o `branch.email` e o CNPJ
       placeholder da filial são corrigidos depois, pela tela (§8). *(Plano: A9)*
-- [ ] `2026_09_25_1500_seed_dados_faltantes.sql` (idempotente)
-- [ ] `2026_10_02_0921_criar_tabela_login_attempts.sql` — **antes** de
-      publicar o código do A4 (bloqueio de login): o login passa a usar esta
-      tabela e quebra sem ela. *(Plano: A4)*
+- [ ] `2026_09_25_1500_seed_dados_faltantes.sql`
+- [ ] `2026_10_02_0921_criar_tabela_login_attempts.sql` — obrigatória **antes**
+      do código: o login novo usa esta tabela e quebra sem ela. *(Plano: A4)*
+- [ ] `2026_10_02_1137_configuracao_email_smtp_ydeal.sql` — **tem credencial**:
+      seguir o §6 antes de rodar. *(Plano: C7)*
 - [ ] `2026_10_02_1600_esconder_menu_moedas.sql` — esconde "Moedas" do menu (sem
-      efeito se o item não existir; conferir com o SELECT do cabeçalho). Pode rodar
-      antes ou depois do código. *(Plano: M12)*
-- [ ] Qualquer migration nova criada depois desta lista (conferir a pasta).
+      efeito se o item não existir; conferir com o SELECT do cabeçalho). *(Plano: M12)*
 
-## 6. Dados reais (bloqueados até o usuário informar)
+### 5.3 Publicar o código
 
-- [ ] **SMTP de envio** (tabela `configuracao_email`): hoje aponta para a
-      infraestrutura da Ydeal (`mail.ydeal.net.br`) com remetente vazio. Sem
-      definir isso, recuperação de senha e e-mails do sistema
-      saem pelo servidor errado ou não saem. *(Plano: C7 — ⚠️ bloqueado)*
-- [ ] **Se o M4 tiver sido feito** (chave JWT fora do código): trocar a chave
-      invalida os links de recuperação de senha já enviados e não usados —
-      avisar a equipe antes. *(Plano: M4)*
+- [ ] Colocar o sistema em manutenção (ou avisar os usuários).
+- [ ] Publicar os arquivos do commit que vai para produção (anotar o hash),
+      **sem** sobrescrever `src/config/config.php` nem as pastas de upload
+      (`public/img/`, `public/attachments/`, `public/vehicle/`).
+- [ ] Publicar a `vendor/` (ou `composer install --no-dev`) — §2.1.
+- [ ] Conferir o `src/config/config.php` do servidor — §2.
+- [ ] Abrir o login e entrar com um Administrador: a tela abre e o login
+      funciona (se der erro, conferir se a `login_attempts` foi criada no §5.2).
+- [ ] Pedir para quem estava logado sair e entrar de novo: o menu lateral fica
+      em cache por sessão.
+
+### 5.4 Migrations — DEPOIS de publicar o código
+
+- [ ] `2026_09_21_1020_remover_campo_creci.sql` — no Caso B, o código antigo
+      ainda lê essas colunas; por isso só depois do código novo. No Caso A não
+      faz nada (as colunas não vieram na estrutura).
+- [ ] Qualquer migration nova criada depois desta lista (conferir a pasta e o
+      cabeçalho de cada uma, que diz se vai antes ou depois do código).
+
+## 6. Dados reais que não vão para o repositório
+
+- [ ] **SMTP de envio** (tabela `configuracao_email`) — decisão de 2026-10-02:
+      **continua o SMTP da Ydeal** (`mail.ydeal.net.br`, porta 587). Essa
+      configuração **não está em nenhum seed** e, no banco local, a linha tem
+      e-mail e senha **vazios** (o envio não funciona hoje em nenhum ambiente).
+      Ela chega à produção pela migration
+      `2026_10_02_1137_configuracao_email_smtp_ydeal.sql`, que tem marcadores no
+      lugar da credencial: *(Plano: C7)*
+      1. Pedir à Ydeal o **e-mail da conta de envio** e a **senha**.
+      2. Copiar a migration para **fora do repositório**, trocar
+         `<<EMAIL_SMTP>>` e `<<SENHA_SMTP>>` na cópia, rodar a cópia e apagá-la.
+         **Nunca** commitar o arquivo com a senha. Sem trocar os marcadores, a
+         migration não grava nada.
+      3. Conferir (não mostra a senha):
+         `SELECT id, nome, email, smtp, porta, (senha2 <> '') AS tem_senha FROM configuracao_email;`
+         → uma linha, `email` preenchido, `tem_senha` = 1.
+      4. O nome do remetente fica "Website" (copiado do banco local); para
+         outro nome, ajustar a cópia antes de rodar.
+- [ ] **Chave JWT** (§2): trocar a chave invalida os links de recuperação de
+      senha já enviados e não usados — avisar a equipe antes. *(Plano: M4)*
 
 ## 7. Verificações de segurança no servidor (depois de publicar o código)
 
@@ -208,8 +269,8 @@ UNION ALL SELECT 'cliente', extension, COUNT(*) FROM customer_attachments GROUP 
 Com um usuário Administrador e, onde indicado, um usuário Vendedor:
 
 - [ ] Login, navegação pelo menu e logout. Sessão expirada volta para o login.
-- [ ] Recuperar senha: o e-mail chega (depende do item 6/C7) e o link só
-      funciona uma vez. *(Plano: C6)*
+- [ ] Recuperar senha: o e-mail chega (depende do §6, SMTP) e o link só
+      funciona uma vez. *(Plano: C6/C7)*
 - [ ] Listagens com busca: Veículos, Vendidos, Comprados, Histórico, Pedidos
       de Compra/Venda, Cheques, Clientes. Busca com apóstrofo (`d'a`) não dá
       erro. *(Plano: C2)*
@@ -268,6 +329,18 @@ smoke test e **antes** de passar login e senha aos demais usuários.
       perfil, desativar o grupo inteiro (ou pelo menos Comprador).
 - [ ] Clicar num menu pai (ex.: "Financeiro") aplica o mesmo estado em todos os
       submenus dele.
+- [ ] **Telas com regra fixa no código** — ativar para outro perfil não libera:
+      o link aparece no menu, mas ao clicar volta para a Home.
+      - **Veículos Vendidos, Veículos Comprados, relatório de Pedidos de Venda e
+        Usuários**: só Administrador (e Superadm/Desenvolvedor).
+      - **Histórico do Veículo**: Secretária ou acima (Secretária, Gerentes,
+        Administrador, Superadm, Desenvolvedor).
+      Para não confundir os usuários, deixar essas telas **Inativas** nos
+      perfis que não passam na regra. Hoje o Vendedor já tem as quatro
+      primeiras liberadas no menu, e a Secretária tem Usuários.
+      *(Verificação final 2026-10-02)*
+- [ ] **Redes Sociais** (`networks-site`), **Leads** (`lead`, `lead-config`):
+      não têm item de menu e exigem Administrador no código. *(Plano: N17)*
 - [ ] O sistema não deixa o Administrador desativar "Configurações" no próprio
       perfil (aviso na tela). Os perfis Superadm e Desenvolvedor não aparecem
       para o Administrador.

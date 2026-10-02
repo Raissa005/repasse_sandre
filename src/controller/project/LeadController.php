@@ -30,6 +30,9 @@ class LeadController extends FrontController
         $this->table = 'lead';
         parent::__construct($this->route);
 
+        // N17: rota sem item de menu; só Superadm/Administrador/Desenvolvedor (vale também se o módulo for reativado)
+        Secure::access_admin(true);
+
         /**
          * Módulo Lead pausado a pedido do usuário (2026-09-02): a tabela
          * `lead` não existe neste banco, então qualquer ação aqui já

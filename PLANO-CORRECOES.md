@@ -59,8 +59,11 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - ✅ C3 + "sem linha = negado" + N15 (2026-10-02). **Não** popular
   `menu_access` com negações: o Sandré configura pela tela (DEPLOY-CHECKLIST §9)
 - ✅ A5 / M2 / B5, N13, sobra do N2, N10 3º item (2026-10-02)
-- ⚠️ N17 — 11 rotas sem item de menu: proposta feita, **aguardando aprovação** (exceto `card-pdf`, decidido 2026-10-02 → Onda 4, com N18)
-- C7 — ⚠️ bloqueado (dado real)
+- ✅ N17 — rotas sem item de menu: `card-pdf` (Onda 4, com N18) e, em 2026-10-02,
+  Admin exigido em `networks-site`, `lead` e `lead-config`; as demais não precisam de mudança
+- ✅ C7 (decidido 2026-10-02) — mantido o SMTP da Ydeal; a configuração chega à produção
+  pela migration `2026_10_02_1137_configuracao_email_smtp_ydeal.sql`, com a credencial
+  preenchida no deploy (DEPLOY-CHECKLIST §6)
 - ✅ A9 (2026-10-02) — telefone da Ydeal mantido; e-mail/CNPJ da filial preenchidos pela tela no pós-deploy (DEPLOY-CHECKLIST §8)
 
 **Onda 4 — antes do lançamento**:
@@ -82,14 +85,23 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
   `dompdf/dompdf` ^3.1.6 via composer, escape dos dados do cartão, chroot correto, link do
   botão, e **exigir login** — cada usuário gera só o próprio cartão; Admin/Superadm, o de
   qualquer usuário (ver N17 e N18)
+- ✅ Verificação final antes da homologação (2026-10-02): `ROTEIRO-TESTES.md` criado;
+  `imagine/imagine` fixado na release estável 1.5.4 (N18); migrations
+  `2026_09_18_1615` e `2026_09_21_1020` tornadas idempotentes e DEPLOY-CHECKLIST §5
+  reorganizado (estrutura do banco, migrations antes/depois de publicar o código)
 
 **Pós-lançamento**:
 - A1 completo
+- N16 (decisão do usuário, 2026-10-02): avisos PHP já existentes em telas de veículo,
+  DRE, atendimento e cheques — em produção vão só para o log
 - N18: `firebase/php-jwt` e `phpmailer/phpmailer` em releases estáveis (hoje
   `dev-main`/`dev-master`), e junto o `smottt/wideimage` (`dev-master`): depois do
   N12 o único que ainda depende dele é o `FileUploader` (`uploadImg`/`uploadImgSingle`,
   `use WideImage\WideImage`, sem chamador) — trocar por Imagine ou remover esses
-  métodos antes de tirar o pacote do `composer.json`
+  métodos antes de tirar o pacote do `composer.json`. Também em branch de
+  desenvolvimento, por causa do `"minimum-stability": "dev"`: `symfony/cache`,
+  `symfony/*-contracts`, `symfony/var-exporter`, polyfills, `composer/installers`,
+  `psr/container` — avaliar flags `@stable` por pacote, como no Imagine
 - Grupo B: B1, B3, B4, B6 a B11 (o B5 vai na Onda 3, com A5/M2; o B2 fica fora das ondas)
 - M7, M9, M10
 - M12, limpeza opcional: remover as referências a moedas no código (o
@@ -699,11 +711,23 @@ com a ausência de rate-limiting no login).
 completo (solicitar recuperação → usar o link → confirmar que o link não
 funciona mais numa segunda tentativa) antes de considerar resolvido.
 
-### C7 — Servidor de e-mail (SMTP) do sistema usa a infraestrutura da Ydeal
+### ✅ C7 — Servidor de e-mail (SMTP) do sistema usa a infraestrutura da Ydeal — DECIDIDO 2026-10-02 (credencial no deploy)
 
 **Nota (2026-10-02)**: a Ydeal é a empresa dona do sistema, não um fornecedor antigo
-(correção de enquadramento da Auditoria 4). Continua pendente decidir qual SMTP e
-remetente o sistema usa em produção.
+(correção de enquadramento da Auditoria 4).
+
+**✅ Decisão do usuário (2026-10-02): manter o SMTP da Ydeal.** Levantamento (só
+leitura): nenhum seed inclui `configuracao_email`; num banco criado da estrutura do
+banco local a tabela fica vazia e o `MoreMailer` (usado só pela recuperação de senha)
+quebraria ao ler a configuração. No banco local a linha existe (`mail.ydeal.net.br`,
+587, nome "Website"), mas com **e-mail e senha vazios** — o envio não funciona hoje em
+nenhum ambiente. Criada a migration `2026_10_02_1137_configuracao_email_smtp_ydeal.sql`:
+servidor/porta/nome do banco local e marcadores `<<EMAIL_SMTP>>`/`<<SENHA_SMTP>>`
+(credencial não vai para o git; sem trocar os marcadores, nada é gravado); insere só
+se a tabela estiver vazia e só preenche e-mail/senha vazios. Sintaxe conferida com
+`PREPARE` no servidor, sem executar. **Pendente (dado, não código)**: a Ydeal informar a
+conta e a senha de envio no deploy — DEPLOY-CHECKLIST §6. Observação: se o envio
+falhar, o `MoreMailer` imprime o erro do PHPMailer na página (registrado, não tratado).
 
 **Fontes**: `AUDITORIA-4-identidade.md` §1.1.
 **Onde**: tabela `configuracao_email` (dado, não código) +
@@ -2012,7 +2036,9 @@ mesmo estado no menu e em todos os descendentes, numa única transação (antes
 uma por menu). Mantido: ativar um submenu cujo pai não tem linha ativa o pai.
 Teste no C3.
 
-### N16 — Avisos PHP já existentes vistos na matriz do C3 (só registrado, Onda 4)
+### N16 — Avisos PHP já existentes vistos na matriz do C3 (só registrado; pós-lançamento, decisão do usuário 2026-10-02)
+
+Conferido na verificação final (2026-10-02): continuam iguais.
 
 Iguais antes e depois das correções; aparecem em desenvolvimento (em
 produção vão só para o log):
@@ -2025,7 +2051,20 @@ produção vão só para o log):
 - `check-control` (listagem): 10 avisos em `check-control/modals.php`
   (`$costCenters` indefinida, propriedades lidas de null).
 
-### N17 — 11 rotas sem item de menu (proposta, ⚠️ aguardando aprovação; `card-pdf` ✅ aplicado 2026-10-02, ver N18)
+### ✅ N17 — 11 rotas sem item de menu — CONCLUÍDO 2026-10-02 (`card-pdf` com o N18; `networks-site`, `lead`, `lead-config` exigem Admin)
+
+**Nota de execução (2026-10-02)** — decisão do usuário: exigir Admin em
+`networks-site`, `lead` e `lead-config`. `Secure::access_admin(true)` logo depois do
+`parent::__construct` dos três controllers (padrão do `CountriesController`), cobrindo
+todas as ações. Conferido antes: nenhuma tela de não-admin usa a rota `networks-site`
+(o PDF do cartão usa só o model `NetworksSite`). Nos dois de Lead, a checagem vem antes
+do bloqueio do módulo desativado — continua valendo se ele for reativado.
+**Teste antes × depois** (harness `php-cgi`, só GET; "antes" = cópia do HEAD):
+Superadm e Administrador iguais; Secretária e Vendedor abriam `networks-site` (lista,
+cadastro, edição) e agora voltam para a Home; `lead`/`lead-config` já mandavam todos
+para a Home e continuam. As demais linhas da tabela não mudam: `login`, `error` e
+`notification` não podem exigir Admin; `front`, `countries` e `lead-redirect` não
+precisam; `currencies` já redireciona todos (M12).
 
 Decisão do usuário (2026-10-02): as rotas sem item de menu "passam a exigir
 Admin no servidor; listar antes de aplicar". Levantamento — várias **não podem**
@@ -2055,7 +2094,20 @@ ser admin — tudo antes de carregar qualquer dado. Executar na Onda 4 junto com
 (troca do dompdf) e o link do botão (A2). As demais linhas desta tabela continuam
 aguardando aprovação.
 
-### N18 — Dependências desatualizadas apontadas pelo `composer audit` — ✅ PDF CONCLUÍDO 2026-10-02 (com N17 `card-pdf` e A2 do botão); JWT/PHPMailer pós-lançamento
+### N18 — Dependências desatualizadas apontadas pelo `composer audit` — ✅ PDF CONCLUÍDO 2026-10-02 (com N17 `card-pdf` e A2 do botão); ✅ Imagine 1.5.4; JWT/PHPMailer pós-lançamento
+
+**Imagine (verificação final, 2026-10-02)**: estava em `dev-develop` (commit `ebf9bb0`,
+fev/2024; `composer.json` pedia `^1.0@dev`) e, desde o N12, faz todo o
+redimensionamento de imagem do sistema. Fixado na release estável mais recente,
+**1.5.4** (jun/2026, PHP ≥ 7.1), com `"imagine/imagine": "^1.5.4@stable"` — a flag
+`@stable` no pacote, sem mudar o `"minimum-stability": "dev"` (com `^1.5.4` puro o
+composer continuaria no branch). Avaliação: diferenças do código entre os dois são de
+compatibilidade (tipos anuláveis, `imagedestroy` só antes do PHP 8.5, opção nova de
+resolução não usada); nada no `open`/`thumbnail`/`resize`/`save` como o sistema chama.
+Só esse pacote mudou no lock; `composer audit` sem alertas. **Teste do N12 repetido**,
+antes (Imagine antigo, cópia do HEAD) × depois: as 71 verificações do N12 mais 9 de
+fotos de veículo (`resizeImageWithCanvas`, 3 tamanhos × JPG/PNG) — 80/80 nas duas
+versões, e os 79 arquivos gerados **idênticos byte a byte**.
 
 **Nota de execução (2026-10-02)** — itens 1 a 6 do escopo abaixo, feitos juntos:
 - Composer: `dompdf/dompdf` **v3.1.6** (traz `dompdf/php-svg-lib` 1.0.2,
@@ -2178,12 +2230,12 @@ Vendedor pedindo o próprio → PDF; Administrador pedindo o de qualquer um → 
 |---|---|
 | ~~C3~~ | ✅ Decidido e aplicado 2026-10-02 (com "sem linha = negado" e N15). |
 | ~~C5~~ | ✅ Decidido e aplicado 2026-10-02 (rateio removido + transação opção A). |
-| C7 | Qual o SMTP/e-mail de envio real da Repasse Sandré? |
+| ~~C7~~ | ✅ Decidido 2026-10-02: SMTP da Ydeal mantido; credencial informada no deploy (DEPLOY-CHECKLIST §6). |
 | ~~A5/M2~~ | ✅ Decidido e aplicado 2026-10-02 (ver A5 e M2). |
 | ~~A9~~ | ✅ Decidido 2026-10-02: telefone da Ydeal mantido; e-mail/CNPJ da filial pela tela no pós-deploy. |
 | ~~M1~~ | ✅ Decidido e aplicado 2026-10-01: aba escondida, código mantido. |
 | ~~N14~~ | ✅ Decidido e aplicado 2026-10-02. |
-| N17 | Aprovar a proposta para as demais rotas sem item de menu (o `card-pdf` foi decidido em 2026-10-02: exigir login, Onda 4). |
+| ~~N17~~ | ✅ Decidido e aplicado 2026-10-02 (`card-pdf`; Admin em `networks-site`, `lead`, `lead-config`). |
 | ~~M12~~ | ✅ Decidido 2026-10-01: esconder do menu e bloquear a rota (Onda 4); remoção completa é limpeza opcional. |
 | ~~B2~~ | ✅ Decidido 2026-10-01: manter documentado, não dropar. |
 

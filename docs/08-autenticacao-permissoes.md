@@ -100,6 +100,17 @@ que o usuário afetado precisa logar de novo (ou o cache precisa ser limpo).
   Fora o Superadm, ninguém desativa "Configurações" (ou o pai dele) do próprio perfil.
 - Clicar num menu pai aplica o **mesmo** estado em todos os submenus
   (`MenuAccess::setProfileMenuStatus`).
+- Algumas telas têm, além do `menu_access`, um perfil mínimo **fixo no
+  controller**: Veículos Vendidos, Veículos Comprados, relatório de Pedidos de
+  Venda e Usuários (`access_admin(true)`); Histórico do Veículo
+  (`access_secretary(true)`). Ativá-las na tela Menus para um perfil abaixo disso
+  só põe o link no menu — ao clicar, volta para a Home.
+- Rotas **sem item de menu** não passam pela checagem de `menu_access` (`$this->page`
+  vazio), então a regra fica no próprio controller: `countries`, `networks-site`,
+  `lead` e `lead-config` exigem `access_admin(true)` no construtor (N17);
+  `card-pdf`/`cardPDF` exige login e só gera o cartão do próprio usuário, exceto
+  para admin; `currencies` redireciona todos para a Home (M12). Rota nova sem item
+  de menu precisa da sua própria checagem.
 - Filiais (7) e DRE (59) aparecem no menu de Superadm/Administrador também dentro
   de uma filial (`assembleMenu`).
 - "Ver como este usuário" (`users/turnUser`): só Superadm. A sessão do usuário visto

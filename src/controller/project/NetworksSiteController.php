@@ -24,6 +24,9 @@ class NetworksSiteController extends FrontController
         $this->model = new NetworksSite();
         $this->table = 'rede_social';
         parent::__construct($this->route);
+
+        // N17: rota sem item de menu; todas as ações só para Superadm/Administrador/Desenvolvedor
+        Secure::access_admin(true);
     }
 
     public function index()

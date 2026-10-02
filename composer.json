@@ -15,7 +15,7 @@
         "phpmailer/phpmailer": "dev-master",
         "firebase/php-jwt": "dev-main",
         "symfony/cache": "~5.4.0",
-        "imagine/imagine": "^1.0@dev",
+        "imagine/imagine": "^1.5.4@stable",
         "ezyang/htmlpurifier": "^4.17",
         "dompdf/dompdf": "^3.1.6"
     },
