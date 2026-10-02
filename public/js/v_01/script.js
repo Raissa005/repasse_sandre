@@ -160,29 +160,6 @@ $(document).ajaxComplete(function (event, xhr) {
     }
 });
 
-$(document).ready(function () {
-    $.post({
-        url: `${url}ajax/global/toast`,
-        dataType: 'json',
-        data: {},
-        xhrFields: {
-            withCredentials: true
-        },
-        async: false,
-        success: function (response) {
-            const { error, message, data } = response;
-
-            if (data.toast) {
-                Toast.fire({
-                    icon: data.toast.icon,
-                    title: data.toast.title,
-                    // padding: '.8em',
-                });
-            }
-        }
-    });
-});
-
 $("select").select2();
 
 $("input.custon-checkbox").checkboxradio();

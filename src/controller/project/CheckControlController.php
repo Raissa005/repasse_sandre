@@ -6,6 +6,8 @@ use RR\libs\Date;
 use RR\libs\Util;
 use RR\model\User;
 use RR\libs\Secure;
+use PDOException;
+use RR\libs\Toast;
 use RR\model\Banks;
 use RR\model\Customer;
 use RR\libs\Pagination;
@@ -462,6 +464,41 @@ class CheckControlController extends FrontController
         ];
 
         redirect("{$this->route}/editItem/$item->id");
+    }
+
+    // N10: botões Ativar/Inativar da listagem (modal envia POST para check-control/disableItem|enableItem/{id})
+    public function disableItem($itemId, $page = "1")
+    {
+        Secure::access_admin(true);
+        Secure::check_post_method($this->route);
+
+        try {
+            $success = $this->model->disableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemDisabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . (int) $page);
+        exit;
+    }
+
+    public function enableItem($itemId, $page = "1")
+    {
+        Secure::access_admin(true);
+        Secure::check_post_method($this->route);
+
+        try {
+            $success = $this->model->enableItem($itemId);
+        } catch (PDOException $error) {
+            $success = false;
+        }
+
+        $success ? Toast::itemEnabled() : Toast::genericError();
+
+        header('location: ' . URL . $this->route . '?page=' . (int) $page . '&statusCheck=0');
+        exit;
     }
 
     public function handleDeleteCheckTimeline($itemId)

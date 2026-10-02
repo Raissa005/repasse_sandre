@@ -23,7 +23,7 @@ class VehicleAttachments extends Model
         parent::__construct($this->table, $joins);
     }
 
-    private function saveFile(array $file, int $itemId, string $extension): string
+    private function saveFile(array $file, int $itemId, string $extension): ?string
     {
         $path = ROOT . "public/vehicle/$itemId/attachments";
         if (!file_exists($path)) {
@@ -32,8 +32,7 @@ class VehicleAttachments extends Model
 
         $fileName = uniqid() . ".$extension";
         $destination = "$path/$fileName";
-        move_uploaded_file($file['tmp_name'], $destination);
-        return $fileName;
+        return move_uploaded_file($file['tmp_name'], $destination) ? $fileName : null;
     }
 
     public function deleteFile(int $itemId, $attachmentId)
@@ -57,6 +56,10 @@ class VehicleAttachments extends Model
         }
 
         $fileName = $this->saveFile($file, $itemId, $extension);
+
+        if ($fileName === null) {
+            return (object)['error' => true, 'message' => 'Arquivo não pode ser enviado.'];
+        }
 
         return (new VehicleAttachments)->insert([
             "id_vehicle" => $itemId,

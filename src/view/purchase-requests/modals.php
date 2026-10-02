@@ -26,7 +26,7 @@
                         <div class="form-group">
                             <label for="id_form_of_payment">Forma de Pagamento <span class="text-danger">*</span></label>
                             <select class="form-control" name="id_form_of_payment" id="id_form_of_payment" required>
-                                <?php foreach ($formOfPayments as $payment) { ?>
+                                <?php foreach ($formOfPayments ?? [] as $payment) { ?>
                                     <option value="<?= $payment->id ?>"><?= $payment->name ?></option>
                                 <?php } ?>
                             </select>
@@ -44,7 +44,7 @@
                             <label for="cost_center">Centro de Custo <span class="text-danger">*</span></label>
                             <select id="cost_center" name="cost_center" class="form-control" required>
                                 <option value="">Selecione</option>
-                                <?php foreach($costCenters as $cost){ ?>
+                                <?php foreach ($costCenters ?? [] as $cost){ ?>
                                     <option value="<?= $cost->id ?>"><?= $cost->name ?></option>
                                 <?php } ?>
                             </select>

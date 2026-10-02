@@ -183,7 +183,7 @@
                         <div class="form-group">
                             <label for="id_form_of_payment">Forma de Pagamento <span class="text-danger">*</span></label>
                             <select class="form-control" name="id_form_of_payment" id="id_form_of_payment" required>
-                                <?php foreach ($formOfPayments as $payment) { ?>
+                                <?php foreach ($formOfPayments ?? [] as $payment) { ?>
                                     <option value="<?= $payment->id ?>"><?= $payment->name ?></option>
                                 <?php } ?>
                             </select>

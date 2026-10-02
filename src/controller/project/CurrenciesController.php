@@ -24,9 +24,14 @@ class CurrenciesController extends FrontController
         $this->dir = 'currencies';
         $this->route = 'currencies';
         $this->table = 'currencies';
-        $this->model = new Currencies();
 
         parent::__construct($this->route);
+
+        // M12: tela fora do ar (a tabela `currencies` não existe); todos os métodos voltam para a home
+        Toast::warningToast('A tela de Moedas não está disponível.');
+        redirect('home');
+
+        $this->model = new Currencies();
     }
 
     public function index()

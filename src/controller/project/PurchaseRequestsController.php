@@ -7,6 +7,7 @@ use RR\libs\Util;
 use RR\model\User;
 use RR\model\Menu;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\Branch;
 use RR\model\Cities;
 use RR\model\States;
@@ -851,6 +852,9 @@ class PurchaseRequestsController extends FrontController
             ]
         );
 
+        $this->printingRequires($item, 'Pedido não encontrado.', $this->route);
+        $this->printingRequires($item->id_bills_to_pay, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/purchaseFinancial/$itemId");
+
         array_map(function ($i) {
             if (!empty($i->customer_fancy_name_company)) {
 
@@ -865,6 +869,7 @@ class PurchaseRequestsController extends FrontController
         }, [$item]);
 
         $billsToPay = (new BillsToPay)->getItemById($item->id_bills_to_pay);
+        $this->printingRequires($billsToPay, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/purchaseFinancial/$itemId");
 
         array_map(function ($element) use (&$installments) {
             $installments = (new BillsToPayInstallment())->getWithFiltersAllItems(
@@ -956,6 +961,9 @@ class PurchaseRequestsController extends FrontController
             ]
         );
 
+        $this->printingRequires($item, 'Pedido não encontrado.', $this->route);
+        $this->printingRequires($item->id_bills_to_pay, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/editItem/$itemId");
+
         array_map(function ($i) {
             if (!empty($i->customer_fancy_name_company)) {
 
@@ -999,6 +1007,7 @@ class PurchaseRequestsController extends FrontController
         }, $vehiclesPurchased->data);
 
         $billsToPay = (new BillsToPay)->getItemById($item->id_bills_to_pay);
+        $this->printingRequires($billsToPay, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/editItem/$itemId");
 
         array_map(function ($element) use (&$installments) {
             $installments = (new BillsToPayInstallment())->getWithFiltersAllItems(
@@ -1089,6 +1098,9 @@ class PurchaseRequestsController extends FrontController
             ]
         );
 
+        $this->printingRequires($item, 'Pedido não encontrado.', $this->route);
+        $this->printingRequires($item->id_commission_to_pay, 'Este pedido não tem comissão lançada para imprimir.', "{$this->route}/purchaseCommission/$itemId");
+
         array_map(function ($i) {
             $i->customer_name = $i->customer_fancy_name_company ?? $i->customer_company_name ?? $i->customer_name;
             $i->value = Util::maskMoney($i->value);
@@ -1096,6 +1108,7 @@ class PurchaseRequestsController extends FrontController
         }, [$item]);
 
         $billsToPay = (new BillsToPay)->getItemById($item->id_commission_to_pay);
+        $this->printingRequires($billsToPay, 'Este pedido não tem comissão lançada para imprimir.', "{$this->route}/purchaseCommission/$itemId");
 
         array_map(function ($element) use (&$installments) {
             $installments = (new BillsToPayInstallment())->getWithFiltersAllItems(
@@ -1159,6 +1172,15 @@ class PurchaseRequestsController extends FrontController
             $totalInstallments = Util::maskMoney($totalInstallments);
 
         require APP . 'view/' . $this->dir . '/installment-printing.php';
+    }
+
+    /** N9: impressão aberta pela URL sem o pedido ou sem o lançamento (o botão de imprimir só aparece quando existe) */
+    private function printingRequires($value, string $message, string $path): void
+    {
+        if (empty($value)) {
+            Toast::warningToast($message);
+            redirect($path);
+        }
     }
 
     public function disableItem($id){

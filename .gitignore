@@ -6,7 +6,6 @@ public/img/users/*
 .vscode
 public/img/products_imgs
 src/config/config.php
-src/libs/dompdf/lib/fonts/*
 public/attachments/attendance/*
 public/attachments/customer/*
 public/attachments/billsToPay/*

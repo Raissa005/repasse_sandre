@@ -19,7 +19,7 @@ use RR\libs\Util;
                                     <?php foreach ($items as $item) { ?>
                                         <li class="item">
                                             <div class="product-info active" style="margin-left: 0px;">
-                                                <a href="<?= URL . $this->route . "/" . $item->id ?>">
+                                                <a href="<?= URL . $this->route . "/index/" . $item->id ?>">
                                                     <?= Util::escapeSystemHtml($item->title) ?>
                                                     <span class="pull-right">
                                                         <?php if (!$item->message_read) { ?>
@@ -44,8 +44,8 @@ use RR\libs\Util;
                 <?php if (!empty($notice->route)) { ?>
                     <div class="box box-warning">
                         <div class="box-header with-border">
-                            <a href="<?= URL . $notice->route ?>" target="_blank">
-                                <i class="text-yellow <?= $notice->icon ?>"></i>
+                            <a href="<?= htmlspecialchars(URL . $notice->route, ENT_QUOTES, 'UTF-8') ?>" target="_blank">
+                                <i class="text-yellow <?= htmlspecialchars($notice->icon ?? '', ENT_QUOTES, 'UTF-8') ?>"></i>
                                 <h3 class="box-title" style="margin-top: 7px;"><?= !empty($notice->title) ? Util::escapeSystemHtml($notice->title) : "Nem uma Notificação selecionada!" ?></h3>
                             </a>
                             <span class="pull-right"><?= !empty($notice->created_at) ? Date::date_hour($notice->created_at) :  "" ?></span>
@@ -53,7 +53,7 @@ use RR\libs\Util;
                         <div class="box-body">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <?= !empty($notice->description) ? htmlspecialchars($notice->description, ENT_QUOTES, 'UTF-8') : "" ?>
+                                    <?= !empty($notice->description) ? Util::escapeSystemHtml($notice->description) : "" ?>
                                 </div>
                             </div>
                         </div>

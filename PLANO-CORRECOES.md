@@ -63,21 +63,21 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - A9 — ⚠️ bloqueado (dado real)
 
 **Onda 4 — antes do lançamento**:
-- A2
+- ✅ A2 (2026-10-02): botão do cartão e link da notificação
 - ✅ A3 + M3 (2026-10-02)
 - ✅ A4 (2026-10-02) — migration rodada pelo usuário no banco local; contador aplicado
 - ✅ A10 (2026-10-02)
 - ✅ M4 (2026-10-02) — inclui a correção da recuperação de senha, que estava quebrada (N19)
-- N9
-- Chamada morta `ajax/global/toast` em `script.js:150` (N3, 2º item)
-- Botões Ativar/Inativar da listagem de Cheques (N10, 1º item)
-- Anexo de veículo que só grava o primeiro arquivo (N11)
-- Sobra do N1: anexos de veículo e de Contas a Pagar/Receber gravam registro
-  quebrado se enviados sem arquivo
+- ✅ N9 (2026-10-02)
+- ✅ Chamada morta `ajax/global/toast` em `script.js:150` (N3, 2º item) (2026-10-02)
+- ✅ Botões Ativar/Inativar da listagem de Cheques (N10, 1º item) (2026-10-02)
+- ✅ Anexo de veículo que só grava o primeiro arquivo (N11) (2026-10-02)
+- ✅ Sobra do N1: anexos de veículo e de Contas a Pagar/Receber gravam registro
+  quebrado se enviados sem arquivo (2026-10-02, junto com o N11)
 - ✅ N12 (2026-10-02): WideImage trocado pelo Imagine em avatar, cartões, logos e
   marca d'água, recodificando sempre; `-dp-` da foto do cartão corrigido
-- M12: esconder Moedas do menu e bloquear a rota `currencies`
-- N18 + N17 (`card-pdf`) + A2 no botão do cartão: trocar o dompdf 0.8.3 embutido por
+- ✅ M12: esconder Moedas do menu e bloquear a rota `currencies` (2026-10-02; migration pendente de execução)
+- ✅ N18 + N17 (`card-pdf`) + A2 no botão do cartão (2026-10-02): trocar o dompdf 0.8.3 embutido por
   `dompdf/dompdf` ^3.1.6 via composer, escape dos dados do cartão, chroot correto, link do
   botão, e **exigir login** — cada usuário gera só o próprio cartão; Admin/Superadm, o de
   qualquer usuário (ver N17 e N18)
@@ -729,7 +729,35 @@ em vez de em cada view manualmente) reduz bastante esse risco, mas ainda
 assim exige teste extensivo de todo o sistema depois — recomenda-se rollout
 incremental (ex.: por módulo) em vez de uma mudança única.
 
-### A2 — Bug de roteamento: link de 2 segmentos chama método com nome literal do id
+### ✅ A2 — Bug de roteamento: link de 2 segmentos chama método com nome literal do id — CONCLUÍDO 2026-10-02 (2 links; roteador não mexido)
+
+**Nota de execução (2026-10-02)**:
+- **Cartão digital**: botão para `cardPDF/index/{id}` — ver a nota do N18.
+- **Notificação**: `NotificationController::index($itemId = null)` no lugar do
+  `$_GET['pg1']` (que nunca trazia o id); links da lista (`notification/index.php`) e
+  do sino do topo (`public/js/v_01/notification.js`) para `notification/index/{id}`.
+  Com o link funcionando, o detalhe passaria a rodar código que nunca rodou; corrigido
+  junto, sem regra nova:
+  - só abre notificação que está na **lista do próprio usuário** (mesmos filtros de
+    perfil/filial da lista: Vendedor/Secretária só as suas da filial, Gerentes e Administrador as da
+    filial, Superadm todas); fora dela ou id não numérico → "Notificação não
+    encontrada." e volta para a lista. Antes, qualquer id abriria;
+  - "marcar como lida" comparava `bool == id` (qualquer um que abrisse marcava a do
+    destinatário); agora só quando `notification_read.id_user` é o usuário logado;
+  - bloco do atendimento: o telefone ia direto no SQL (`phone = {$phone}`), agora só
+    se for só dígitos (é como está gravado); atendimento inexistente não dá fatal;
+  - descrição do detalhe com `Util::escapeSystemHtml` (o link do cliente que esse
+    bloco monta voltou a funcionar; o resto sai escapado); rota e ícone do cabeçalho
+    escapados.
+- **Teste**: antes, `notification/45` → fatal "undefined method ::45()" (Superadm e
+  Vendedor). Depois, `notification` igual (200, 0 erros) e `notification/index/45` /
+  `notification/index/x1` → aviso + volta para a lista (a tabela `notification` está
+  vazia no banco local). Detalhe testado com dados em memória: link do cliente
+  clicável, `<img onerror>`/`<script>` no nome, aspas na rota e no ícone saem como texto.
+- **Efeito prático hoje: nenhum** — quem cria notificação é só o `LeadController`
+  (módulo desativado). Se o banco de produção tiver notificações antigas, passam a abrir.
+- `docs/02-arquitetura-fluxo.md`: anotada a armadilha do 2º segmento.
+
 
 **Fontes**: `AUDITORIA-2-tecnica.md`, achados ALTO #3 e #4.
 **Arquivos**: `src/view/notification/index.php:21`,
@@ -1285,7 +1313,20 @@ controllers) é mudança pequena e puramente defensiva — restringe uma opção
 que já não deveria estar disponível, não remove nada que funcione hoje.
 Testar emissão de recibo normal ("Recibo Simples") depois.
 
-### M12 — `CurrenciesController`: tabela inexistente (decisão de escopo, além da checagem de perfil do grupo M2)
+### ✅ M12 — `CurrenciesController`: tabela inexistente — CONCLUÍDO 2026-10-02 (menu escondido + rota bloqueada; remoção completa segue opcional)
+
+**Nota de execução (2026-10-02)**:
+- Migration `db/migrations/2026_10_02_1600_esconder_menu_moedas.sql`:
+  `UPDATE menu SET status = 0 WHERE route = 'currencies'` (rollback `status = 1`).
+  **Não executada** — no banco local o item não existe (0 linhas); em produção,
+  conferir com o SELECT do cabeçalho. Listada no DEPLOY-CHECKLIST §5.
+- `CurrenciesController::__construct`: depois do `parent::__construct` (sessão e login),
+  toast "A tela de Moedas não está disponível." e `redirect('home')`, antes de criar o
+  model — vale para todos os métodos. Nenhum arquivo apagado.
+- **Teste antes × depois** (Superadm, Administrador, Vendedor × `currencies`,
+  `addItem`, `editItem/1`): antes abriam para os três (inclusive Vendedor) com avisos de
+  tabela inexistente; depois os 9 → 302 `home`, 0 erros.
+
 
 **Fontes**: `AUDITORIA-2-tecnica.md`, achado MÉDIO #10 (parte de schema).
 
@@ -1512,6 +1553,10 @@ Levantadas ao executar o C1, deixadas para depois do lançamento:
   log do Apache. Hoje sem efeito visível (o toast real sai pelo
   `Toast::render()` no footer). Remover o bloco `$(document).ready` do
   `script.js` e o `application.js` órfão numa limpeza separada.
+  **✅ Removido 2026-10-02**: bloco tirado do `script.js` (`node --check` ok) e
+  `application.js` apagado (`git rm`; nenhuma referência, e todo o conteúdo dele
+  existe no `script.js`). Conferido: o aviso de um redirect (ex.: `currencies` → home)
+  continua aparecendo pelo `Toast::render()` do rodapé.
 - **Reordenar anexos de veículo está quebrado** (independente do C1):
   `src/view/vehicles/attachments.php` e `record-vehicle-history/vehicle.php`
   usam `data-table="products_attachments"`, tabela que não existe, e
@@ -1685,7 +1730,25 @@ impressões só admin, igual à aba?) antes de corrigir. Também: o `index()` de
 Compra chama `Secure::individual_menu_access(true)` (vira menu id 1, que não
 existe), uma linha sem efeito; não mexi.
 
-### N9 — Erros já existentes vistos nos testes do C2 lote 2 (só registrado)
+### ✅ N9 — Erros já existentes vistos nos testes do C2 lote 2 — CONCLUÍDO 2026-10-02
+
+**Nota de execução (2026-10-02)**: causa comum — as impressões só têm botão quando o
+lançamento existe, mas abertas pela URL (pedido sem financeiro/comissão, ou id
+inexistente) seguiam sem checar. Novo `printingRequires()` privado em
+`SaleRequestsController` e `PurchaseRequestsController`, chamado nas 6 impressões com
+parcelas (`installmentPrinting`, `vehicleInstallmentPrinting`,
+`commissionInstallmentPrinting` de cada um): pedido inexistente → "Pedido não
+encontrado." + listagem; sem lançamento (id vazio ou linha inexistente) → "Este pedido
+não tem financeiro lançado / comissão lançada para imprimir." + volta para a aba do botão
+(Financeiro, Dados Gerais ou Comissão). `$formOfPayments` (e `$costCenters` na Compra):
+`?? []` no `foreach` dos `modals.php` de Pedido de Venda e de Compra — o modal de parcela
+é incluído em todas as telas do pedido, mas só Financeiro/Comissão definem as listas.
+**Teste antes × depois** (Superadm): as 6 impressões de pedidos com lançamento
+(compra 1, venda 6) com **corpo idêntico**; compra 2/4/999 e venda 1/7/999 — antes fatal
+ou avisos e impressão vazia — agora redirecionam com 0 erros; listagens e
+`addItem`/`editItem` de Venda e Compra sem os avisos. Não testado o caminho positivo
+da comissão de venda (nenhuma venda local tem comissão).
+
 
 Já aconteciam antes das correções; não têm relação com o C2:
 - `sale-requests` (listagem): `Warning: Undefined variable $formOfPayments` +
@@ -1704,6 +1767,14 @@ Já aconteciam antes; não têm relação com o C2:
 - **Cheques: botões Ativar/Inativar da listagem não funcionam** — apontam para
   `check-control/disableItem`/`enableItem`, que não existem no
   `CheckControlController` (a rota cai em `error`).
+  **✅ Corrigido 2026-10-02**: `disableItem`/`enableItem` criados no padrão dos
+  outros cadastros (`Model::disableItem`/`enableItem`, toast, volta para a listagem;
+  Ativar volta para a lista de inativos), com `Secure::access_admin(true)` (mesma regra
+  do `index()`) e `check_post_method` (o modal envia POST). Sem registro na timeline do
+  cheque (o padrão genérico não registra). Inativar tira o cheque do seletor do
+  pagamento de parcela (`ajax/CheckControl`, filtra `status = 1`). Teste antes × depois:
+  Administrador por GET — antes fatal "undefined method", agora volta sem gravar;
+  Vendedor por POST → home nos dois; o POST de admin grava e ficou para o teste manual.
 - **`ajax/Customer/getCustomersSuppliersAndBuilders` sem chamador** em
   `public/js`, e filtra tipos de cliente por ids fixos `[9, 11]`; no banco
   local nenhum cliente tem esses tipos, então sempre volta vazio. Mesma
@@ -1715,7 +1786,30 @@ Já aconteciam antes; não têm relação com o C2:
   (que pediu checagem em impressões e gravações). `getBillReceiveById` não tem
   chamador e não faz nada (monta um array e não usa).
 
-### N11 — Anexo de veículo grava só o primeiro arquivo (só registrado, Onda 4)
+### ✅ N11 — Anexo de veículo grava só o primeiro arquivo — CONCLUÍDO 2026-10-02 (com a sobra do N1)
+
+**Nota de execução (2026-10-02)**:
+- Nenhum formulário de anexo do sistema tem `multiple` (veículo, atendimento, cliente,
+  Contas a Pagar/Receber): pela tela só sai **um** arquivo por envio, então o "só o
+  primeiro" não era alcançável pela interface. Mesmo assim o
+  `VehiclesController::handleSubmitAddAttachments` passou a gravar **cada** arquivo
+  enviado, como os outros módulos (com 1 arquivo, comportamento idêntico). Os dois
+  redirects para `vehicles/attachment/{id}` (singular, rota inexistente) viraram
+  `attachments`. `VehicleAttachments::saveFile` devolve `null` se o
+  `move_uploaded_file` falhar, e `insertAttachments` não grava nesse caso.
+- **Sobra do N1**: `FileUploader::hasSelectedFile` (mesmo padrão do atendimento) no
+  início dos handlers de veículo, Contas a Pagar, Contas a Receber e cliente — sem
+  arquivo → "Nenhum arquivo foi escolhido. Selecione o arquivo e depois clique em
+  "Adicionar"." e nada é gravado. Em Contas a Pagar/Receber, entrada com erro do
+  `uploadFiles` (arquivo não movido) é pulada, com "Não foi possível enviar um ou mais
+  arquivos" (padrão que o cliente já usava).
+- **Teste antes × depois** (scratchpad; models de gravação substituídos por stubs em
+  memória, nada no banco): campo vazio — antes gravava registro sem arquivo em
+  veículo/pagar/receber e o cliente dizia só "não foi possível enviar"; depois nada é
+  gravado e a mensagem explica. Veículo com 2 arquivos: antes 1 gravação, depois 2.
+  Arquivo que não pôde ser movido (pagar/receber): antes gravava mesmo assim, depois
+  não. O envio real com sucesso grava, então ficou para o teste manual.
+
 
 Visto no levantamento do C4 etapa 2. O campo de anexo de veículo
 (`src/view/vehicles/attachments.php`) é `attachments[]`, mas
@@ -1906,7 +2000,7 @@ produção vão só para o log):
 - `check-control` (listagem): 10 avisos em `check-control/modals.php`
   (`$costCenters` indefinida, propriedades lidas de null).
 
-### N17 — 11 rotas sem item de menu (proposta, ⚠️ aguardando aprovação)
+### N17 — 11 rotas sem item de menu (proposta, ⚠️ aguardando aprovação; `card-pdf` ✅ aplicado 2026-10-02, ver N18)
 
 Decisão do usuário (2026-10-02): as rotas sem item de menu "passam a exigir
 Admin no servidor; listar antes de aplicar". Levantamento — várias **não podem**
@@ -1936,7 +2030,45 @@ ser admin — tudo antes de carregar qualquer dado. Executar na Onda 4 junto com
 (troca do dompdf) e o link do botão (A2). As demais linhas desta tabela continuam
 aguardando aprovação.
 
-### N18 — Dependências desatualizadas apontadas pelo `composer audit` — PDF na Onda 4, JWT/PHPMailer pós-lançamento
+### N18 — Dependências desatualizadas apontadas pelo `composer audit` — ✅ PDF CONCLUÍDO 2026-10-02 (com N17 `card-pdf` e A2 do botão); JWT/PHPMailer pós-lançamento
+
+**Nota de execução (2026-10-02)** — itens 1 a 6 do escopo abaixo, feitos juntos:
+- Composer: `dompdf/dompdf` **v3.1.6** (traz `dompdf/php-svg-lib` 1.0.2,
+  `dompdf/php-font-lib` 1.0.2, `masterminds/html5` 2.11.0); `phenx/php-svg-lib` e
+  `phenx/php-font-lib` removidos. Sem `-W`: com ele o `sabberworm/php-css-parser`
+  iria para `dev-main`; ficou no 8.4.0 já instalado. `composer audit`: nenhum alerta.
+- `src/libs/dompdf/` removido (`git rm`) e a linha dele no `.gitignore`.
+- `CardPDFController` passa a estender `FrontController` (rota `card-pdf`, sem item
+  de menu): sessão + login vêm do construtor base (sem login → `login/logout`). Id não
+  numérico → home; id de outro usuário sem `Secure::access_admin()` → toast
+  "sem autorização" + home; usuário inexistente → aviso + home; usuário sem modelo de
+  cartão → aviso + `users/digital-card/{id}`. Tudo antes de montar o PDF.
+- Dompdf: `Options` com `chroot` em `public/`, remoto e PHP desligados,
+  `loadHtml`/`setPaper`. Caminhos de imagem e fonte viraram absolutos
+  (`ROOT . 'public/...'`); as `@font-face` (`../fonts/...`) nunca carregavam.
+  `fontDir`/`fontCache` em `storage/dompdf-fonts/` (raiz, fora de `public/`, conteúdo
+  ignorado pelo git; precisa ser gravável pelo Apache — DEPLOY-CHECKLIST §2.1): o dompdf 3 grava ali as
+  fontes do cartão, e a `vendor` não é gravável pelo Apache (`daemon`).
+- `cardPDF/index.php`: nome, ocupação, título, links das redes (do usuário e da
+  empresa), `url_global`, classes de fonte e caminhos com `htmlspecialchars`;
+  `filename` do ícone com `basename`; tirado o `use Sabberworm\...` solto. Cores e
+  tamanhos que vão para o `<style>` são validados no controller (hex `#rgb`…`#rrggbbaa`,
+  senão `transparent`; tamanho `(int)`).
+- Botão "Gerar Cartão Digital" (`users/digital-card.php`): `cardPDF/index/{id}`
+  (**parte do A2 referente ao cartão**). A rota fica `cardPDF`, não `card-pdf`: o
+  roteador viraria `CardPdfController`, que só acha o arquivo em disco sem
+  diferenciar maiúsculas (macOS), não no Linux.
+- **Teste (harness php-cgi + sessão em arquivo, só leitura)**: antes, `cardPDF/1` →
+  fatal "undefined method ::1()" e `cardPDF/index/{id}` → fatal das fontes, **inclusive
+  sem sessão**. Depois: sem sessão → 302 `login/logout`; Vendedor (12) o próprio → PDF;
+  Vendedor o de 13 e o de 1 → 302 home; Administrador (6) e Superadm (1) o de outro → PDF;
+  id 999 e `1abc` → 302 home; 0 erros PHP. Conteúdo (view real com dados em memória,
+  sem banco): foto e fontes do cartão aparecem; `<b>João</b> <script>…` no nome e HTML
+  na ocupação/links saem como texto; imagem fora de `public/` é recusada pelo chroot.
+- **Observação**: o modelo de cartão local (`digital_card` id 1) tem fundo `.avif`
+  (anterior ao C4) e a pasta está vazia; o dompdf não lê AVIF. Uploads novos só
+  aceitam jpg/png. Registrado no DEPLOY-CHECKLIST §8.
+
 
 Visto ao instalar o HTMLPurifier (A3, 2026-10-02). Sem relação com A3/M4:
 - `phenx/php-svg-lib` (usado pelo gerador de PDF): 3 alertas — 1 crítico

@@ -11,6 +11,8 @@ use RR\model\GerenciaPost;
 use RR\model\ModelGenerico;
 use RR\model\CustomerBranch;
 
+use function RR\Controller\redirect;
+
 class NotificationController extends FrontController
 {
     public $route;
@@ -28,7 +30,7 @@ class NotificationController extends FrontController
         parent::__construct($this->route);
     }
 
-    public function index()
+    public function index($itemId = null)
     {
         if (!isset($_GET['status'])) {
             $_GET['status'] = true;
@@ -49,8 +51,14 @@ class NotificationController extends FrontController
 
         $items = (new Notification)->getAndFilterAllItem(0, $_GET, 0);
 
-        if (!empty($_GET['pg1'])) {
-            $notice = (new Notification)->getItemById8161($_GET['pg1']);
+        if ($itemId !== null) {
+            // A2: só abre notificação que aparece na lista do usuário (mesmos filtros de perfil/filial acima)
+            if (!ctype_digit((string) $itemId) || !in_array((int) $itemId, array_map('intval', array_column($items, 'id')), true)) {
+                Toast::warningToast('Notificação não encontrada.');
+                redirect($this->route);
+            }
+
+            $notice = (new Notification)->getItemById8161((int) $itemId);
 
             $arrayRoute = explode('/', $notice->route);
 
@@ -59,7 +67,10 @@ class NotificationController extends FrontController
 
                 $phone = (new ModelGenerico)->getItemByGenericField(end($arrayRoute), 'attendance_phones', 'id_attendance');
 
-                $customer = (new Customer)->getItemWithFilters([(object)['columns' => ['name' => (object)['comparison' => 'LIKE', 'value' => $arrayLink->name]]], (object)['WHERE' => " AND phone = {$phone[0]->phone} OR cellphone = {$phone[0]->phone}"]]);
+                // telefone entra no SQL sem bind: só segue se for só dígitos
+                $customer = (!empty($arrayLink) && !empty($phone[0]->phone) && ctype_digit((string) $phone[0]->phone))
+                    ? (new Customer)->getItemWithFilters([(object)['columns' => ['name' => (object)['comparison' => 'LIKE', 'value' => $arrayLink->name]]], (object)['WHERE' => " AND phone = {$phone[0]->phone} OR cellphone = {$phone[0]->phone}"]])
+                    : null;
 
                 if (!empty($customer)) {
                     $customerBranches = (new CustomerBranch)->getWithFiltersAllItems(
@@ -82,7 +93,8 @@ class NotificationController extends FrontController
                 }
             }
 
-            if (!empty($notice->message_read) == 0 && !empty($notice->id_user) == $_SESSION['RR']->user->id) {
+            // marca como lida só a notificação destinada ao próprio usuário
+            if (empty($notice->message_read) && !empty($notice->id_notification_read) && (int) $notice->id_user === (int) $_SESSION['RR']->user->id) {
                 $arrPoost = [
                     'message_read' => true,
                     'seen_at' => Date('Y-m-d H:i:s'),

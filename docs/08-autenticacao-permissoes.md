@@ -118,8 +118,9 @@ $_SESSION['RR']->toast = (object)['icon' => 'success'|'error'|'warning', 'title'
 redirect($rota); // ou header('location: ...'); exit;
 ```
 
-O front-end busca isso via `ajax/global/toast` (`GlobalController::toast()`),
-que já limpa o toast da sessão depois de ler. Existe também
+O toast é impresso pelo `Toast::render()` no `footer.php` da próxima página, que
+já limpa o toast da sessão depois de ler (a antiga chamada `ajax/global/toast` do
+`script.js` não existia no servidor e foi removida em 2026-10-02). Existe também
 `src/libs/Toast.php` (`Toast::successToast`/`errorToast`/`warningToast`/
 `genericToast`/`checkResponse`) como helper para montar esse objeto sem repetir
 a estrutura na mão — preferir esses helpers a montar `(object)['icon'=>...]`

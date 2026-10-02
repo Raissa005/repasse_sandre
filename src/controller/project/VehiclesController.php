@@ -418,11 +418,12 @@ class VehiclesController extends FrontController
 
     public function handleSubmitAddAttachments($itemId)
     {
-        Secure::check_post_method($this->route . "/attachment/$itemId");
+        Secure::check_post_method($this->route . "/attachments/$itemId");
 
-        if (empty($_FILES)) {
-            Toast::genericError();
-            redirect($this->route . "/attachment/$itemId");
+        // sobra do N1: campo vazio chega como name = [''] e gravava anexo sem arquivo
+        if (!FileUploader::hasSelectedFile($_FILES['attachments'] ?? null)) {
+            Toast::warningToast('Nenhum arquivo foi escolhido. Selecione o arquivo e depois clique em "Adicionar".');
+            redirect($this->route . "/attachments/$itemId");
         }
 
         if ($sizeError = FileUploader::sizeLimitError($_FILES['attachments'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
@@ -435,16 +436,24 @@ class VehiclesController extends FrontController
             redirect($this->route . "/attachments/$itemId");
         }
 
-        $file = [
-            'name' => $_POST['name'],
-            'description' => $_POST['description'],
-            'fileName' => $_FILES['attachments']['name'][0],
-            'tmp_name' => $_FILES['attachments']['tmp_name'][0]
-        ];
+        // N11: grava cada arquivo enviado (antes só o [0]), como os anexos dos outros módulos
+        $files = $_FILES['attachments'];
+        $hasError = false;
+        $response = null;
+        foreach ((array) $files['name'] as $i => $fileName) {
+            if ($fileName === '' || ($files['error'][$i] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) continue;
 
-        $response = (new VehicleAttachments)->insertAttachments($file, $itemId);
+            $response = (new VehicleAttachments)->insertAttachments([
+                'name' => $_POST['name'],
+                'description' => $_POST['description'],
+                'fileName' => $fileName,
+                'tmp_name' => $files['tmp_name'][$i]
+            ], $itemId);
 
-        Toast::checkResponse($response->error, $response->message);
+            if ($response->error) $hasError = true;
+        }
+
+        ($hasError || !$response) ? Toast::errorToast('Não foi possível enviar um ou mais arquivos') : Toast::checkResponse($response->error, $response->message);
 
         redirect("{$this->route}/attachments/$itemId");
     }

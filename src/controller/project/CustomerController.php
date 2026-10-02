@@ -731,6 +731,12 @@ class CustomerController extends FrontController
 
     public function handleSubmitAddAttachment($customerId)
     {
+        // sobra do N1: sem arquivo não gravava, mas também não dizia o motivo
+        if (!FileUploader::hasSelectedFile($_FILES['file'] ?? null)) {
+            Toast::warningToast('Nenhum arquivo foi escolhido. Selecione o arquivo e depois clique em "Adicionar".');
+            redirect("{$this->route}/attachment/$customerId/");
+        }
+
         if ($sizeError = FileUploader::sizeLimitError($_FILES['file'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
             Toast::warningToast($sizeError);
             redirect("{$this->route}/attachment/$customerId/");

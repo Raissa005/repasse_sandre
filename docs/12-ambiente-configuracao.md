@@ -50,16 +50,16 @@
 
 `smottt/wideimage` (só usado pelo `FileUploader::uploadImg*`, sem chamador; a cópia
 local `src/libs/wideImage` foi removida no N12 e o pacote sai no pós-lançamento),
-`phpmailer/phpmailer` (e-mail), `phenx/php-font-lib` +
-`phenx/php-svg-lib` (suporte do dompdf), `firebase/php-jwt` (recuperação de
+`phpmailer/phpmailer` (e-mail), `dompdf/dompdf` (PDF do cartão digital; traz
+`dompdf/php-svg-lib`/`php-font-lib`), `firebase/php-jwt` (recuperação de
 senha), `symfony/cache` (cache de menu, `FilesystemAdapter`), `imagine/imagine`
 (processamento de imagem). Dev-only: `almasaeed2010/adminlte` (tema AdminLTE 2).
 
-`src/libs/dompdf/` é uma **cópia vendorizada** do dompdf dentro do próprio
-`src/libs` (não gerenciada pelo Composer raiz — tem seu próprio `composer.json`
-interno, mas não é isso que é carregado). Não atualizar via `composer require` —
-se precisar atualizar essa lib, é uma troca manual dos arquivos, e vale alinhar
-com o usuário antes por ser uma dependência grande e vendorizada.
+O dompdf vem do Composer (`dompdf/dompdf` ^3.1.6, N18 em 2026-10-02); a antiga cópia
+vendorizada `src/libs/dompdf/` foi removida. Em deploy, rodar `composer install`.
+O cache de fontes dele fica em `storage/dompdf-fonts/` (fora de `public/`, conteúdo
+ignorado pelo git) e precisa ser gravável pelo usuário do Apache — no XAMPP do Mac,
+`daemon`: `chmod 777 storage/dompdf-fonts` (e os arquivos que já estiverem nela).
 
 ## Sem testes automatizados / CI
 

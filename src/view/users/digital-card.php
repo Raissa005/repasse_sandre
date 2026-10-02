@@ -77,7 +77,7 @@ use RR\libs\Util;
                             <a class="btn btn-warning" href="<?= URL . $this->route ?>">Voltar</a>
                             <div class="pull-right">
                                 <?php if (!empty($item->card_digital_occupation) && !empty($item->card_digital_name) && $item->card_digital_capa == true && !empty($item->card_digital)) { ?>
-                                    <a href="<?= URL . "cardPDF/$itemId" ?>" class="btn btn-warning" target="_blank"><i class="fas fa-id-badge"></i> Gerar Cartão Digital</a>
+                                    <a href="<?= URL . "cardPDF/index/$itemId" ?>" class="btn btn-warning" target="_blank"><i class="fas fa-id-badge"></i> Gerar Cartão Digital</a>
                                 <?php } ?>
                                 <button type="submit" class="btn btn-primary">Salvar</button>
                             </div>

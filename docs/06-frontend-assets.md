@@ -30,7 +30,7 @@ comportamento existente, não é bug a "corrigir" sem alinhar antes).
 ## Estrutura de `public/js/v_01/`
 
 - Scripts genéricos/compartilhados soltos na raiz: `script.js`, `mask.js`,
-  `modals.js`, `toast.js`, `toast-config.js`, `notification.js`, `application.js`,
+  `modals.js`, `toast.js`, `toast-config.js`, `notification.js`,
   `state.js`, `autocep.js`, `cnpj.js`, `arrangementAnimation.js`, etc.
 - Scripts **por módulo**, em subpasta com o mesmo nome (kebab-case) do `route`/
   `dir` do controller: `branch/`, `sales/`, `property/`, `vehicles/`,

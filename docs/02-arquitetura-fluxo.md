@@ -38,6 +38,12 @@ A URL é lida de `$_GET['url']` (vinda do `.htaccess`) e splitada por `/`:
 - Sem action → chama `index()` do controller.
 - Com action e parâmetros → `call_user_func_array([$controller, $action], $params)`.
 - Controller inexistente → redireciona para `error` (ver `ErrorController`).
+- **O 2º segmento é sempre o nome do método.** Link `rota/{id}` (2 segmentos)
+  tenta chamar um método chamado `45` → erro fatal (A2). Para passar só um id ao
+  `index()`, usar `rota/index/{id}` e receber como parâmetro (`index($itemId = null)`),
+  não por `$_GET['pg1']` (que nesse caso vale `index`). O nome do controller vem do
+  1º segmento com `ucfirst`: `cardPDF` → `CardPDFController`; `card-pdf` viraria
+  `CardPdfController`, que só é achado em disco sem diferenciar maiúsculas (macOS).
 
 Isso significa: **para criar uma rota nova, basta criar o método público
 correspondente no Controller certo** — não existe arquivo de rotas central para

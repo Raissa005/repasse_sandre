@@ -855,6 +855,12 @@ class BillsToPayInstallmentController extends FrontController
             redirect($this->route . "/attachment/$itemId");
         }
 
+        // sobra do N1: campo vazio chega como name = [''] e gravava anexo sem arquivo
+        if (!FileUploader::hasSelectedFile($_FILES['attachmentEntry'] ?? null)) {
+            Toast::warningToast('Nenhum arquivo foi escolhido. Selecione o arquivo e depois clique em "Adicionar".');
+            redirect($this->route . "/attachment/$itemId");
+        }
+
         if ($sizeError = FileUploader::sizeLimitError($_FILES['attachmentEntry'] ?? null, FileUploader::MAX_SIZE_ATTACHMENT)) {
             Toast::warningToast($sizeError);
             redirect($this->route . "/attachment/$itemId");
@@ -868,7 +874,13 @@ class BillsToPayInstallmentController extends FrontController
         try {
             $attachments = FileUploader::uploadFiles($_FILES['attachmentEntry'], array_fill(0, count($_FILES['attachmentEntry']) + 1, "attachments/billsToPay/$itemId"), FileUploader::ALLOWED_ATTACHMENT);
 
+            $hasError = false;
             foreach ($attachments as $attachment) {
+                if ($attachment['error']) {
+                    $hasError = true;
+                    continue;
+                }
+
                 $arrayPost = array(
                     "id_bills_to_pay_installments" => $itemId,
                     "name" => $_POST['name'],
@@ -880,7 +892,7 @@ class BillsToPayInstallmentController extends FrontController
                 (new GerenciaPost())->insert7181($arrayPost, "bills_to_pay_installments_attachment", null, false);
             }
 
-            Toast::itemAdded();
+            $hasError ? Toast::errorToast('Não foi possível enviar um ou mais arquivos') : Toast::itemAdded();
             header('location:' . URL . $this->route . '/attachment/' . $itemId);
             exit;
         } catch (PDOException $error) {

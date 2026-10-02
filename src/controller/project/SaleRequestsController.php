@@ -7,6 +7,7 @@ use RR\libs\Util;
 use RR\model\User;
 use RR\model\Menu;
 use RR\libs\Secure;
+use RR\libs\Toast;
 use RR\model\Branch;
 use RR\model\Customer;
 use RR\libs\Pagination;
@@ -845,6 +846,9 @@ class SaleRequestsController extends FrontController
             ]
         );
 
+        $this->printingRequires($item, 'Pedido não encontrado.', $this->route);
+        $this->printingRequires($item->id_bill_receive, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/saleFinancial/$itemId");
+
         array_map(function ($i) {
             $i->value = Util::maskMoney($i->value);
             $i->sale_date = Date::date($i->sale_date);
@@ -852,6 +856,7 @@ class SaleRequestsController extends FrontController
 
         if (!empty($item->id_bill_receive)) {
             $billReceive = (new BillReceive)->getItemById($item->id_bill_receive);
+            $this->printingRequires($billReceive, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/saleFinancial/$itemId");
 
             array_map(function ($element) use (&$installments) {
                 $installments = (new BillReceiveInstallment())->getWithFiltersAllItems(
@@ -947,6 +952,9 @@ class SaleRequestsController extends FrontController
             ]
         );
 
+        $this->printingRequires($item, 'Pedido não encontrado.', $this->route);
+        $this->printingRequires($item->id_bill_receive, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/editItem/$itemId");
+
         array_map(function ($i) {
             if (!empty($i->customer_fancy_name_company)) {
 
@@ -989,6 +997,7 @@ class SaleRequestsController extends FrontController
 
         if (!empty($item->id_bill_receive)) {
             $billReceive = (new BillReceive)->getItemById($item->id_bill_receive);
+            $this->printingRequires($billReceive, 'Este pedido não tem financeiro lançado para imprimir.', "{$this->route}/editItem/$itemId");
 
             array_map(function ($element) use (&$installments) {
                 $installments = (new BillReceiveInstallment())->getWithFiltersAllItems(
@@ -1084,6 +1093,9 @@ class SaleRequestsController extends FrontController
             ]
         );
 
+        $this->printingRequires($item, 'Pedido não encontrado.', $this->route);
+        $this->printingRequires($item->id_commission_receive, 'Este pedido não tem comissão lançada para imprimir.', "{$this->route}/saleCommission/$itemId");
+
         array_map(function ($i) {
             $i->value = Util::maskMoney($i->value);
             $i->sale_date = Date::date($i->sale_date);
@@ -1091,6 +1103,7 @@ class SaleRequestsController extends FrontController
 
         if (!empty($item->id_commission_receive)) {
             $billReceive = (new BillReceive)->getItemById($item->id_commission_receive);
+            $this->printingRequires($billReceive, 'Este pedido não tem comissão lançada para imprimir.', "{$this->route}/saleCommission/$itemId");
 
             array_map(function ($element) use (&$installments) {
                 $installments = (new BillReceiveInstallment())->getWithFiltersAllItems(
@@ -1161,6 +1174,15 @@ class SaleRequestsController extends FrontController
         }
 
         require APP . 'view/' . $this->dir . '/installment-printing.php';
+    }
+
+    /** N9: impressão aberta pela URL sem o pedido ou sem o lançamento (o botão de imprimir só aparece quando existe) */
+    private function printingRequires($value, string $message, string $path): void
+    {
+        if (empty($value)) {
+            Toast::warningToast($message);
+            redirect($path);
+        }
     }
 
     public function disableItem($id){

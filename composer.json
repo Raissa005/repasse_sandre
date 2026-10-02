@@ -13,12 +13,11 @@
     "require": {
         "smottt/wideimage": "dev-master",
         "phpmailer/phpmailer": "dev-master",
-        "phenx/php-font-lib": "dev-master",
-        "phenx/php-svg-lib": "^0.3.3",
         "firebase/php-jwt": "dev-main",
         "symfony/cache": "~5.4.0",
         "imagine/imagine": "^1.0@dev",
-        "ezyang/htmlpurifier": "^4.17"
+        "ezyang/htmlpurifier": "^4.17",
+        "dompdf/dompdf": "^3.1.6"
     },
     "autoload": {
         "psr-4": {

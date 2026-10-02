@@ -1,13 +1,14 @@
 <?php
-
-use Sabberworm\CSS\Value\URL;
+$e = function ($value) {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <html>
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title><?= $user->card_digital_name ?></title>
+    <title><?= $e($user->card_digital_name) ?></title>
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <link rel="icon" type="imagem/png" href="#">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,27 +22,27 @@ use Sabberworm\CSS\Value\URL;
         /**Fontes */
         @font-face {
             font-family: gotham;
-            src: url("../fonts/gotham-black.ttf");
+            src: url("<?= $e($publicDir) ?>fonts/gotham-black.ttf");
         }
 
         @font-face {
             font-family: lato-black;
-            src: url("../fonts/Lato-Black.ttf");
+            src: url("<?= $e($publicDir) ?>fonts/Lato-Black.ttf");
         }
 
         @font-face {
             font-family: lato-regular;
-            src: url("../fonts/Lato-Regular.ttf");
+            src: url("<?= $e($publicDir) ?>fonts/Lato-Regular.ttf");
         }
 
         @font-face {
             font-family: roboto-black;
-            src: url("../fonts/Roboto-Black.ttf");
+            src: url("<?= $e($publicDir) ?>fonts/Roboto-Black.ttf");
         }
 
         @font-face {
             font-family: roboto-regular;
-            src: url("../fonts/Roboto-Regular.ttf");
+            src: url("<?= $e($publicDir) ?>fonts/Roboto-Regular.ttf");
         }
 
         .gotham {
@@ -69,7 +70,7 @@ use Sabberworm\CSS\Value\URL;
         .fundoCard {
             height: 2100px;
             position: relative;
-            <?php if ($configDigitalCard->capa_fundo) { ?>background: url(<?= $backgroundImage ?>) no-repeat;
+            <?php if ($configDigitalCard->capa_fundo) { ?>background: url("<?= $e($backgroundImage) ?>") no-repeat;
             <?php } else { ?>background-color: <?= $configDigitalCard->cor_fundo ?>;
             <?php } ?>
         }
@@ -170,15 +171,15 @@ use Sabberworm\CSS\Value\URL;
     <div class="fundoCard">
         <div class="cabecalho">
             <div class="logo-cabecalho">
-                <img class="img-fluid image-user" src="<?= $userImage ?>" />
+                <img class="img-fluid image-user" src="<?= $e($userImage) ?>" />
             </div>
         </div>
 
         <div class="corpo">
-            <div class="texto-nome-corretor <?= $configDigitalCard->fonte_usuario ?>"><?= $user->card_digital_name ?></div>
+            <div class="texto-nome-corretor <?= $e($configDigitalCard->fonte_usuario) ?>"><?= $e($user->card_digital_name) ?></div>
 
             <div class="div-corretor gotham">
-                <div class="texto-occupation <?= $configDigitalCard->fonte_ocupacao ?>"><?= $user->card_digital_occupation ?></div>
+                <div class="texto-occupation <?= $e($configDigitalCard->fonte_ocupacao) ?>"><?= $e($user->card_digital_occupation) ?></div>
             </div>
 
             <div class="box-icones-corpo">
@@ -192,8 +193,8 @@ use Sabberworm\CSS\Value\URL;
                                                                         echo "https://api.whatsapp.com/send/?phone=55";
                                                                     } else if ($network->id_networks_card_digital == 3) {
                                                                         echo "mailto:";
-                                                                    } ?><?= $network->link ?>" target="_blank" style="margin: auto;">
-                                        <img src="<?= "../public/img/network_ico/$network->filename.png" ?>" class="img-100">
+                                                                    } ?><?= $e($network->link) ?>" target="_blank" style="margin: auto;">
+                                        <img src="<?= $e($publicDir . "img/network_ico/" . basename((string) $network->filename) . ".png") ?>" class="img-100">
                                     </a>
                                 </td>
                         <?php }
@@ -207,40 +208,40 @@ use Sabberworm\CSS\Value\URL;
                     <tr>
                         <?php if (!empty($config->url_global)) { ?>
                             <td style="text-align: center;">
-                                <a class="icone-corpo" href="<?= $config->url_global ?>" target="_blank" style="margin: auto;">
-                                    <img src="<?= "../public/img/network_ico/website.png" ?>" class="img-100">
+                                <a class="icone-corpo" href="<?= $e($config->url_global) ?>" target="_blank" style="margin: auto;">
+                                    <img src="<?= $publicDir . "img/network_ico/website.png" ?>" class="img-100">
                                 </a>
                             </td>
                         <?php  } ?>
                         <?php foreach ($networkCompany as $network) {
                             if (strpos($network->link, 'facebook')) { ?>
                                 <td style="text-align: center;">
-                                    <a class="icone-corpo" href="<?= $network->link ?>" target="_blank" style="margin: auto;">
-                                        <img src="<?= "../public/img/network_ico/facebook.png" ?>" class="img-100">
+                                    <a class="icone-corpo" href="<?= $e($network->link) ?>" target="_blank" style="margin: auto;">
+                                        <img src="<?= $publicDir . "img/network_ico/facebook.png" ?>" class="img-100">
                                     </a>
                                 </td>
                             <?php } else if (strpos($network->link, 'instagram')) { ?>
                                 <td style="text-align: center;">
-                                    <a class="icone-corpo" href="<?= $network->link ?>" target="_blank" style="margin: auto;">
-                                        <img src="<?= "../public/img/network_ico/instagram.png" ?>" class="img-100">
+                                    <a class="icone-corpo" href="<?= $e($network->link) ?>" target="_blank" style="margin: auto;">
+                                        <img src="<?= $publicDir . "img/network_ico/instagram.png" ?>" class="img-100">
                                     </a>
                                 </td>
                             <?php } else if (strpos($network->link, 'linkedln')) { ?>
                                 <td style="text-align: center;">
-                                    <a class="icone-corpo" href="<?= $network->link ?>" target="_blank" style="margin: auto;">
-                                        <img src="<?= "../public/img/network_ico/linkedln.png" ?>" class="img-100">
+                                    <a class="icone-corpo" href="<?= $e($network->link) ?>" target="_blank" style="margin: auto;">
+                                        <img src="<?= $publicDir . "img/network_ico/linkedln.png" ?>" class="img-100">
                                     </a>
                                 </td>
                             <?php } else if (strpos($network->link, 'twitter')) { ?>
                                 <td style="text-align: center;">
-                                    <a class="icone-corpo" href="<?= $network->link ?>" target="_blank" style="margin: auto;">
-                                        <img src="<?= "../public/img/network_ico/twitter.png" ?>" class="img-100">
+                                    <a class="icone-corpo" href="<?= $e($network->link) ?>" target="_blank" style="margin: auto;">
+                                        <img src="<?= $publicDir . "img/network_ico/twitter.png" ?>" class="img-100">
                                     </a>
                                 </td>
                             <?php } else if (strpos($network->link, 'whatsapp') || strpos($network->link, 'wa.me')) { ?>
                                 <td style="text-align: center;">
-                                    <a class="icone-corpo" href="<?= $network->link ?>" target="_blank" style="margin: auto;">
-                                        <img src="<?= "../public/img/network_ico/whatsapp.png" ?>" class="img-100">
+                                    <a class="icone-corpo" href="<?= $e($network->link) ?>" target="_blank" style="margin: auto;">
+                                        <img src="<?= $publicDir . "img/network_ico/whatsapp.png" ?>" class="img-100">
                                     </a>
                                 </td>
                             <?php } ?>
@@ -251,12 +252,12 @@ use Sabberworm\CSS\Value\URL;
             </div>
 
             <div class="div-legenda">
-                <div class="<?= $configDigitalCard->fonte_creci ?> texto-legenda">Toque nos ícones para entrar em contato e conhecer nossa estrutura.</div>
+                <div class="<?= $e($configDigitalCard->fonte_creci) ?> texto-legenda">Toque nos ícones para entrar em contato e conhecer nossa estrutura.</div>
             </div>
         </div>
     </div>
     <div class="rodape">
-        <img style="width: 600px; margin-top: 100px;" src="<?= $configDigitalCard->capa_logo ? $footerImage : "" ?>" />
+        <img style="width: 600px; margin-top: 100px;" src="<?= $configDigitalCard->capa_logo ? $e($footerImage) : "" ?>" />
     </div>
 
 </body>

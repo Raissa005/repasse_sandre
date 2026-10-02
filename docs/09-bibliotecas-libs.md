@@ -72,13 +72,17 @@ Usar para toda formatação de data em pt-BR em vez de `date()`/`DateTime` cru.
 
 ## PDF
 
-- `src/libs/dompdf/` — build vendorizado do dompdf **0.8.3** (cópia dentro do
-  repo, não gerenciada pelo Composer; a pasta `lib/fonts` está no `.gitignore`
-  e não existe, então ele não inicia). Único uso: o PDF do cartão digital
-  (`CardPDFController`). As impressões dos módulos (`print*.php`) são HTML
-  para o navegador imprimir, não PDF gerado no servidor. Versão com vários
-  alertas de segurança — troca por `dompdf/dompdf` ^3.1.6 planejada na Onda 4
-  (N18 do `PLANO-CORRECOES.md`). Não vendorizar uma segunda lib de PDF.
+- `dompdf/dompdf` ^3.1.6 via Composer (N18, 2026-10-02; a cópia 0.8.3 que ficava
+  em `src/libs/dompdf/` foi removida, junto com `phenx/php-svg-lib`/`php-font-lib`).
+  Único uso: o PDF do cartão digital (`CardPDFController`, rota `cardPDF/index/{id}`).
+  As impressões dos módulos (`print*.php`) são HTML para o navegador imprimir, não
+  PDF gerado no servidor. Opções usadas: `chroot` em `public/` (imagens e fontes
+  referenciadas por caminho absoluto `ROOT . 'public/...'`), remoto e PHP
+  desligados, `fontDir`/`fontCache` em `storage/dompdf-fonts/` (raiz do projeto, fora de `public/`; conteúdo no `.gitignore` da própria pasta; o dompdf
+  instala ali as fontes de `@font-face`; a pasta da `vendor` não é gravável pelo
+  Apache). Formatos de imagem: jpg/png/gif/webp/svg/bmp — **AVIF não é suportado**.
+  Dado do usuário no HTML do PDF sai com `htmlspecialchars`; cores/tamanhos que vão
+  para o `<style>` são validados no controller. Não vendorizar uma segunda lib de PDF.
 
 ## E-mail
 

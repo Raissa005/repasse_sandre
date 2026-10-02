@@ -17,7 +17,7 @@ jQuery(function () {
                 if (!error) {
                     const html = notifications.map(n => {
                         return `<li id="${n.id_notification_read}" class="btn-message-read">
-                                   <a href="${url + "notification/" + n.id}">
+                                   <a href="${url + "notification/index/" + n.id}">
                                         <span class="text-sm ${n.intended_user == 1 ? "text-yellow" : "text-aqua"}">
                                             Nova Mensagem
                                         </span>

@@ -65,6 +65,17 @@ e vá para a seção **Plano de volta**.
       --no-dev` no servidor com o `composer.lock` do commit). Ela precisa conter
       **`ezyang/htmlpurifier`** — sem ela, as telas de Observações do veículo e
       de Transferência dão erro fatal. *(Plano: A3)*
+- [ ] Ela também precisa conter **`dompdf/dompdf` 3.1.x** (e **não** mais
+      `phenx/*`): a cópia antiga `src/libs/dompdf/` saiu do código. Sem o
+      pacote, o PDF do Cartão Digital dá erro fatal. *(Plano: N18)*
+- [ ] Pasta **`storage/dompdf-fonts/`** (raiz do projeto, fora de `public/`)
+      existe e é **gravável pelo usuário do Apache** — o dompdf instala ali as
+      fontes do cartão na primeira geração. O conteúdo não é versionado (só o
+      `.gitignore` dela); não copiar o cache local para o servidor. Ex.:
+      `chown www-data storage/dompdf-fonts && chmod 775 storage/dompdf-fonts`
+      (trocar `www-data` pelo usuário do Apache no servidor). Sem permissão, o
+      aviso de escrita do PHP sai no meio do PDF e o cartão não abre.
+      *(Plano: N18)*
 
 ## 3. Servidor: Apache
 
@@ -114,6 +125,9 @@ Ordem (cronológica, pelo nome do arquivo):
 - [ ] `2026_10_02_0921_criar_tabela_login_attempts.sql` — **antes** de
       publicar o código do A4 (bloqueio de login): o login passa a usar esta
       tabela e quebra sem ela. *(Plano: A4)*
+- [ ] `2026_10_02_1600_esconder_menu_moedas.sql` — esconde "Moedas" do menu (sem
+      efeito se o item não existir; conferir com o SELECT do cabeçalho). Pode rodar
+      antes ou depois do código. *(Plano: M12)*
 - [ ] Qualquer migration nova criada depois desta lista (conferir a pasta).
 
 ## 6. Dados reais (bloqueados até o usuário informar)
@@ -222,6 +236,16 @@ Com um usuário Administrador e, onde indicado, um usuário Vendedor:
       mensagem de bloqueio; a senha certa também é recusada durante o
       bloqueio; concluir "Esqueci a senha" libera na hora. Não usar o e-mail de
       quem vai trabalhar no dia (fica 15 min bloqueado). *(Plano: A4)*
+- [ ] Cartão Digital: como Vendedor, em Perfil (menu do usuário) → aba Cartão Digital, "Gerar
+      Cartão Digital" abre o PDF do próprio cartão; trocar o id na URL
+      (`cardPDF/index/{outro id}`) volta para a home. *(Plano: A2/N17/N18)*
+- [ ] Antes desse teste, verificar se algum modelo de cartão em produção tem
+      imagem em **AVIF** (o dompdf não lê AVIF; o fundo/logo some do PDF):
+      `SELECT id, name, capa_fundo, ext_fundo, capa_logo, ext_logo FROM digital_card WHERE status = 1;`
+      Se `ext_fundo` ou `ext_logo` for `avif` (com `capa_*` = 1), **reenviar
+      a imagem em JPG/PNG** em Cadastros → Cartão Digital → editar o modelo
+      (o upload atual só aceita JPG/PNG). O banco local tem esse caso: modelo 1,
+      fundo `.avif`. *(Plano: N18)*
 - [ ] Log de erros do PHP/Apache sem erro novo durante o teste.
 
 ## 9. Permissões por perfil — antes de liberar os usuários *(Plano: C3)*
