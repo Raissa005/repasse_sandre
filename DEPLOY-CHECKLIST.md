@@ -119,8 +119,8 @@ Ordem (cronológica, pelo nome do arquivo):
 - [ ] `2026_09_21_1010_desativar_standard_contract_imovel.sql`
 - [ ] `2026_09_21_1020_remover_campo_creci.sql`
 - [ ] `2026_09_25_1000_seed_inicial_producao.sql` — **só em banco novo/vazio**
-      (ver cabeçalho do arquivo). Antes, corrigir nele o `branch.email`
-      (item A9, abaixo).
+      (ver cabeçalho do arquivo). Rodar como está: o `branch.email` e o CNPJ
+      placeholder da filial são corrigidos depois, pela tela (§8). *(Plano: A9)*
 - [ ] `2026_09_25_1500_seed_dados_faltantes.sql` (idempotente)
 - [ ] `2026_10_02_0921_criar_tabela_login_attempts.sql` — **antes** de
       publicar o código do A4 (bloqueio de login): o login passa a usar esta
@@ -132,13 +132,10 @@ Ordem (cronológica, pelo nome do arquivo):
 
 ## 6. Dados reais (bloqueados até o usuário informar)
 
-- [ ] **SMTP de envio** (tabela `configuracao_email`): ainda aponta para o
-      fornecedor antigo. Sem isso, recuperação de senha e e-mails do sistema
+- [ ] **SMTP de envio** (tabela `configuracao_email`): hoje aponta para a
+      infraestrutura da Ydeal (`mail.ydeal.net.br`) com remetente vazio. Sem
+      definir isso, recuperação de senha e e-mails do sistema
       saem pelo servidor errado ou não saem. *(Plano: C7 — ⚠️ bloqueado)*
-- [ ] **Telefone de suporte** (`src/view/_templates/header.php:56`,
-      `src/core/Model.php:18`) e **e-mail de contato da filial**
-      (`branch.email`, inclusive no seed de produção). Corrigir código e dado
-      juntos. *(Plano: A9 — ⚠️ bloqueado)*
 - [ ] **Se o M4 tiver sido feito** (chave JWT fora do código): trocar a chave
       invalida os links de recuperação de senha já enviados e não usados —
       avisar a equipe antes. *(Plano: M4)*
@@ -246,6 +243,11 @@ Com um usuário Administrador e, onde indicado, um usuário Vendedor:
       a imagem em JPG/PNG** em Cadastros → Cartão Digital → editar o modelo
       (o upload atual só aceita JPG/PNG). O banco local tem esse caso: modelo 1,
       fundo `.avif`. *(Plano: N18)*
+- [ ] **Dados reais da filial**: como Administrador, em Filiais → Editar
+      "Repasse Sandré", preencher o **e-mail** e o **CNPJ** reais da Repasse
+      Sandré (o seed deixa `suporte@ydealtecnologia.com.br` e
+      `00000000000000`). O telefone de "Suporte Técnico" no cabeçalho é o da
+      Ydeal, dona do sistema, e fica como está. *(Plano: A9)*
 - [ ] Log de erros do PHP/Apache sem erro novo durante o teste.
 
 ## 9. Permissões por perfil — antes de liberar os usuários *(Plano: C3)*

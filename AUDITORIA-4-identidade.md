@@ -1,20 +1,31 @@
-# Auditoria 4 — Identidade de marca residual (cliente anterior / fornecedor)
+# Auditoria 4 — Identidade de marca residual (cliente anterior / contatos da Ydeal)
 
 **Data**: 2026-09-29. **Tipo**: auditoria somente leitura — nenhum arquivo de
 código ou registro de banco foi alterado durante a investigação.
 
+> **Correção (2026-10-02, informada pelo usuário)**: a versão original deste
+> relatório tratava a **Ydeal Tecnologia** como "fornecedor antigo". Isso estava
+> errado: a Ydeal é a **empresa dona do sistema**, que o desenvolve e continua dando
+> o suporte técnico. O texto abaixo foi ajustado. Consequências: o telefone de
+> suporte (achado 1.2) é o suporte atual da Ydeal e foi **mantido**; o e-mail e o
+> CNPJ da filial (1.3) continuam sendo dado da Repasse Sandré a preencher pela tela
+> (A9 do `PLANO-CORRECOES.md`); a conta "Suporte Ydeal" (1.6) é a conta do dono do
+> sistema; o SMTP (1.1) segue em aberto no C7.
+
 ## Contexto
 
 O sistema atual é da revenda de veículos **"Repasse Sandré"**. O software é
-white-label de um fornecedor chamado **"Ydeal Tecnologia"**
-(`ydealtecnologia.com.br`/`ydeal.net.br`), usado antes por um cliente
+da **"Ydeal Tecnologia"** (`ydealtecnologia.com.br`/`ydeal.net.br`), empresa
+dona do sistema, que o desenvolve e dá o suporte técnico; foi usado antes por um cliente
 diferente do ramo imobiliário chamado **"Realize Repasse"** — nome que, por
 coincidência de sigla, ainda está entranhado na arquitetura (`namespace RR\`,
 `$_SESSION['RR']`, nome do repositório). Três auditorias irmãs já mapearam
 resíduo funcional desse histórico (`AUDITORIA-1-dominio.md`,
 `AUDITORIA-2-tecnica.md`, `AUDITORIA-3-seguranca.md`); este documento é
 focado especificamente em **identidade visível** — o que um cliente,
-fornecedor ou parceiro externo veria hoje que não é "Repasse Sandré".
+fornecedor ou parceiro externo veria hoje que não é "Repasse Sandré" (contatos
+da Ydeal são esperados onde se referem ao suporte do sistema, não onde deveriam
+ser dados da revenda).
 
 **Metodologia**: 3 agentes em paralelo (texto/contato hardcoded; logos/
 cores/favicon; templates de e-mail/PDF), cada um consultando o banco real
@@ -26,7 +37,7 @@ documento.
 
 ## 1. Achados ATIVOS — visíveis hoje sem precisar de nenhuma ação especial
 
-### 1.1 — CRÍTICO — Servidor de e-mail (SMTP) ainda é do fornecedor antigo
+### 1.1 — CRÍTICO — Servidor de e-mail (SMTP) usa a infraestrutura da Ydeal, com remetente vazio
 
 Único fluxo de e-mail do sistema (`LoginController::sendRecoverPasswordMail`
 → `MoreMailer.php` → PHPMailer, config lida de `configuracao_email`).
@@ -43,10 +54,10 @@ para corrigir isso (`SettingsSite::getSettingEmailById()` nunca é chamado
 por nenhum controller); só é editável via SQL/migration manual.
 
 **Severidade: CRÍTICO** — é o único canal de e-mail do sistema, e está
-configurado com a infraestrutura do fornecedor antigo, sem tela para
-corrigir.
+configurado na infraestrutura da Ydeal com remetente vazio, sem tela para
+corrigir. Qual SMTP/remetente usar em produção é decisão em aberto (C7).
 
-### 1.2 — ALTO — Telefone do fornecedor hardcoded em todo o painel
+### 1.2 — Telefone de suporte da Ydeal hardcoded em todo o painel — ✅ mantido (A9, 2026-10-02)
 
 `554832636688` (WhatsApp) aparece fixo em dois pontos centrais do código,
 não em configuração de filial (a tabela `branch` não tem nem coluna de
@@ -65,28 +76,30 @@ telefone):
   protected $message_admins = "Ops! ... Entre em contato os <a ... href=\"https://api.whatsapp.com/send?phone=554832636688\">administradores</a>";
   ```
 No dump legado (`db/realize_repasse.sql`), o único cadastro com esse número
-é **"Wyllyam Neves Rozenq" / "Ydeal Tecnologia Ltda"** — forte indício de
-que é contato do fornecedor, não da revenda de veículos atual.
+é **"Wyllyam Neves Rozenq" / "Ydeal Tecnologia Ltda"** — é o contato da Ydeal.
 
-**Severidade: ALTO** — visível em toda página do painel e em qualquer erro
-financeiro que qualquer usuário encontre.
+**Situação**: confirmado pelo usuário em 2026-10-02 que (48) 3263-6688 é o
+suporte técnico atual da Ydeal, que continua atendendo o sistema. **Correto
+como está; mantido.** (A versão original classificava como ALTO por supor que
+fosse de um fornecedor antigo.)
 
-### 1.3 — ALTO — E-mail da filial "Repasse Sandré" é do domínio do fornecedor
+### 1.3 — ALTO — E-mail da filial "Repasse Sandré" é do domínio da Ydeal
 
 **Confirmado no banco real**:
 ```
 branch.id=1  name='Repasse Sandré'  email='suporte@ydealtecnologia.com.br'  cnpj='00000000000000'
 ```
 Visível para qualquer usuário que abra **Filiais → Editar → Repasse
-Sandré** — o campo Email vem pré-preenchido com o domínio do fornecedor
+Sandré** — o campo Email vem pré-preenchido com o domínio da Ydeal
 (`src/view/branch/edit.php:27`). O CNPJ também é um placeholder inválido
 (`00000000000000`), não o CNPJ real da empresa. **Este mesmo valor está
 fixado na migration de seed de produção**
 (`db/migrations/2026_09_25_1000_seed_inicial_producao.sql:5964-5971`) — o
 próprio autor da migration já deixou um comentário sinalizando o problema
 e pedindo ajuste manual pós-deploy. Se a migration rodar sem esse ajuste, a
-instalação de produção nasce com o e-mail do fornecedor cadastrado na
-filial.
+instalação de produção nasce com o e-mail da Ydeal cadastrado na
+filial. **Decisão (A9, 2026-10-02)**: o seed não é alterado; e-mail e CNPJ
+reais são preenchidos em Filiais → Editar no pós-deploy (DEPLOY-CHECKLIST §8).
 
 **Severidade: ALTO** — dado de identidade legal/contato da empresa errado,
 visível na tela principal de cadastro da filial e reproduzido no seed de
@@ -94,12 +107,13 @@ produção.
 
 ### 1.4 — MÉDIO — "Suporte Ydeal" como condição hardcoded no código
 
-`src/controller/project/UsersController.php:148,257` — o nome do fornecedor
+`src/controller/project/UsersController.php:148,257` — o nome da conta da Ydeal
 comparado como string em lógica de produção (decide se mostra o botão "Ver
 como este usuário" e se uma sessão está em modo "voltar"). Relacionado ao
 achado de escalação de privilégio já catalogado em `AUDITORIA-3-seguranca.md`
-(achado 5.1) — aqui pela ótica de que o nome do fornecedor está cravado como
-regra de negócio, não só um bug de permissão.
+(achado 5.1) — aqui pela ótica de que o nome de uma conta está cravado como
+regra de negócio, não só um bug de permissão. (Já corrigido no C3: a checagem
+passou a ser por perfil Superadm.)
 
 ### 1.5 — MÉDIO — Link morto para site institucional do cliente anterior, entregue a terceiros no Cartão Digital
 
@@ -123,7 +137,8 @@ link quebrado e sem sentido entregue a terceiros num documento oficial.
 catalogada como achado de segurança (conta Superadmin ativa) em memória do
 projeto; aqui registrado pela ótica de identidade: o nome "Suporte Ydeal"
 aparece em qualquer tela que mostre "criado por"/"editado por" ou no
-cabeçalho de quem estiver logado com essa conta.
+cabeçalho de quem estiver logado com essa conta. **Correção (2026-10-02)**: é a
+conta do dono do sistema (Ydeal) e deve ser mantida — não é resíduo.
 
 ---
 
@@ -131,7 +146,7 @@ cabeçalho de quem estiver logado com essa conta.
 
 Dado real, mas **confirmado por grep que nenhum código atual lê essas
 colunas** — não vazam para tela nenhuma hoje, mas continuam armazenando
-identidade de dois clientes/fornecedores anteriores em texto pleno,
+identidade do cliente anterior (e menções à Ydeal) em texto pleno,
 inclusive em migrations que talvez ainda não rodaram em produção.
 
 | Tabela.coluna | Valor real | Observação |
@@ -190,7 +205,7 @@ visíveis por padrão hoje:
 | `public/img/settings/logo_login-2.png` | "RS · Repasses Sandré / REPASSES DE VEÍCULOS" | tela de login |
 | `public/img/settings/logo_menu-3.png` + `public/img/branch/1/logo_menu-1.png` | "RS Repasses Sandré", horizontal | header do painel |
 
-**Nenhum logo do fornecedor "Ydeal Tecnologia" nem do cliente imobiliário
+**Nenhum logo da "Ydeal Tecnologia" nem do cliente imobiliário
 anterior sobrevive em `public/img/`** — confirmado por leitura direta de
 todas as 15 imagens do diretório e por busca de nome de arquivo
 (`*ydeal*`, `*imobil*`, `*imovel*`, `*property*`) em todo o repositório
@@ -205,7 +220,7 @@ biblioteca não modificado), sem override de tema.
 `public/img/customer/default/default.png` — ícone padrão de avatar de
 Cliente/Fornecedor/Vendedor é um **operário de construção civil com
 capacete**, usado como fallback sempre que o cadastro não tem foto própria
-(`CustomerController.php:205`). Não identifica o cliente/fornecedor
+(`CustomerController.php:205`). Não identifica o cliente
 anterior por nome, mas é um resíduo temático de construção civil/imóveis
 num sistema de revenda de veículos — vale trocar por um ícone neutro.
 
@@ -220,8 +235,8 @@ num sistema de revenda de veículos — vale trocar por um ícone neutro.
 - **`composer.json:2-3`** — `"name": "ydeal/realize_repasse"`,
   `"description": "Realize Repasse"`. Não visível a usuário final, mas é a
   primeira coisa que um desenvolvedor vê ao abrir o projeto — carrega os
-  dois nomes anteriores (fornecedor como vendor namespace, cliente
-  imobiliário na descrição), mesmo o produto já se chamando "Repasse
+  dois nomes (Ydeal como vendor namespace — correto, é a dona do sistema —
+  e o cliente imobiliário anterior na descrição, que é o resíduo), mesmo o produto já se chamando "Repasse
   Sandré" em toda a interface.
 
 ### Achado estrutural (fora do pedido literal, registrado por transparência)
@@ -244,7 +259,7 @@ como dump não confiável por `AUDITORIA-1-dominio.md`).
   (`554832636688`). Demais telefones em views vêm de variável de banco.
 - **CNPJ hardcoded em código-fonte**: nenhum. O único CNPJ "errado" é dado
   de banco (`branch.id=1`, placeholder inválido `00000000000000`, achado
-  1.3). O CNPJ real do fornecedor (`19471199000164`, "Ydeal Tecnologia
+  1.3). O CNPJ da Ydeal (`19471199000164`, "Ydeal Tecnologia
   Ltda") só existe no dump morto `db/realize_repasse.sql`, não no banco
   real nem em migration.
 
@@ -254,12 +269,12 @@ como dump não confiável por `AUDITORIA-1-dominio.md`).
 
 | # | Achado | Onde | Classificação |
 |---|---|---|---|
-| 1 | SMTP do fornecedor (`mail.ydeal.net.br`), sem tela pra corrigir | `configuracao_email` + `MoreMailer.php` | **CRÍTICO**, ativo |
-| 2 | Telefone do fornecedor hardcoded em todo o painel + erros financeiros | `header.php:56`, `Model.php:18` | ALTO, ativo |
-| 3 | E-mail da filial "Repasse Sandré" é do domínio do fornecedor, replicado no seed de produção | `branch.email`, `branch/edit.php:27`, migration de seed | ALTO, ativo |
+| 1 | SMTP na infraestrutura da Ydeal (`mail.ydeal.net.br`), remetente vazio, sem tela pra corrigir | `configuracao_email` + `MoreMailer.php` | **CRÍTICO**, ativo |
+| 2 | Telefone de suporte da Ydeal hardcoded em todo o painel + erros financeiros | `header.php:56`, `Model.php:18` | ✅ correto, mantido (A9) |
+| 3 | E-mail da filial "Repasse Sandré" é do domínio da Ydeal, replicado no seed de produção (preencher pela tela no pós-deploy, A9) | `branch.email`, `branch/edit.php:27`, migration de seed | ALTO, ativo |
 | 4 | "Suporte Ydeal" hardcoded como regra de negócio | `UsersController.php:148,257` | MÉDIO, ativo |
 | 5 | Link `localhost` morto do site antigo, embutido em todo Cartão Digital PDF | `cardPDF/index.php:208-210` + `configuracao.url_global` | MÉDIO, ativo |
-| 6 | Conta "Suporte Ydeal" ativa (Superadmin) | `users.id=1` | BAIXO, ativo (já catalogado como risco de segurança) |
+| 6 | Conta "Suporte Ydeal" ativa (Superadmin) | `users.id=1` | ✅ correto: conta do dono do sistema |
 | 7 | Nome/rodapé/slogan/endereço do cliente imobiliário anterior | `configuracao.*` | BAIXO, órfão (não renderizado) |
 | 8 | Texto institucional completo da construtora anterior | tabela `texto` | BAIXO, órfão |
 | 9 | Templates de contrato imobiliário acessíveis via POST manipulado | `standard_contract` + `printReceipt()` sem validação server-side | BAIXO, requer manipulação |
@@ -274,17 +289,16 @@ como dump não confiável por `AUDITORIA-1-dominio.md`).
 
 A parte **visual** (logo, favicon, cores, título de página) já foi corretamente
 rebrandizada para "Repasse Sandré" — não há resíduo de imagem/marca do
-cliente imobiliário anterior nem do fornecedor "Ydeal Tecnologia". O
-problema real está em **dados de contato e configuração**: o servidor de
-e-mail (achado 1), o telefone de suporte (achado 2) e o e-mail da filial
-(achado 3) ainda apontam para o fornecedor antigo, todos **ativos e visíveis
-hoje**, sem tela de administração para o e-mail de SMTP. Recomenda-se, antes
-de qualquer coisa, alinhar com o usuário quais são os dados de contato reais
-da Repasse Sandré hoje (regra do CLAUDE.md — não presumir dado de negócio) e
-então gerar as migrations correspondentes para corrigir `configuracao_email`
-e `branch.email`, e trocar o telefone hardcoded em `header.php`/`Model.php`
-por uma fonte configurável (ou pelo dado real, se for informação estática
-mesmo).
+cliente imobiliário anterior. O que resta está em **dados de contato e
+configuração**: o servidor de e-mail (achado 1) usa a infraestrutura da Ydeal
+com remetente vazio (decisão em aberto no C7) e o e-mail/CNPJ da filial
+(achado 3) ainda não são os da Repasse Sandré. O telefone de suporte (achado 2)
+é o suporte atual da Ydeal, dona do sistema, e está correto.
+*(Conclusão ajustada em 2026-10-02 — ver nota no topo.)*
+
+Recomendação (ajustada em 2026-10-02): definir o SMTP/remetente de produção
+(C7) e preencher o e-mail e o CNPJ reais da filial pela tela Filiais → Editar
+(A9, pós-deploy). O telefone de suporte fica como está.
 
 Nenhuma correção foi aplicada nesta auditoria — só o relatório, como pedido
 ("SOMENTE LEITURA").

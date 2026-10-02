@@ -9,7 +9,8 @@ Lidos os quatro relatórios na raiz do projeto — `AUDITORIA-1-dominio.md`
 (resíduo do domínio imobiliário), `AUDITORIA-2-tecnica.md` (sintaxe,
 includes, rotas, SQL vs schema, variáveis), `AUDITORIA-3-seguranca.md`
 (SQLi, XSS, CSRF, upload, senhas, controle de acesso), `AUDITORIA-4-identidade.md`
-(marca/contato residual do cliente e fornecedor anteriores) — somando mais
+(marca/contato residual do cliente anterior e contatos da Ydeal, empresa dona
+do sistema) — somando mais
 de 90 achados individuais entre os quatro. Este plano:
 
 - **Remove duplicatas**: alguns achados apareceram em mais de um relatório
@@ -60,7 +61,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - ✅ A5 / M2 / B5, N13, sobra do N2, N10 3º item (2026-10-02)
 - ⚠️ N17 — 11 rotas sem item de menu: proposta feita, **aguardando aprovação** (exceto `card-pdf`, decidido 2026-10-02 → Onda 4, com N18)
 - C7 — ⚠️ bloqueado (dado real)
-- A9 — ⚠️ bloqueado (dado real)
+- ✅ A9 (2026-10-02) — telefone da Ydeal mantido; e-mail/CNPJ da filial preenchidos pela tela no pós-deploy (DEPLOY-CHECKLIST §8)
 
 **Onda 4 — antes do lançamento**:
 - ✅ A2 (2026-10-02): botão do cartão e link da notificação
@@ -698,7 +699,11 @@ com a ausência de rate-limiting no login).
 completo (solicitar recuperação → usar o link → confirmar que o link não
 funciona mais numa segunda tentativa) antes de considerar resolvido.
 
-### C7 — Servidor de e-mail (SMTP) do sistema é do fornecedor antigo
+### C7 — Servidor de e-mail (SMTP) do sistema usa a infraestrutura da Ydeal
+
+**Nota (2026-10-02)**: a Ydeal é a empresa dona do sistema, não um fornecedor antigo
+(correção de enquadramento da Auditoria 4). Continua pendente decidir qual SMTP e
+remetente o sistema usa em produção.
 
 **Fontes**: `AUDITORIA-4-identidade.md` §1.1.
 **Onde**: tabela `configuracao_email` (dado, não código) +
@@ -985,7 +990,24 @@ teste manual pegou um fatal error. Corrigido para
 `bill-receive-installment/edit/{id}`, mesmo padrão já usado por todos os
 outros links do sistema para parcela a receber.
 
-### A9 — Contato de suporte hardcoded do fornecedor antigo (telefone + e-mail de filial)
+### ✅ A9 — Contato de suporte (telefone) e e-mail/CNPJ da filial — CONCLUÍDO 2026-10-02 (sem alteração de código)
+
+**Decisão do usuário (2026-10-02)**:
+- A Ydeal Tecnologia é a **empresa dona do sistema** e continua dando o suporte técnico;
+  não é "fornecedor antigo" (o enquadramento da Auditoria 4 estava errado e foi
+  corrigido lá e neste plano).
+- **Telefone** `554832636688` ((48) 3263-6688) é o suporte técnico atual da Ydeal:
+  **mantido** em `header.php:56` (link "Suporte Técnico") e `Model.php:18`
+  (`$message_admins`). Nenhuma mudança.
+- **E-mail e CNPJ da filial** (`branch.email = suporte@ydealtecnologia.com.br`,
+  `cnpj = 00000000000000`): **o seed de produção não é alterado**. O Sandré/
+  responsável preenche os dados reais em Filiais → Editar depois do deploy —
+  registrado no DEPLOY-CHECKLIST §8 (pós-deploy). Nenhuma migration.
+- Levantamento (só leitura): o telefone é o do cadastro "Ydeal Tecnologia Ltda" no dump
+  antigo (`db/realize_repasse.sql:1394`); o `branch.email` só aparece na tela Filiais →
+  Editar (o `Contract.php` lê o campo, mas o único recibo ativo não usa).
+
+*(Texto original, mantido como registro:)*
 
 **Fontes**: `AUDITORIA-4-identidade.md` §1.2 (telefone), §1.3 (e-mail da
 filial).
@@ -1450,7 +1472,10 @@ ambiente é mecânico; integração está documentada como adiada, então zero
 urgência funcional. Trocar as credenciais de exemplo em
 `config.example.php` é cosmético.
 
-### B9 — `composer.json` com nome de fornecedor/cliente anterior
+### B9 — `composer.json` com nome do cliente anterior
+
+**Nota (2026-10-02)**: o vendor `ydeal` está certo (a Ydeal é a dona do sistema); o
+resíduo é só `realize_repasse`/"Realize Repasse", do cliente imobiliário anterior.
 
 **Fontes**: `AUDITORIA-4-identidade.md` §5.
 
@@ -2155,7 +2180,7 @@ Vendedor pedindo o próprio → PDF; Administrador pedindo o de qualquer um → 
 | ~~C5~~ | ✅ Decidido e aplicado 2026-10-02 (rateio removido + transação opção A). |
 | C7 | Qual o SMTP/e-mail de envio real da Repasse Sandré? |
 | ~~A5/M2~~ | ✅ Decidido e aplicado 2026-10-02 (ver A5 e M2). |
-| A9 | Qual o telefone de suporte e e-mail de contato reais da Repasse Sandré? |
+| ~~A9~~ | ✅ Decidido 2026-10-02: telefone da Ydeal mantido; e-mail/CNPJ da filial pela tela no pós-deploy. |
 | ~~M1~~ | ✅ Decidido e aplicado 2026-10-01: aba escondida, código mantido. |
 | ~~N14~~ | ✅ Decidido e aplicado 2026-10-02. |
 | N17 | Aprovar a proposta para as demais rotas sem item de menu (o `card-pdf` foi decidido em 2026-10-02: exigir login, Onda 4). |
