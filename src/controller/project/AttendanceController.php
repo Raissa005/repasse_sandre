@@ -593,6 +593,15 @@ class AttendanceController extends FrontController
             'created_at' => date("Y-m-d H:i:s")
         );
 
+        /**A10: estes campos vão para a coluna `json`, que a GerenciaPost grava sem bind — só aceitar dígitos */
+        foreach (['id_brand', 'id_model', 'year_from', 'year_to', 'km_max'] as $field) {
+            if (isset($_POST[$field]) && $_POST[$field] !== '' && !ctype_digit((string) $_POST[$field])) {
+                Toast::itemAddError();
+                header('location:' . URL . $this->route . "/attendance/$attendanceId?interests");
+                exit;
+            }
+        }
+
         $json = [];
         $filterType = $_POST['filter_type'];
 
@@ -610,6 +619,7 @@ class AttendanceController extends FrontController
             case '1':
                 /**Marca e Modelo */
                 $alreadyAdded = array_filter($json, function ($pair) {
+                    $pair = (array) $pair; // o JSON salvo volta como objeto (json_decode sem assoc)
                     return $pair['id_brand'] == $_POST['id_brand'] && ($pair['id_model'] ?? '') == ($_POST['id_model'] ?? '');
                 });
 
@@ -639,7 +649,8 @@ class AttendanceController extends FrontController
                 break;
         }
 
-        $arrayPost['json'] = json_encode($json);
+        // A10: sem aspas cruas no JSON, já que ele entra no SQL sem bind
+        $arrayPost['json'] = json_encode($json, JSON_HEX_APOS | JSON_HEX_QUOT);
 
         try {
             if (!empty($filterInterest)) {
@@ -697,7 +708,8 @@ class AttendanceController extends FrontController
                     $json = array_values($json);
                 }
 
-                $json = json_encode($json);
+                // A10: sem aspas cruas no JSON, já que ele entra no SQL sem bind
+                $json = json_encode($json, JSON_HEX_APOS | JSON_HEX_QUOT);
 
                 (new GerenciaPost())->update8191(['json' => $json], "attendance_filters_interests", 'id', $itemId, false);
             } else {

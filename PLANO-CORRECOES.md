@@ -66,7 +66,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - A2
 - ✅ A3 + M3 (2026-10-02)
 - A4
-- A10
+- ✅ A10 (2026-10-02)
 - M4
 - N9
 - Chamada morta `ajax/global/toast` em `script.js:150` (N3, 2º item)
@@ -917,7 +917,7 @@ Repasse Sandré. Corrigir o código (`header.php`, `Model.php`) e o dado
 (`branch.email`, inclusive na migration de seed de produção que ainda não
 rodou) na mesma leva, para não corrigir um e esquecer o outro.
 
-### A10 — Bypass de parametrização via chave `'json'` em `GerenciaPost`
+### ✅ A10 — Bypass de parametrização via chave `'json'` em `GerenciaPost` — CONCLUÍDO 2026-10-02
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §1.3.
 **Arquivos**: `src/model/GerenciaPost.php:19-48,50-74`,
@@ -930,6 +930,25 @@ afetada, precisa mapear todas antes). BAIXO se a correção for pontual só no
 `AttendanceController` (ex.: validar/sanitizar `id_brand`/`id_model` antes
 de montar o JSON, sem tocar na lib) — abordagem recomendada por ser mais
 isolada.
+
+**✅ Aplicado (2026-10-02), pontual, sem mexer na `GerenciaPost`**:
+- `handleSubmitInterestFilter`: `id_brand`, `id_model`, `year_from`,
+  `year_to`, `km_max` só com dígitos (`ctype_digit`); senão, aviso de erro e
+  nada é gravado. Os preços já passavam por `Util::unmaskMoney` (só dígitos e
+  ponto).
+- Os dois `json_encode` (cadastro e `deleteInterestFilterById`) com
+  `JSON_HEX_APOS | JSON_HEX_QUOT` — nenhuma aspa crua chega ao SQL, nem a partir
+  de dado antigo já salvo.
+- **Defeito antigo corrigido junto**: no filtro "Marca e Modelo", o JSON salvo
+  volta como objeto e o código o lia como array (`$pair['id_brand']`) —
+  adicionar a **segunda** marca no mesmo atendimento dava erro fatal. Agora
+  `(array) $pair`.
+**Teste** (não grava): `GerenciaPost` real com conexão falsa que só captura o
+SQL. Antes, um `id_brand` malicioso fechava a aspa e montava um segundo INSERT
+com o hash da senha do usuário 1; depois, recusado pela validação, e mesmo só
+com o encode novo a aspa vira `'`. Formato salvo no uso normal idêntico
+(`[{"id_brand":"1","id_model":"1"}]`). Erro fatal da 2ª marca reproduzido antes
+e ausente depois. Aba Interesses abre igual antes × depois.
 
 ### ✅ A11 — Vazamento de erro PDO sem gate de ambiente (Contas a Pagar/Receber) — CONCLUÍDO 2026-09-30
 
