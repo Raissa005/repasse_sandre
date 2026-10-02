@@ -5,14 +5,17 @@
 `LoginController` (`src/controller/project/LoginController.php`):
 
 - `index()` — mostra o form de login (limpa `$_SESSION['RR']` antes).
-- `signIn()` — autentica. Primeiro tenta
-  `Authentication::centralizedAuthentication($email, $senha)`
-  (`src/libs/Authentication.php`): faz uma chamada HTTP para um serviço externo
-  (`http://www.ydealtecnologia.com.br/autenticacao/autentica_ymoveis.php`) — é um
-  serviço central da própria "ydeal", fora deste repositório. Se essa autenticação
-  central não confirmar, cai para `password_verify($senha, $user->password)`
-  local (hash bcrypt). **Não modificar esse fluxo sem entender o serviço externo**
-  — perguntar ao usuário antes de qualquer mudança na forma de autenticar.
+- `signIn()` — autentica só localmente, com `password_verify($senha, $user->password)`
+  (hash bcrypt). A chamada ao serviço externo da Ydeal
+  (`Authentication::centralizedAuthentication`) foi removida em 2026-09-18 —
+  permitia entrar como Superadm sem senha. **Bloqueio por tentativas (A4,
+  2026-10-02)**, Model `LoginAttempt` (tabela `login_attempts`): 5 erros em até
+  15 minutos bloqueiam o **e-mail digitado** (exista ou não) por 15 minutos,
+  inclusive com a senha certa; login certo apaga a linha; concluir a
+  recuperação de senha também. Mensagens não revelam se o usuário existe
+  ("E-mail ou senha invalido!" / mensagem de bloqueio / recuperação neutra).
+  Para desbloquear alguém manualmente: migration com `DELETE FROM login_attempts
+  WHERE email = '...'` (ou a pessoa conclui "Esqueci a senha").
 - Ao autenticar, monta `$_SESSION['RR']` (ver estrutura completa em
   `docs/02-arquitetura-fluxo.md`) e **invalida o cache de menu** da sessão
   anterior (`FilesystemAdapter->delete('menus_' . $sessionId)`).

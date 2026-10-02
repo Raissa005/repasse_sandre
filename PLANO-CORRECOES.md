@@ -65,7 +65,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 **Onda 4 — antes do lançamento**:
 - A2
 - ✅ A3 + M3 (2026-10-02)
-- 🔄 A4 — migration criada e mensagem neutra na recuperação aplicada (2026-10-02); **contador aguarda o usuário rodar a migration** `2026_10_02_0921_criar_tabela_login_attempts.sql`
+- ✅ A4 (2026-10-02) — migration rodada pelo usuário no banco local; contador aplicado
 - ✅ A10 (2026-10-02)
 - ✅ M4 (2026-10-02) — inclui a correção da recuperação de senha, que estava quebrada (N19)
 - N9
@@ -811,7 +811,7 @@ sem mudança visual. Nenhum erro PHP novo.
 cidades etc.) continua sem escape — a auditoria listou só os campos de texto
 livre acima; um varrimento geral fica para o pós-lançamento.
 
-### 🔄 A4 — Login sem rate-limiting/lockout contra força bruta — migration criada 2026-10-02; código aguarda a migration rodar
+### ✅ A4 — Login sem rate-limiting/lockout contra força bruta — CONCLUÍDO 2026-10-02
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §4.2.
 **Arquivos**: `src/controller/project/LoginController.php:45-101`.
@@ -841,20 +841,33 @@ neutra.
   token e envia e-mail — não executado). Observação: o tempo de resposta ainda
   difere (envio de e-mail), diferença pequena.
 
-**⚠️ Aguardando o usuário rodar a migration** (regra de `db/migrations/README.md`:
-o código que depende dela só muda depois). Planejado para depois:
-- Model novo `LoginAttempt` (tabela `login_attempts`): ler a linha do e-mail,
-  gravar (upsert pelo índice único) e apagar.
-- `signIn()`: e-mail normalizado (minúsculo, sem espaços); se `locked_until` >
-  agora → recusa, **mesmo com a senha certa**, com "Muitas tentativas. Tente
-  novamente em alguns minutos." (vale para qualquer e-mail, então não revela
-  existência); senha certa → apaga a linha e loga; senha errada → soma 1
-  (recomeça do 1 se o último erro foi há mais de 15 min); no 5º erro grava
-  `locked_until` = agora + 15 min e já mostra a mensagem de bloqueio; nos
-  demais, a mensagem atual "E-mail ou senha invalido!".
+**✅ Contador aplicado (2026-10-02), depois de o usuário confirmar que rodou a
+migration no banco local** (conferido por leitura: colunas e índice único
+`uk_login_attempts_email` como na migration, 0 linhas):
+- Model novo `LoginAttempt`: regra em funções puras (`normalizeEmail`,
+  `isLocked`, `nextFailure`) e SQL em 3 métodos (`getByEmail`,
+  `registerFailure` — upsert pelo índice único —, `clear`).
+- `signIn()`: e-mail normalizado (minúsculo, sem espaços, até 191); se
+  bloqueado → recusa **antes de conferir a senha** (vale com a senha certa),
+  com "Muitas tentativas de login. Tente novamente em 15 minutos ou use
+  \"Esqueci a senha\"."; senha certa → apaga a linha (só se existir) e loga;
+  senha errada → `nextFailure` (recomeça do 1 se não havia linha, se o último
+  erro foi há mais de 15 min ou se um bloqueio anterior venceu); no 5º erro
+  grava `locked_until` = agora + 15 min e já mostra a mensagem de bloqueio;
+  nos demais, "E-mail ou senha invalido!".
 - `handleSubmitChangePassWord`: ao concluir a troca, apaga a linha do e-mail
-  do token.
-- Ordem de deploy no `DEPLOY-CHECKLIST.md` §5 (migration antes do código).
+  do token (zera o contador).
+- `docs/08`: descrito o bloqueio, como desbloquear manualmente, e corrigido o
+  trecho que ainda citava a autenticação externa da Ydeal (removida em
+  2026-09-18).
+**Teste (sem gravar)**: regra com horários simulados — erros 1 a 4 sem
+bloqueio, bloqueio no 5º até +15 min, bloqueado 1 s antes do fim e liberado
+depois, erro após bloqueio vencido recomeça do 1, 4 erros + pausa de 16 min
+recomeça do 1, 4 erros + 1 erro 14 min depois bloqueia; e-mail normalizado;
+os 3 SQLs **preparados no servidor** com `ATTR_EMULATE_PREPARES=false` (o MySQL
+analisa a sintaxe sem executar) — aceitos; `getByEmail` lendo a tabela real.
+Tabela continua com 0 linhas. O login em si (grava em `login_attempts`) não
+foi executado — teste manual.
 
 ### ✅ A5 — Controllers administrativos/financeiros sem checagem de perfil consistente — CONCLUÍDO 2026-10-02
 

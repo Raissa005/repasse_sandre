@@ -218,6 +218,10 @@ Com um usuário Administrador e, onde indicado, um usuário Vendedor:
 - [ ] Recuperar senha com um e-mail que **não** existe → mesma mensagem de
       sucesso de um e-mail existente. Com um e-mail real, o link abre e aceita
       nova senha de 8+ caracteres; com menos, recusa. *(Plano: M4/A4)*
+- [ ] Bloqueio de login: com um e-mail **de teste**, errar a senha 5 vezes →
+      mensagem de bloqueio; a senha certa também é recusada durante o
+      bloqueio; concluir "Esqueci a senha" libera na hora. Não usar o e-mail de
+      quem vai trabalhar no dia (fica 15 min bloqueado). *(Plano: A4)*
 - [ ] Log de erros do PHP/Apache sem erro novo durante o teste.
 
 ## 9. Permissões por perfil — antes de liberar os usuários *(Plano: C3)*

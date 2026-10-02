@@ -7,6 +7,7 @@ use RR\model\User;
 use RR\libs\Secure;
 use RR\libs\Toast;
 use RR\model\Branch;
+use RR\model\LoginAttempt;
 use RR\libs\JWTWrapper;
 use RR\libs\MoreMailer;
 use RR\model\GerenciaPost;
@@ -45,9 +46,23 @@ class LoginController extends FrontController
 
     public function signIn()
     {
+        // A4: bloqueio por e-mail digitado (exista ou não) — vale mesmo com a senha certa
+        $now = time();
+        $attemptEmail = LoginAttempt::normalizeEmail($_POST['email'] ?? '');
+        $loginAttempt = new LoginAttempt();
+        $attempt = $loginAttempt->getByEmail($attemptEmail);
+
+        if (LoginAttempt::isLocked($attempt, $now)) {
+            Toast::errorToast(LoginAttempt::LOCKED_MESSAGE);
+            header('location:' . URL . 'login');
+            exit;
+        }
+
         $userVerified = (new User())->getUserByEmail($_POST['email']);
 
         if ($userVerified && password_verify($_POST['password'], $userVerified->password)) {
+            if (!empty($attempt)) $loginAttempt->clear($attemptEmail);
+
             if ($userVerified->access <= 5) {
                 $branches = (new Branch())->getAllBranch();
                 array_unshift($branches, (object) array("id" => 0, "name" => "Super ADM"));
@@ -94,7 +109,10 @@ class LoginController extends FrontController
             header('location:' . URL . 'home');
             exit;
         } else {
-            Toast::errorToast('E-mail ou senha invalido!');
+            $state = LoginAttempt::nextFailure($attempt, $now);
+            $loginAttempt->registerFailure($attemptEmail, $state, $now);
+
+            Toast::errorToast(!empty($state->locked_until) ? LoginAttempt::LOCKED_MESSAGE : 'E-mail ou senha invalido!');
 
             header('location:' . URL . 'login');
             exit;
@@ -207,6 +225,9 @@ class LoginController extends FrontController
             try {
                 (new GerenciaPost())->update8191($arrPost, "users", "id", $decodedToken->userData->id, false);
                 (new GerenciaPost())->update8191(["status" => 0], "tokens", "id", $jwt[0]->id, false);
+
+                // A4: concluir a recuperação zera o contador de tentativas desse e-mail
+                (new LoginAttempt())->clear(LoginAttempt::normalizeEmail($jwt[0]->email));
 
                 Toast::successToast('Senha alterada com successo!');
                 header('location: ' . URL . 'login/index');
