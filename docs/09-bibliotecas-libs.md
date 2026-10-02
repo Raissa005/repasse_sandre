@@ -91,7 +91,13 @@ Usar para toda formatação de data em pt-BR em vez de `date()`/`DateTime` cru.
 
 `JWTWrapper.php` (`encode`/`decode`) — usado hoje só no fluxo de recuperação de
 senha (tabela `tokens`). Reaproveitar para qualquer necessidade nova de
-token assinado com expiração.
+token assinado com expiração. A chave vem de `JWT_KEY` em `src/config/config.php`
+(M4, 2026-10-02 — não versionado; mínimo 32 caracteres; sem ela o encode/decode
+lança `RuntimeException`). O `firebase/php-jwt` instalado é `dev-main`: o
+`decode` exige `new Key($chave, 'HS256')` (já feito no wrapper).
+
+Política de senha (M4): `User::passwordPolicyError($senha)` / `User::PASSWORD_MIN_LENGTH`
+(8) — usar em todo ponto que define senha.
 
 ## Negócio / cálculo
 

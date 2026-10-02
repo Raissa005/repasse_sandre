@@ -67,7 +67,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 - ✅ A3 + M3 (2026-10-02)
 - A4
 - ✅ A10 (2026-10-02)
-- M4
+- ✅ M4 (2026-10-02) — inclui a correção da recuperação de senha, que estava quebrada (N19)
 - N9
 - Chamada morta `ajax/global/toast` em `script.js:150` (N3, 2º item)
 - Botões Ativar/Inativar da listagem de Cheques (N10, 1º item)
@@ -1061,7 +1061,7 @@ mantendo só o `<strong>`; `notification/index.php`: título com
 (módulo desativado) não foi alterado — a proteção está na exibição.
 `node --check` ok nos 2 JS.
 
-### M4 — Falta de política de senha + chave JWT hardcoded
+### ✅ M4 — Falta de política de senha + chave JWT hardcoded — CONCLUÍDO 2026-10-02
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §4.1 (política de complexidade),
 §4.3 (chave JWT).
@@ -1074,6 +1074,32 @@ para variável de ambiente/config é mecânico, mas **invalida qualquer link
 de recuperação de senha já enviado e não usado** no momento do deploy —
 comunicar isso ao time antes de trocar, ainda que o risco técnico seja
 baixo.
+
+**✅ Aplicado (2026-10-02)**. Decisão do usuário: só tamanho mínimo, **8
+caracteres**, para senhas novas ou alteradas (as atuais continuam valendo).
+- `User::PASSWORD_MIN_LENGTH` + `User::passwordPolicyError()` (conta
+  caracteres, não bytes), usado em `UsersController::handleSubmitAddItem`,
+  `handleSubmitEditItem` (só quando a senha é preenchida) e
+  `LoginController::handleSubmitChangePassWord`, antes de gravar.
+  `minlength="8"` nos campos das 3 telas.
+- Chave JWT: `JWTWrapper` lê `JWT_KEY` do `src/config/config.php` (não
+  versionado; `RuntimeException` se faltar ou tiver menos de 32 caracteres);
+  `config.example.php` documenta como gerar. Gerada uma chave local no
+  `config.php` desta máquina (backup do anterior no scratchpad).
+- **N19 — recuperação de senha estava quebrada (achado e corrigido aqui)**: o
+  `firebase/php-jwt` instalado é `dev-main`, cujo `decode` exige
+  `new Key($chave, 'HS256')`; o wrapper passava a chave em texto e **todo**
+  link de recuperação dava erro fatal (`"kid" empty`) ao abrir e ao enviar a
+  nova senha. O C6 corrigiu a tabela, mas o fluxo não chegava até lá.
+- `handleSubmitChangePassWord`: confere o prazo do link também no envio (antes
+  só ao abrir a página). Token ilegível (adulterado ou de antes da troca da
+  chave) → "Link inválido", em vez de erro fatal.
+**Teste**: política (vazio, 7, 8, 7 e 8 letras acentuadas) ok; JWT antes ×
+depois — antes, nenhum token era lido; depois, token novo lido, adulterado e
+assinado com a chave antiga recusados; o link real pendente no banco (token
+antigo) antes dava erro fatal, depois volta ao login com "Link inválido";
+telas de usuário e login abrem iguais (+`minlength`). Gravações (salvar
+usuário, trocar senha) não executadas.
 
 ### ✅ M5 — Config/debug: blocos dependentes de ambiente de produção não verificável — CONCLUÍDO 2026-09-30 (parte de código)
 

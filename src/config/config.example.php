@@ -52,6 +52,13 @@ ini_set('ignore_repeated_errors', TRUE);
  */
 
 define('TOKEN', '8+d*) 22@o4& 9k95a8 1éã');
+
+/**
+ * Chave de assinatura dos links de recuperação de senha (JWT). Única por servidor e secreta.
+ * Gerar com: php -r 'echo bin2hex(random_bytes(32)), "\n";'
+ * Trocar a chave invalida os links de recuperação já enviados e ainda não usados.
+ */
+define('JWT_KEY', '');
 define('URL_PUBLIC_FOLDER', 'public');
 define('URL_PROTOCOL', '//');
 define('URL_DOMAIN', $_SERVER['HTTP_HOST']);

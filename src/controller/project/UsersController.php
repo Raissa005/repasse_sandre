@@ -161,6 +161,11 @@ class UsersController extends FrontController
             redirect($this->route . '/addItem');
         }
 
+        if ($passwordError = User::passwordPolicyError($_POST['password'] ?? '')) {
+            Toast::warningToast($passwordError);
+            redirect($this->route . '/addItem');
+        }
+
         $response = $this->model->submitAddForm();
 
         Toast::checkResponse($response->error, $response->message);
@@ -288,6 +293,12 @@ class UsersController extends FrontController
 
         if ($profileError = $this->profileRuleError($this->model->getUserById($itemId), $_POST['id_profile'] ?? '')) {
             Toast::warningToast($profileError);
+            redirect($this->route . "/editItem/" . $itemId);
+        }
+
+        // M4: a senha só é alterada quando preenchida (User::submitEditForm); nesse caso precisa atender à política
+        if (($_POST['password'] ?? '') !== '' && ($passwordError = User::passwordPolicyError($_POST['password']))) {
+            Toast::warningToast($passwordError);
             redirect($this->route . "/editItem/" . $itemId);
         }
 

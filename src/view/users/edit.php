@@ -44,7 +44,7 @@ use RR\libs\Secure;
                                         <div class="col-md-4">
                                             <div class="form-group box-password">
                                                 <label for="password">Senha <span class="text-danger">*</span></label>
-                                                <input autocomplete="off" type="password" class="form-control" id="password" name="password">
+                                                <input autocomplete="off" type="password" class="form-control" id="password" name="password" minlength="8">
                                             </div>
                                         </div>
                                         <div class="col-md-4">

@@ -26,7 +26,7 @@
                 <div class="form-group has-feedback">
                     <div class="input-group">
                         <span class="input-group-addon"><i class="fa fa-lock" style="width: 15px;"></i></span>
-                        <input name="password" autocomplete="off" type="password" class="form-control" placeholder="Senha" required>
+                        <input name="password" autocomplete="off" type="password" class="form-control" placeholder="Senha (mínimo 8 caracteres)" minlength="8" required>
                     </div>
                 </div>
                 <div class="form-group has-feedback">

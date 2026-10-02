@@ -38,7 +38,7 @@
                                 <div class="col-md-4 col-lg-4">
                                     <div class="form-group">
                                         <label for="password">Senha <span class="text-danger">*</span></label>
-                                        <input autocomplete="off" type="password" class="form-control password" id="password" name="password" required>
+                                        <input autocomplete="off" type="password" class="form-control password" id="password" name="password" minlength="8" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-lg-4">

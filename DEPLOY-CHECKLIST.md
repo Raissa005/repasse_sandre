@@ -53,6 +53,11 @@ e vá para a seção **Plano de volta**.
   ```
 
 - [ ] Conferir as constantes de banco (`DB_*`) e de URL do servidor.
+- [ ] **`JWT_KEY`** (chave dos links de recuperação de senha) definida, igual
+      ao `config.example.php`, com valor **novo e só deste servidor**:
+      `php -r 'echo bin2hex(random_bytes(32)), "\n";'`. Sem ela, "Esqueci a
+      senha" dá erro. Links de recuperação enviados antes da troca deixam de
+      funcionar (mostram "Link inválido") — avisar a equipe. *(Plano: M4)*
 
 ## 2.1 Servidor: dependências (`vendor/`, não versionada)
 

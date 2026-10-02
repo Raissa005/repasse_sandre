@@ -140,7 +140,7 @@ class LoginController extends FrontController
             exit;
         }
 
-        $decodedToken = JWTWrapper::decode($jwt[0]->jwt);
+        $decodedToken = self::decodeRecoveryToken($jwt[0]->jwt);
 
         if ($decodedToken->expiration < time()) {
             Toast::warningToast('O tempo para redefinir a senha expirou!');
@@ -149,6 +149,21 @@ class LoginController extends FrontController
         }
 
         require APP . 'view/login/changePassword.php';
+    }
+
+    /**
+     * M4: token de recuperação ilegível (adulterado, ou assinado com uma JWT_KEY anterior) é tratado como link inválido,
+     * em vez de erro fatal.
+     */
+    private static function decodeRecoveryToken(string $jwt)
+    {
+        try {
+            return JWTWrapper::decode($jwt);
+        } catch (\UnexpectedValueException | \DomainException | \InvalidArgumentException $error) {
+            Toast::errorToast('Link inválido ou não encontrado!');
+            header('location: ' . URL . 'login/index');
+            exit;
+        }
     }
 
     public function handleSubmitChangePassWord($token)
@@ -171,7 +186,20 @@ class LoginController extends FrontController
             exit;
         }
 
-        $decodedToken = JWTWrapper::decode($jwt[0]->jwt);
+        $decodedToken = self::decodeRecoveryToken($jwt[0]->jwt);
+
+        // M4: o prazo também vale no envio, não só ao abrir a página
+        if ($decodedToken->expiration < time()) {
+            Toast::warningToast('O tempo para redefinir a senha expirou!');
+            header('location: ' . URL . 'login/index');
+            exit;
+        }
+
+        if ($passwordError = User::passwordPolicyError($_POST['password'] ?? '')) {
+            Toast::warningToast($passwordError);
+            header('location: ' . URL . 'login/changePassWord?token=' . $token);
+            exit;
+        }
 
         if ($_POST["password"] == $_POST["confirm_password"]) {
             $arrPost = array('password' =>  password_hash($_POST['password'], PASSWORD_BCRYPT, array('cost' => 12)));

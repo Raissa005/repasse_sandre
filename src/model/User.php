@@ -49,6 +49,21 @@ class User extends Model
         parent::__construct($this->table, $joins);
     }
 
+    /** M4: política de senha decidida pelo usuário (2026-10-02) — só tamanho mínimo, vale para senhas novas ou alteradas */
+    const PASSWORD_MIN_LENGTH = 8;
+
+    /**
+     * Devolve a mensagem de recusa, ou null se a senha atende à política.
+     */
+    public static function passwordPolicyError($password): ?string
+    {
+        if (mb_strlen((string) $password, 'UTF-8') < self::PASSWORD_MIN_LENGTH) {
+            return 'A senha deve ter pelo menos ' . self::PASSWORD_MIN_LENGTH . ' caracteres.';
+        }
+
+        return null;
+    }
+
     public function submitAddForm()
     {
         $arrayPost = array(
