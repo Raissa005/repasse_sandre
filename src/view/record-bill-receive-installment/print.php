@@ -104,7 +104,7 @@ use RR\libs\Util;
                                         </td>
                                     <?php } ?>
                                     <?php if (isset($_GET['column_description']) && $_GET['column_description'] == 'on') { ?>
-                                        <td class="va-middle" style="vertical-align: middle;"><?= $item->description ?></td>
+                                        <td class="va-middle" style="vertical-align: middle;"><?= Util::escapeSystemHtml($item->description) ?></td>
                                     <?php } ?>
                                     <?php if (isset($_GET['column_pay_day']) && $_GET['column_pay_day'] == 'on') { ?>
                                         <td class="text-center va-middle"><?= ($item->pay_day) ?></td>

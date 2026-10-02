@@ -17,7 +17,8 @@
         "phenx/php-svg-lib": "^0.3.3",
         "firebase/php-jwt": "dev-main",
         "symfony/cache": "~5.4.0",
-        "imagine/imagine": "^1.0@dev"
+        "imagine/imagine": "^1.0@dev",
+        "ezyang/htmlpurifier": "^4.17"
     },
     "autoload": {
         "psr-4": {

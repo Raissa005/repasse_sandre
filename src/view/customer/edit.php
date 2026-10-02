@@ -206,7 +206,7 @@ use RR\libs\Util;
                                         <div class="col-md-12 col-lg-12">
                                             <div class="form-group">
                                                 <label for="observation">Observação</label>
-                                                <textarea name="observation" id="observation" class="form-control" rows="5"><?= $customer->observation ?></textarea>
+                                                <textarea name="observation" id="observation" class="form-control" rows="5"><?= htmlspecialchars($customer->observation ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                                             </div>
                                         </div>
                                     </div>

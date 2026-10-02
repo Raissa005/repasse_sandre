@@ -372,7 +372,7 @@ class CheckControlController extends FrontController
             }
             $tl->userName = (new User)->getItemById($tl->created_by)->name;
 
-            $tl->comment = nl2br($tl->comment);
+            $tl->comment = nl2br(Util::escapeSystemHtml($tl->comment));
         }, $timeline->data);
 
         require APP . 'view/_templates/header.php';

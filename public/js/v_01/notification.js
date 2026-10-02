@@ -1,3 +1,9 @@
+// M3: título e ícone vêm do banco; escapa tudo e devolve só o <strong> que o sistema grava no título
+const escapeNotificationText = (text, allowStrong = false) => {
+    const escaped = String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    return allowStrong ? escaped.replace(/&lt;(\/?)strong&gt;/g, '<$1strong>') : escaped;
+};
+
 jQuery(function () {
     $(".dropdown-notification").on("click", function () {
         $.post({
@@ -16,7 +22,7 @@ jQuery(function () {
                                             Nova Mensagem
                                         </span>
                                         <div>
-                                        <i class="text-sm ${n.icon}"> </i> ${n.title}
+                                        <i class="text-sm ${escapeNotificationText(n.icon)}"> </i> ${escapeNotificationText(n.title, true)}
                                         </div>
                                    </a>
                                 </li>`;

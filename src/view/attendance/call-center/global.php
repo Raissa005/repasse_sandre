@@ -31,7 +31,7 @@
                                             <li class="list-group-item"><i class="fas fa-network-wired"></i> <strong>Como Conheceu:</strong><span class="pull-right"><?= $attendance->communication_channel ?></span></li>
                                             <?php if (isset($attendance->description) && !empty($attendance->description) && $attendance->description != "") { ?>
                                                 <li class="list-group-item"><i class="fas fa-comment-alt"></i> <strong>Descrição:</strong></li>
-                                                <li class="list-group-item"><?= $attendance->description ?></li>
+                                                <li class="list-group-item"><?= htmlspecialchars($attendance->description ?? '', ENT_QUOTES, 'UTF-8') ?></li>
                                             <?php } ?>
                                         </ul>
                                     </div>

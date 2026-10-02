@@ -107,7 +107,7 @@ use RR\libs\Util;
                                         <td class="text-center va-middle"><?= ($item->pay_day) ?></td>
                                     <?php } ?>
                                     <?php if (isset($_GET['column_description']) && $_GET['column_description'] == 'on') { ?>
-                                        <td style="vertical-align: middle;"><?= $item->description ?></td>
+                                        <td style="vertical-align: middle;"><?= Util::escapeSystemHtml($item->description) ?></td>
                                     <?php } ?>
                                     <?php if (isset($_GET['column_status_payment']) && $_GET['column_status_payment'] == 'on') { ?>
                                         <td class="text-center va-middle"><?= $item->label == "Aguard. Pagam." ? "Ag. Pagam." : $item->label ?></td>

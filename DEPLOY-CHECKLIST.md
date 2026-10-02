@@ -54,6 +54,13 @@ e vá para a seção **Plano de volta**.
 
 - [ ] Conferir as constantes de banco (`DB_*`) e de URL do servidor.
 
+## 2.1 Servidor: dependências (`vendor/`, não versionada)
+
+- [ ] Publicar a pasta `vendor/` atualizada (ou rodar `composer install
+      --no-dev` no servidor com o `composer.lock` do commit). Ela precisa conter
+      **`ezyang/htmlpurifier`** — sem ela, as telas de Observações do veículo e
+      de Transferência dão erro fatal. *(Plano: A3)*
+
 ## 3. Servidor: Apache
 
 - [ ] `mod_rewrite` carregado (o sistema inteiro depende dele).
@@ -198,6 +205,8 @@ Com um usuário Administrador e, onde indicado, um usuário Vendedor:
 - [ ] Recibo/impressão de parcela de Contas a Receber e a Pagar abre.
       *(Plano: A6, A8)*
 - [ ] Como Vendedor: telas administrativas redirecionam para a home.
+- [ ] Observações do veículo: as observações antigas aparecem **com a
+      formatação** (negrito, listas, tabela). *(Plano: A3)*
 - [ ] Log de erros do PHP/Apache sem erro novo durante o teste.
 
 ## 9. Permissões por perfil — antes de liberar os usuários *(Plano: C3)*

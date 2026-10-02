@@ -50,7 +50,7 @@ use RR\components\ContentHeaderComponent4214;
                                             <?php foreach ($vehicleAttachments as $attachment) { ?>
                                                 <tr id="<?= "item_$attachment->id" ?>" class="<?= $permission ? "" : "disableOrder" ?>" style="cursor: pointer;">
                                                     <td><?= "$attachment->name" ?></td>
-                                                    <td><?= $attachment->description ?></td>
+                                                    <td><?= htmlspecialchars($attachment->description ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                                     <td style="width: 11rem;" class="text-center">
                                                     <a class="btn btn-warning"
                                                     href="<?= URL . "public/vehicle/" . urlencode($attachment->id_vehicle ) . "/attachments/" . urlencode($attachment->filename) ?>"

@@ -1,6 +1,7 @@
 <?php
 
 use RR\libs\Date;
+use RR\libs\Util;
 
 ?>
 <div class="content-wrapper">
@@ -19,7 +20,7 @@ use RR\libs\Date;
                                         <li class="item">
                                             <div class="product-info active" style="margin-left: 0px;">
                                                 <a href="<?= URL . $this->route . "/" . $item->id ?>">
-                                                    <?= $item->title ?>
+                                                    <?= Util::escapeSystemHtml($item->title) ?>
                                                     <span class="pull-right">
                                                         <?php if (!$item->message_read) { ?>
                                                             <i class="text-yellow fas fa-bell"></i>
@@ -29,7 +30,7 @@ use RR\libs\Date;
                                                         <?php } ?>
                                                     </span>
                                                 </a>
-                                                <span class="product-description"><?= $item->description ?></span>
+                                                <span class="product-description"><?= htmlspecialchars($item->description ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                                             </div>
                                         </li>
                                     <?php } ?>
@@ -45,14 +46,14 @@ use RR\libs\Date;
                         <div class="box-header with-border">
                             <a href="<?= URL . $notice->route ?>" target="_blank">
                                 <i class="text-yellow <?= $notice->icon ?>"></i>
-                                <h3 class="box-title" style="margin-top: 7px;"><?= !empty($notice->title) ? $notice->title : "Nem uma Notificação selecionada!" ?></h3>
+                                <h3 class="box-title" style="margin-top: 7px;"><?= !empty($notice->title) ? Util::escapeSystemHtml($notice->title) : "Nem uma Notificação selecionada!" ?></h3>
                             </a>
                             <span class="pull-right"><?= !empty($notice->created_at) ? Date::date_hour($notice->created_at) :  "" ?></span>
                         </div>
                         <div class="box-body">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <?= !empty($notice->description) ? $notice->description : "" ?>
+                                    <?= !empty($notice->description) ? htmlspecialchars($notice->description, ENT_QUOTES, 'UTF-8') : "" ?>
                                 </div>
                             </div>
                         </div>

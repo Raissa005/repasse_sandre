@@ -56,7 +56,7 @@ use RR\components\ContentHeaderComponent4214;
                                                                                 <span class="time"><i class="fa fa-clock"></i> <?= Date::date_hour($vehicleObservations->data[$i]->created_at) ?></span>
                                                                                 <h3 class="timeline-header"><a href="#"><?= ($i + 1) . ' - ' . $vehicleObservations->data[$i]->user_name ?></a></h3>
                                                                                 <div class="timeline-body">
-                                                                                    <?= $vehicleObservations->data[$i]->observation ?>
+                                                                                    <?= \RR\libs\Util::richText($vehicleObservations->data[$i]->observation) ?>
                                                                                 </div>
                                                                             </div>
                                                                         </li>

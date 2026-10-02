@@ -102,7 +102,7 @@ use RR\libs\Secure;
                                 <div class="col-md-12 col-lg-12">
                                     <div class="form-group">
                                         <label for="description">Descrição</label>
-                                        <textarea name="description" id="description" class="form-control" rows="6"><?= $attendance->description ?></textarea>
+                                        <textarea name="description" id="description" class="form-control" rows="6"><?= htmlspecialchars($attendance->description ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                                     </div>
                                 </div>
                             </div>

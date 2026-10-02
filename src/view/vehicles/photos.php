@@ -63,13 +63,13 @@ use RR\components\ContentHeaderComponent4214;
                                                             <?php foreach ($vehicleImages->data as $img) { ?>
                                                                 <tr id="<?= "item_$img->id" ?>" class="<?= Secure::access_secretary() ? "" : "disableOrder" ?>" style="cursor: pointer;">
                                                                     <td class="text-center" style="vertical-align: middle;">
-                                                                        <span class="img-carousel" data-img="<?= $img->id ?>" data-fancybox title="<?= $img->description ?>">
+                                                                        <span class="img-carousel" data-img="<?= $img->id ?>" data-fancybox title="<?= htmlspecialchars($img->description ?? '', ENT_QUOTES, 'UTF-8') ?>">
                                                                             <img class="img-rounded" src="<?= URL . "vehicle/{$itemId}/images/{$img->filename}-xs.{$img->extension}" ?>">
                                                                         </span>
                                                                         <?= $img->sizes ?>
                                                                     </td>
                                                                     <td style="vertical-align: middle;">
-                                                                        <input name="descriptionImage[<?= $img->id ?>]" placeholder="Descrição da imagem..." type="text" value="<?= $img->description ?>" class="form-control">
+                                                                        <input name="descriptionImage[<?= $img->id ?>]" placeholder="Descrição da imagem..." type="text" value="<?= htmlspecialchars($img->description ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control">
                                                                     </td>
                                                                     <?php if (Secure::access_secretary()) { ?>
                                                                         <td class="text-center" style="vertical-align: middle;">

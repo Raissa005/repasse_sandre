@@ -74,7 +74,7 @@ use RR\libs\Secure;
                                     <?= $item->user_name ?>
                                 </h3>
                                 <div class="timeline-body" style="padding-bottom: 0px;">
-                                    <?= $item->comment ?>
+                                    <?= htmlspecialchars($item->comment ?? '', ENT_QUOTES, 'UTF-8') ?>
                                 </div>
                                 <div class="timeline-footer">
                                     <?php if (!empty($item->url_attachment)) { ?>
@@ -123,7 +123,7 @@ use RR\libs\Secure;
                                     <?= $item->user_name ?>
                                 </h3>
                                 <div class="timeline-body" style="padding-bottom: 0px;">
-                                    <?= $item->comment ?>
+                                    <?= htmlspecialchars($item->comment ?? '', ENT_QUOTES, 'UTF-8') ?>
                                 </div>
                                 <div class="timeline-footer">
                                     <?php if (!empty($item->url_attachment)) { ?>
@@ -170,7 +170,7 @@ use RR\libs\Secure;
                                     <?= $item->user_name ?>
                                 </h3>
                                 <div class="timeline-body" style="padding-bottom: 0px;">
-                                    <?= $item->comment ?>
+                                    <?= htmlspecialchars($item->comment ?? '', ENT_QUOTES, 'UTF-8') ?>
                                 </div>
                                 <div class="timeline-footer">
                                     <?php if (!empty($item->url_attachment)) { ?>
@@ -217,7 +217,7 @@ use RR\libs\Secure;
                                     <?= $item->user_name ?>
                                 </h3>
                                 <div class="timeline-body" style="padding-bottom: 0px;">
-                                    <?= $item->comment ?>
+                                    <?= htmlspecialchars($item->comment ?? '', ENT_QUOTES, 'UTF-8') ?>
                                 </div>
                                 <div class="timeline-footer">
                                     <?php if (!empty($item->url_attachment)) { ?>

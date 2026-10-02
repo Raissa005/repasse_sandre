@@ -60,7 +60,7 @@ use RR\components\ContentHeaderComponent;
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="description">Descrição </label>
-                                    <textarea name="description" id="description" class="form-control" rows="4" style="resize: none;"><?= $item->description ?></textarea>
+                                    <textarea name="description" id="description" class="form-control" rows="4" style="resize: none;"><?= htmlspecialchars($item->description ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                                 </div>
                             </div>
                         </div>

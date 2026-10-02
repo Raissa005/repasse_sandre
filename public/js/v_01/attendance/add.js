@@ -72,7 +72,7 @@ jQuery(function () {
                                             const { error, message, data } = response;
 
                                             if (!error) {
-                                                $('.modal-body').html("Já existe um atendimento com esse cliente com o usuário " + data.name + "!");
+                                                $('.modal-body').text("Já existe um atendimento com esse cliente com o usuário " + data.name + "!");
                                             }
                                         }
                                     });

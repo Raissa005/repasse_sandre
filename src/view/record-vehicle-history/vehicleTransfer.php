@@ -83,7 +83,7 @@ use RR\libs\Util;
                                                                 <span class="time"><i class="fa fa-clock"></i> <?= date('d/m/Y', strtotime($sale->created_obs)) ?></span>
                                                                 <h3 class="timeline-header"><a href="#"><?= ($i += 1) . ' - ' . $sale->created_by ?></a></h3>
                                                                 <div class="timeline-body">
-                                                                    <?= $sale->observation ?>
+                                                                    <?= Util::richText($sale->observation) ?>
                                                                 </div>
                                                             </div>
                                                         </li>

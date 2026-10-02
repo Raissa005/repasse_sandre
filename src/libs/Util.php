@@ -512,4 +512,37 @@ class Util
         // Redimensiona a imagem mantendo a proporção
         $image->resize(new Box($targetWidth, $targetHeight), ImageInterface::FILTER_LANCZOS)->save($outputName);
     }
+
+    private static $purifier = null;
+
+    /**
+     * A3: limpa HTML de campos com editor de texto rico (CKEditor) antes de exibir — mantém a formatação e remove
+     * scripts, eventos (on*) e links javascript:. Usa o HTMLPurifier com a lista padrão de tags/atributos seguros.
+     */
+    public static function richText($html): string
+    {
+        if (self::$purifier === null) {
+            $config = \HTMLPurifier_Config::createDefault();
+            $config->set('Cache.DefinitionImpl', null); // sem cache em disco: a pasta vendor pode não ser gravável no servidor
+            $config->set('Attr.AllowedFrameTargets', ['_blank']);
+            self::$purifier = new \HTMLPurifier($config);
+        }
+
+        return self::$purifier->purify((string) $html);
+    }
+
+    /**
+     * A3: escape de campos que misturam texto digitado com HTML gravado pelo próprio sistema (timeline de cheque e
+     * descrição de lançamento/parcela gerada por cheque). Escapa tudo e restaura só o que o sistema grava:
+     * <strong>, </strong>, </a> e <a href='{URL}rota/interna' target='_blank'>.
+     */
+    public static function escapeSystemHtml($text): string
+    {
+        $escaped = htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+        $escaped = str_replace(['&lt;strong&gt;', '&lt;/strong&gt;', '&lt;/a&gt;'], ['<strong>', '</strong>', '</a>'], $escaped);
+
+        $url = preg_quote(htmlspecialchars(URL, ENT_QUOTES, 'UTF-8'), '/');
+
+        return preg_replace("/&lt;a href=&#039;({$url}[A-Za-z0-9\/-]*)&#039; target=&#039;_blank&#039;&gt;/", "<a href='$1' target='_blank'>", $escaped);
+    }
 }

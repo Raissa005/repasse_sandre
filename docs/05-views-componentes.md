@@ -113,6 +113,25 @@ Boa parte dos formulários (`add.php`/`edit.php`) ainda é HTML/Bootstrap 3
 esquerda e botão de submit à direita (`pull-right`). Seguir essa estrutura visual
 para manter consistência, mesmo quando não usar `InputComponent`.
 
+## Escape de dados na view (XSS — A3/M3, 2026-10-02)
+
+Todo texto vindo do banco ou do usuário sai escapado. Qual função usar:
+- **Texto simples** (nome, descrição, comentário, observação, inclusive dentro
+  de `<textarea>` e de atributos `value=""`/`title=""`):
+  `htmlspecialchars($x ?? '', ENT_QUOTES, 'UTF-8')`.
+- **Campo de editor de texto rico** (`textarea.box-ckeditor`: observações do
+  veículo, observação de transferência): `Util::richText($x)` (HTMLPurifier —
+  mantém a formatação, remove script/eventos/`javascript:`).
+- **Campo que mistura texto digitado com HTML gravado pelo sistema** (timeline
+  de cheque; descrição de lançamento/parcela gerada por cheque, exibida nos
+  relatórios financeiros; título de notificação): `Util::escapeSystemHtml($x)`
+  — escapa tudo e restaura só `<strong>` e os links internos
+  `<a href='{URL}rota' target='_blank'>` que o sistema grava. Se um código novo
+  gravar outro tipo de HTML nesses campos, ele aparece como texto — prefira não
+  gravar HTML em campo de texto.
+- **JS**: dado de AJAX vai para o DOM com `.text()`, não `.html()`. Se precisar
+  montar HTML em template string, escape o valor antes.
+
 ## Antes de criar uma view/component novo
 
 1. Achar a tela mais parecida já existente (mesmo tipo de CRUD, mesma

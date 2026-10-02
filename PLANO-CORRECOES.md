@@ -64,7 +64,7 @@ A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
 
 **Onda 4 — antes do lançamento**:
 - A2
-- A3 + M3
+- ✅ A3 + M3 (2026-10-02)
 - A4
 - A10
 - M4
@@ -738,7 +738,7 @@ roteador (`Application.php`) — mudança central que afeta toda URL do
 sistema; não recomendado sem suíte de testes automatizados cobrindo rotas,
 dado que o projeto não parece ter testes automatizados hoje.
 
-### A3 — Stored XSS em múltiplos módulos (comentários e descrições de texto livre)
+### ✅ A3 — Stored XSS em múltiplos módulos (comentários e descrições de texto livre) — CONCLUÍDO 2026-10-02
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §2.1, §2.2, §2.3, §2.4, §2.6, §2.7.
 **Arquivos**: `AttendanceController.php` (comentário de timeline, descrição
@@ -759,6 +759,57 @@ confirmar caso a caso que nenhum desses campos depende hoje de HTML sendo
 interpretado de propósito (ex.: algum comentário automático do sistema que
 insere `<a>`/`<strong>` formatado, não digitado pelo usuário) — nesse caso
 usar uma função de escape seletivo em vez de `htmlspecialchars()` cru.
+
+**Levantamento antes de escapar (2026-10-02)** — quem grava cada campo e se
+algum depende de HTML do próprio sistema (código + `SELECT` no banco local):
+- Texto simples, sem HTML do sistema: comentário e descrição de atendimento
+  (14 pontos de gravação, todos texto puro), observação do cliente, descrição
+  de anexo/foto de veículo. Nenhum registro com `<`/`&` no banco.
+- **Depende de HTML do sistema**:
+  - Timeline de cheque (`check_control_timeline.comment`): 7 pontos gravam
+    `<a href='{URL}…/parcela' target='_blank'>` e `<strong>` (um deles com o
+    **nome do usuário** dentro do `<strong>` — outro caminho de XSS), junto com
+    comentários digitados. 1 registro com HTML no banco.
+  - Descrição de lançamento/parcela (`bill_receive`, `bill_receive_installment`,
+    `bills_to_pay_installments`): o fluxo de cheque devolvido
+    (`ajax/CheckControlController`) grava `<a href='{URL}check-control/editItem/…'>`;
+    o link só funciona nos relatórios (no `<textarea>` da edição já aparece como
+    texto). Nenhum registro assim no banco hoje.
+  - Título de notificação: `<strong>` gravado pelo LeadController (módulo
+    desativado).
+- **HTML gerado de propósito pelo editor do sistema (CKEditor)**: observação
+  de transferência (`vehicle_transfer_observation`) e observações do veículo
+  (`vehicle_observations`, não citada na auditoria, mesmo caso) — 3 observações
+  formatadas no banco (fontes, sublinhado, título, tabela, emoji). O editor tem
+  modo "Código-fonte", então aceita HTML livre.
+
+**✅ Aplicado (2026-10-02)**. Decisão do usuário para o CKEditor: HTMLPurifier.
+- `composer require ezyang/htmlpurifier:^4.17` (instalou v4.19.1; nenhum outro
+  pacote mudou). Novos `Util::richText()` (HTMLPurifier com a lista padrão,
+  sem cache em disco, `target="_blank"` permitido) e `Util::escapeSystemHtml()`
+  (escapa tudo e restaura só `<strong>`, `</strong>`, `</a>` e
+  `<a href='{URL}rota/interna' target='_blank'>`).
+- `htmlspecialchars($x ?? '', ENT_QUOTES, 'UTF-8')` (padrão do N6): timeline
+  de atendimento (4 pontos), descrição do atendimento (lista e `<textarea>`),
+  observação do cliente, as 4 descrições financeiras em `<textarea>`, descrição
+  de anexo de veículo (Veículos e Histórico), descrição de foto (`title` e
+  `value`), descrição de notificação.
+- `Util::escapeSystemHtml`: timeline de cheque (no controller, antes do
+  `nl2br`), descrição nos 4 relatórios financeiros (tela e impressão), título
+  de notificação.
+- `Util::richText`: observação de transferência e observações do veículo
+  (Veículos e Histórico).
+- Docs: `docs/05-views-componentes.md` (qual escape usar) e `docs/09`.
+**Teste**: os auxiliares com textos legítimos e ataques (`<script>`, `onerror`,
+`javascript:`, link externo, link interno com evento) — legítimos preservados,
+ataques neutralizados; HTMLPurifier manteve a formatação das 3 observações do
+banco. 17 telas, antes × depois, como Administrador: HTML idêntico nos campos
+de texto (as únicas diferenças são sessão, horário e tempo de carga); nas
+observações do editor, só normalização (`&oacute;` → `ó`, `;` nos estilos),
+sem mudança visual. Nenhum erro PHP novo.
+**Fora do escopo** (registrado): o resto dos `<?= $x ?>` do sistema (nomes,
+cidades etc.) continua sem escape — a auditoria listou só os campos de texto
+livre acima; um varrimento geral fica para o pós-lançamento.
 
 ### A4 — Login sem rate-limiting/lockout contra força bruta
 
@@ -974,7 +1025,7 @@ recebem "Sem permissão". Administrador: mesmas telas e respostas de antes.
 ativar/desativar centro de custo — checagem conferida por leitura como 1ª
 instrução (ou no construtor).
 
-### M3 — XSS de alcance/severidade menor
+### ✅ M3 — XSS de alcance/severidade menor — CONCLUÍDO 2026-10-02
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §2.5 (observação do cliente), §2.8
 (DOM-based via AJAX), §2.9 (notificações, dormente).
@@ -982,6 +1033,14 @@ instrução (ou no construtor).
 **Risco da correção**: BAIXO — mesmo tratamento do grupo A3, em pontos de
 menor alcance. Recomenda-se corrigir na mesma leva que A3 por serem a mesma
 classe de problema.
+
+**✅ Aplicado (2026-10-02), junto com o A3**: §2.5 (observação do cliente,
+`htmlspecialchars`); §2.8 (`attendance/add.js`: `.html()` → `.text()`, a
+mensagem é só texto); §2.9 (`notification.js`: título e ícone escapados,
+mantendo só o `<strong>`; `notification/index.php`: título com
+`escapeSystemHtml`, descrição com `htmlspecialchars`). O `LeadController`
+(módulo desativado) não foi alterado — a proteção está na exibição.
+`node --check` ok nos 2 JS.
 
 ### M4 — Falta de política de senha + chave JWT hardcoded
 
@@ -1712,6 +1771,20 @@ exigir Admin:
 | `lead`, `lead-config` | Leads (módulo desativado) | Já redirecionam todos para a home | Aplicar Admin (sem efeito prático) ou nada |
 | `lead-redirect` | Distribuição de leads (desativado) | Responde 404 a todos | Nada |
 | `card-pdf` | PDF do cartão digital de um usuário, por id na URL | **Sem login nenhum** (não estende `Controller`): qualquer pessoa na internet baixa o cartão de qualquer usuário trocando o id | ⚠️ Decidir: é para clientes (público)? Senão, exigir login |
+
+### N18 — Dependências desatualizadas apontadas pelo `composer audit` (só registrado)
+
+Visto ao instalar o HTMLPurifier (A3, 2026-10-02). Sem relação com A3/M4:
+- `phenx/php-svg-lib` (usado pelo gerador de PDF): 3 alertas — 1 crítico
+  (restrição de caminho contornável via dompdf, versões < 0.5.2), CVE-2024-25117
+  e CVE-2023-50251 (médios). O `composer.json` pede `^0.3.3`; atualizar exige
+  avaliar o dompdf junto (a cópia usada fica em `src/libs/dompdf`).
+- `firebase/php-jwt` está em `dev-main` (versão de desenvolvimento, não uma
+  release) e emite `Deprecated: Using ${var} in strings` no PHP 8.2 (só aviso).
+  Recomendação: fixar numa release estável e testar a recuperação de senha.
+- `phpmailer/phpmailer` e `smottt/wideimage` também estão em `dev-master`.
+Decidir em conjunto (pós-lançamento ou antes, conforme o risco do PDF).
+
 
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 

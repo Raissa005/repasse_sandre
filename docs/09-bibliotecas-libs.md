@@ -19,7 +19,10 @@ Inversas/limpeza: `unmaskMoney`, `removeNumberFormatting`,
 (avalia expressão matemática em string), `coalesce`, `likePHP` (simula `LIKE`
 SQL em PHP), `debug($var, $titulo, $die)` (var_dump formatado, usar em vez de
 `var_dump`/`print_r` cru ao debugar), `gererateToken($tamanho)`,
-`getIp()`, `resizeImageWithCanvas(...)`.
+`getIp()`, `resizeImageWithCanvas(...)`. Escape para view (A3):
+`richText($html)` (HTMLPurifier, campos do CKEditor) e
+`escapeSystemHtml($texto)` (escape que preserva o HTML gravado pelo sistema) —
+quando usar cada um: `docs/05-views-componentes.md`.
 
 **Sempre usar `Util::maskX`/`Util::removeNonNumericCharacters` para
 formatar/limpar CPF, CNPJ, telefone, CEP, dinheiro** em vez de escrever regex

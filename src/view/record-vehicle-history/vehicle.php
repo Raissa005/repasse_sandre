@@ -152,7 +152,7 @@ use RR\libs\Util;
                                                                     href="#"><?= ($i + 1) . ' - ' . $vehicleObservations->data[$i]->user_name ?></a>
                                                             </h3>
                                                             <div class="timeline-body">
-                                                                <?= $vehicleObservations->data[$i]->observation ?>
+                                                                <?= Util::richText($vehicleObservations->data[$i]->observation) ?>
                                                             </div>
                                                         </div>
                                                     </li>
@@ -182,7 +182,7 @@ use RR\libs\Util;
                                                         class="<?= $permission ? "" : "disableOrder" ?>"
                                                         style="cursor: pointer;">
                                                         <td><?= "$attachment->name" ?></td>
-                                                        <td><?= $attachment->description ?></td>
+                                                        <td><?= htmlspecialchars($attachment->description ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                                         <td style="width: 11rem;" class="text-center">
                                                             <a class="btn btn-warning"
                                                                 href="<?= URL . "vehicle/" . urlencode($attachment->id_vehicle ) . "/attachments/" . urlencode($attachment->filename) ?>"
