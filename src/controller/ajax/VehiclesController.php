@@ -4,6 +4,7 @@ namespace RR\controller\ajax;
 
 use RR\core\Ajax;
 use RR\libs\Util;
+use RR\libs\Secure;
 use RR\model\Customer;
 use RR\model\Vehicles;
 use RR\model\VehicleCosts;
@@ -17,6 +18,13 @@ class VehiclesController extends Ajax
         $this->model = new Vehicles;
 
         parent::__construct();
+
+        // M2: todos os métodos daqui são da aba Custos do veículo, que só aparece para admin
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
     }
 
     public function getCustomerById()

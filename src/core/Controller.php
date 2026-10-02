@@ -53,7 +53,7 @@ class Controller
         }
         $this->menus = $this->menus->get();
 
-        if (!empty($this->page)) Secure::individual_menu_access($this->page->id);
+        if (!empty($this->page) && $route !== 'home' && !$this->isOwnUserAction($route)) Secure::individual_menu_access($this->page->id);
 
         $this->system_config = (new ModelGenerico())->getItemById8161(1, 'system_config');
         $this->configuracao = (new SettingsSite)->getItemById(1);
@@ -100,10 +100,32 @@ class Controller
         }
     }
 
+    /**
+     * C3: ações do próprio usuário na rota `users` ("Perfil", cartão digital e "Retornar" do "Ver como") não passam pela
+     * checagem de menu — senão um perfil sem a tela Usuários perderia o próprio perfil. A home também fica fora (é o
+     * destino do bloqueio). As demais ações de `users` continuam com as checagens do próprio UsersController.
+     */
+    private function isOwnUserAction(string $route): bool
+    {
+        if ($route !== 'users') return false;
+
+        $url = explode('/', trim($_GET['url'] ?? '', '/'));
+        $action = strtolower(str_replace('-', '', $url[1] ?? ''));
+        $itemId = (int) ($url[2] ?? 0);
+
+        if ($action === 'turnuser') {
+            return !empty($_SESSION['RR']->user->turnBack) && $itemId === (int) ($_SESSION['RR']->user->turnBackId ?? 0);
+        }
+
+        return in_array($action, ['edititem', 'handlesubmitedititem', 'digitalcard', 'handlesubmitdigitalcard', 'deleteimageprofileid', 'deleteimagedigitalcardid'], true)
+            && $itemId === (int) $_SESSION['RR']->user->id;
+    }
+
     private function assembleMenu(array $filters, $id_menu_parent = 0, $branch = true): array
     {
         $filters['id_menu_parent'] = $id_menu_parent;
-        $filters['id_not'] = !$branch ? [18, 19, 23, 24, 29, 45, 53, 35, 106] : [7, 59];
+        // A5/M2: Filiais (7) e DRE (59) também aparecem para Superadm/Administrador/Desenvolvedor dentro de uma filial
+        $filters['id_not'] = !$branch ? [18, 19, 23, 24, 29, 45, 53, 35, 106] : (Secure::access_admin() ? [] : [7, 59]);
         $filters['type_branch'] = !empty($this->branch) ? $this->branch->type : 0;
 
         $menus = (new Menu())->getAndFilterAllItem($filters, ['orderBy' => 'menu.item_order ASC', 'groupBy' => 'menu.id']);

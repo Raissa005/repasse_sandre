@@ -8,6 +8,7 @@ use RR\model\User;
 use RR\libs\Secure;
 use RR\libs\Toast;
 use RR\libs\FileUploader;
+use RR\model\Menu;
 use RR\model\MenuAccess;
 use RR\model\GerenciaPost;
 use RR\model\SystemSettings;
@@ -37,8 +38,12 @@ class SettingsController extends FrontController
         $navTabs = [
             (object)['text' => 'Dados Gerais', 'route' => URL . $this->route . '/', 'class' => ($_GET['url'] == "{$this->route}/" ? 'active' : '')],
             (object)['text' => 'Imagens', 'route' => URL . $this->route . '/images/', 'class' => ($_GET['url'] == $this->route . '/images/' ? 'active' : '')],
-            (object)['text' => 'Menus', 'route' => URL . $this->route . '/menus/', 'class' => ($_GET['url'] == $this->route . '/menus/' ? 'active' : '')]
         ];
+
+        // C3: permissões de tela só para Superadm, Administrador e Desenvolvedor
+        if (Secure::access_admin()) {
+            array_push($navTabs, (object)['text' => 'Menus', 'route' => URL . $this->route . '/menus/', 'class' => ($_GET['url'] == $this->route . '/menus/' ? 'active' : '')]);
+        }
 
         return $navTabs;
     }
@@ -311,6 +316,7 @@ class SettingsController extends FrontController
 
     public function menus(): void
     {
+        Secure::access_admin(true);
         $this->addScript(URL . "js/" . JSVERSION . "/settings/menu.js");
 
         $contentHeader = (object)[
@@ -330,6 +336,29 @@ class SettingsController extends FrontController
 
     public function updateMenu(int $profileId, int $menuId): void
     {
+        Secure::access_admin(true);
+
+        // C3: só os perfis que a tela lista para quem está editando (o Administrador não vê Superadm nem Desenvolvedor)
+        $allowedProfiles = array_map(function ($profile) {
+            return (int) $profile->id;
+        }, (new User())->getAllUsersProfilesBellow($_SESSION['RR']->profile->access));
+
+        if (!in_array($profileId, $allowedProfiles, true)) {
+            Toast::warningToast('Sem permissão para alterar as permissões deste perfil.');
+            redirect("{$this->route}/menus");
+        }
+
+        // C3: fora o Superadm, ninguém desativa "Configurações" do próprio perfil (perderia o acesso a esta tela)
+        $settingsMenu = (new Menu())->getMenuByRoute($this->route);
+        $currentAccess = (new Menu())->getMenuAccess($menuId, $profileId)->data;
+        $deactivating = !empty($currentAccess) && $currentAccess[0]->status == 1;
+
+        if (!Secure::access_superAdm() && $deactivating && $profileId == $_SESSION['RR']->profile->id
+            && !empty($settingsMenu) && in_array($menuId, [(int) $settingsMenu->id, (int) $settingsMenu->id_menu_parent], true)) {
+            Toast::warningToast('Não é possível desativar "Configurações" para o seu próprio perfil.');
+            redirect("{$this->route}/menus/#{$profileId}");
+        }
+
         $response = (new MenuAccess())->updateProfileMenu($profileId, $menuId);
         $cache = new FilesystemAdapter();
         $cache->clear();

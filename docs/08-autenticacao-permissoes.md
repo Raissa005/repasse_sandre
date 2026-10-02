@@ -48,9 +48,13 @@ Secure::access_generic($nivelMinimo, $redirectAutomatico = false, $controllerDeV
 - `userBranches($branches, $userId, $access)` — combina `creator`+`branch`+`access`
   num único helper (usado em telas de usuário).
 - `individual_menu_access($menuId)` — checa a tabela `menu_access` (permissão por
-  perfil x item de menu) e redireciona se o perfil tiver acesso explicitamente
-  desativado para aquele menu. Chamado automaticamente pelo `Controller` base a
-  cada página (ver `docs/02-arquitetura-fluxo.md`).
+  perfil x item de menu). Linha com `status = 0` → redireciona para todos. **Sem
+  linha** → liberado só para Superadm, Administrador e Desenvolvedor
+  (`access_admin()`); para os demais perfis, **negado** (C3, 2026-10-02). Chamado
+  automaticamente pelo `Controller` base a cada página (ver
+  `docs/02-arquitetura-fluxo.md`), exceto na rota `home` (destino do bloqueio) e
+  nas ações do próprio usuário em `users` (`Controller::isOwnUserAction`: Perfil,
+  cartão digital, "Retornar" do "Ver como").
 - `check_post_method($rotaDeVolta)` — chamar no início de todo método
   `handleSubmit*`/POST, para garantir que veio de um submit real.
 
@@ -77,6 +81,30 @@ O resultado é **cacheado por sessão** (`FilesystemAdapter`, chave
 o usuário depois que o cache dele for invalidado (novo login, ou expurgo manual
 do cache). Ao alterar permissão de menu via seed/migration, lembrar de avisar
 que o usuário afetado precisa logar de novo (ou o cache precisa ser limpo).
+
+**Regras de permissão de tela (C3, 2026-10-02)**:
+- O menu lateral mostra um item só se o perfil tem linha `status = 1`. O
+  servidor segue a regra de `individual_menu_access` acima — para Gerentes,
+  Secretária e Vendedor, item sem linha ("Padrão do sistema" na tela) fica
+  **bloqueado**. As permissões desses perfis são configuradas pelo Administrador
+  em **Configurações → Menus** (não por seed).
+- A checagem é **por rota**: `getMenuByRoute` pega o primeiro menu com aquela
+  rota. Os 5 itens de Clientes usam a rota `customer` e o servidor só olha o
+  primeiro (Comprador) — não dá para bloquear um deles separadamente.
+- Aba Menus (`settings/menus`, `settings/updateMenu`, `ajax/Settings/*`): só
+  `access_admin()`. Só é possível editar os perfis que `User::getAllUsersProfilesBellow`
+  lista para quem edita (Administrador não vê Superadm nem Desenvolvedor).
+  Fora o Superadm, ninguém desativa "Configurações" (ou o pai dele) do próprio perfil.
+- Clicar num menu pai aplica o **mesmo** estado em todos os submenus
+  (`MenuAccess::setProfileMenuStatus`).
+- Filiais (7) e DRE (59) aparecem no menu de Superadm/Administrador também dentro
+  de uma filial (`assembleMenu`).
+- "Ver como este usuário" (`users/turnUser`): só Superadm. A sessão do usuário visto
+  guarda `turnBack` e `turnBackId` (quem iniciou); durante o "Ver como", só é
+  aceito `users/turnUser/{turnBackId}` (Retornar).
+- Tipo de usuário (cadastro/edição em `UsersController`, N14): o servidor só aceita
+  os perfis que a tela oferece; ninguém altera o próprio perfil, exceto Superadm;
+  quem não é Superadm não edita, ativa ou desativa usuários Superadm/Desenvolvedor.
 
 ## Toast (feedback pós-ação)
 

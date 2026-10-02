@@ -49,16 +49,18 @@ período).
 **✅ Onda 2 — concluída** (2026-10-01): C1, C2 (lotes 1, 2 e 3), N4, N6, N7,
 N8, C4 etapa 2.
 
-**Onda 3 — depende de decisão do usuário**:
-- C3 (+ popular `menu_access`, que hoje não bloqueia ninguém — ver C2 lote 2 e N8)
-- Junto com C3/M2: sobra do N2 (excluir anexo de atendimento sem checagem de
-  perfil) e N10, 3º item (endpoints ajax de leitura de cheque sem checagem de
-  perfil; `getBillReceiveById` sem chamador)
-- C5
-- C7
-- A5 / M2 / B5
-- A9
-- M1
+**Onda 3 — quase concluída** (decisões do usuário de 2026-10-01/02 em cada
+item; aplicada em etapas C5 → N14 → C3 + "sem linha = negado" + N15 →
+A5/M2/N13, com `php -l` e teste antes × depois em cada etapa):
+- ✅ M1 — aba "Vendas" do cliente tirada da navegação (2026-10-01)
+- ✅ C5 — rateio herdado removido (2026-10-01) e transação opção A (2026-10-02)
+- ✅ N14 — regras de tipo de usuário no servidor (2026-10-02)
+- ✅ C3 + "sem linha = negado" + N15 (2026-10-02). **Não** popular
+  `menu_access` com negações: o Sandré configura pela tela (DEPLOY-CHECKLIST §9)
+- ✅ A5 / M2 / B5, N13, sobra do N2, N10 3º item (2026-10-02)
+- ⚠️ N17 — 11 rotas sem item de menu: proposta feita, **aguardando aprovação**
+- C7 — ⚠️ bloqueado (dado real)
+- A9 — ⚠️ bloqueado (dado real)
 
 **Onda 4 — antes do lançamento**:
 - A2
@@ -73,13 +75,16 @@ N8, C4 etapa 2.
 - Sobra do N1: anexos de veículo e de Contas a Pagar/Receber gravam registro
   quebrado se enviados sem arquivo
 - N12: trocar o WideImage pelo Imagine em avatar, cartões, logos e marca
-  d'água (proposta no N12, ainda não aplicada), mais os demais itens do N12
+  d'água, recodificando sempre, e corrigir o `-dp-` da foto do cartão
+  (proposta no N12, ainda não aplicada), mais os demais itens do N12
+- M12: esconder Moedas do menu e bloquear a rota `currencies`
 
 **Pós-lançamento**:
 - A1 completo
 - Grupo B: B1, B3, B4, B6 a B11 (o B5 vai na Onda 3, com A5/M2; o B2 fica fora das ondas)
 - M7, M9, M10
-- M12: **remover** a feature de moedas (decisão do usuário, 2026-10-01)
+- M12, limpeza opcional: remover as referências a moedas no código (o
+  bloqueio da tela vai na Onda 4)
 - Métodos sem uso do `AjaxController` (N3, 1º item)
 - N5
 - Reordenação de anexos de veículo (N3, 3º item)
@@ -292,7 +297,7 @@ Model), mas o volume é grande (13 arquivos) — cada um precisa de teste
 manual da busca depois da troca, para garantir que o comportamento de busca
 ("contém", `LIKE %x%`) continua idêntico.
 
-### C3 — Escalação de privilégio self-service (`turnUser` + `updateMenu`)
+### ✅ C3 — Escalação de privilégio self-service (`turnUser` + `updateMenu`) — CONCLUÍDO 2026-10-02 (com "sem linha = negado" e N15)
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §5.1, §5.2; mesma linha de código
 também aparece em `AUDITORIA-4-identidade.md` §1.4 e §1.6 (checagem
@@ -319,6 +324,153 @@ linhas explícitas de negação para os demais perfis, em vez de confiar só no
 código — o modelo atual é opt-out (sem linha = liberado), então a proteção
 no código sozinha não cobre o caso de outra rota nova esquecer a mesma
 checagem no futuro.
+
+**Decisões do usuário (2026-10-01, versão final — substituem a anterior do
+mesmo dia)**:
+1. "Suporte Ydeal" (id 1, Superadm) é a conta do dono do sistema (Ydeal é a
+   empresa dona): **manter**. Trocar só a checagem pelo **nome** por checagem
+   de **perfil** (Superadm), na tela (botão em `UsersController::editItem`) e
+   no servidor (`turnUser` e `updateMenu`).
+2. **Permissões de tela (aba Menus): Superadm e Administrador** — o Sandré
+   (Administrador) vai configurar os perfis em produção. O Administrador
+   **não pode** editar as permissões dos perfis Superadm e Desenvolvedor.
+   **"Ver como este usuário": só Superadm.** Desenvolvedor = igual ao Superadm.
+3. **Não** popular `menu_access` com negações. Gerentes, Vendedor e Secretária:
+   o Sandré define pela tela.
+4. Verificar como a tela grava ao desmarcar e propor o servidor tratar **"sem
+   linha = negado"** para os perfis que não são Superadm/Administrador/
+   Desenvolvedor, mostrando o impacto antes de aplicar.
+5. `DEPLOY-CHECKLIST.md`: o Sandré configura as permissões de cada perfil antes
+   de liberar os usuários (adicionado na seção 9 do checklist).
+
+**Como o controle de telas funciona hoje (levantado 2026-10-01, só leitura)**:
+- **Menu lateral** (`Controller::assembleMenu` + `MenusComponent`): mostra um
+  item só se o perfil tem linha em `menu_access` com `status = 1`. Além disso,
+  `assembleMenu` **esconde Filiais (7) e DRE (59) de todo mundo**, exceto
+  Superadm no modo "todas as filiais" (filial 0) — por isso o Administrador
+  hoje não vê esses dois itens, mesmo tendo linha liberada.
+- **Servidor** (`Controller::__construct` → `Secure::individual_menu_access`
+  com o menu da rota): só bloqueia se existir linha com `status = 0`. Sem linha
+  = liberado. Hoje **não existe nenhuma linha `status = 0`**, então ninguém é
+  bloqueado por menu. `menu.access` (nível do menu) não é usado pelo servidor.
+- Linhas liberadas hoje: Superadm 66, Administrador 66, Vendedor 29,
+  Secretária 26. **Gerente Geral, Gerente de Filial e Gerente de Vendas (4
+  usuários ativos) não têm nenhuma linha** — o menu deles é vazio, mas pela URL
+  abrem tudo.
+- A checagem é por **rota**, não por item de menu: `getMenuByRoute` pega o
+  primeiro menu com aquela rota. `customer` tem 5 itens (Comprador, Fornecedor,
+  Vendedor, Colaborador, Todos) e o servidor só olha um deles (o primeiro,
+  Comprador); desativar "Fornecedor" para um perfil só tira o link do menu.
+- Rotas **sem item de menu** (fora de qualquer configuração da tela): `card-pdf`,
+  `countries`, `currencies`, `error`, `front`, `lead`, `lead-config`,
+  `lead-redirect`, `login`, `networks-site`, `notification`. Endpoints `ajax/*`
+  também não passam pela checagem de menu.
+
+**Como a tela de permissões grava** (`settings/menus` → `settings/updateMenu`
+→ `MenuAccess::updateProfileMenu`, `public/js/v_01/settings/menu.js`):
+- A tela mostra 3 estados: **Ativo** (linha `status = 1`, botão vermelho ×),
+  **Inativo** (linha `status = 0`, botão verde ✓) e **"Padrão do sistema"**
+  (sem linha, botão azul ?).
+- Clicar **inverte**: linha `1` → `0` (grava **"negado"**, não apaga a linha);
+  linha `0` → `1`; sem linha → **insere `status = 1`** (e insere também o pai
+  com `1`, se o pai não tiver linha). Nunca apaga linha.
+- **Defeito (N15)**: ao clicar num menu **pai**, cada submenu é **invertido
+  individualmente** (não recebe o estado do pai), e submenu sem linha é sempre
+  **inserido como liberado**. Ex.: desativar o pai "Financeiro" de um perfil
+  sem linhas libera todos os submenus de Financeiro.
+- A lista de perfis da tela (`User::getAllUsersProfilesBellow`) já mostra só
+  perfis com `access >=` o do usuário e esconde o Desenvolvedor — o
+  Administrador já não vê Superadm/Desenvolvedor na lista, mas o servidor
+  aceita qualquer `profileId` na URL de `updateMenu`. O Superadm também não vê
+  o Desenvolvedor.
+- Os endpoints `ajax/Settings/getMenus` e `getMenuAccess` (usados pela tela)
+  não checam perfil.
+
+**Pontos que a implementação precisa tratar** (levantados, ainda não aplicados):
+- **"Retornar às permissões de suporte"** (`header.php`, link fixo
+  `users/turnUser/1`): durante o "Ver como", a sessão tem o perfil do usuário
+  visto; se `turnUser` exigir Superadm pelo perfil da sessão, o retorno fica
+  bloqueado. O retorno deve ser permitido quando `turnBack` estiver na sessão.
+  O link fixo para o id 1 também deve virar o id de quem iniciou.
+- O **Administrador pode desativar telas do próprio perfil** (inclusive
+  Configuração) e se trancar para fora — só um Superadm desfaz. Ver pergunta
+  em aberto na proposta abaixo.
+
+**Proposta "sem linha = negado" (item 4) — ⚠️ aguardando aprovação, nada
+aplicado**:
+- `Secure::individual_menu_access`: sem linha → **libera** só para Superadm,
+  Administrador e Desenvolvedor (`access <= 10`); para os demais perfis →
+  **nega**. Linha `status = 0` continua negando para todos.
+- **Exceções obrigatórias**: `home` (o próprio redirect de bloqueio vai para
+  `home`; sem a exceção, um Gerente sem linhas entra em **loop infinito de
+  redirecionamento**) e as ações do próprio usuário em `users` (botão
+  "Perfil", cartão digital, "Retornar").
+- Corrigir junto o N15 (pai aplica o mesmo estado nos submenus).
+- Impacto com os dados de hoje, antes do Sandré configurar: Gerentes (4
+  usuários) só acessam Home e o próprio perfil; Vendedor e Secretária passam a
+  ser bloqueados pela URL exatamente nas telas que já não aparecem no menu
+  deles:
+  - **Vendedor**: Configuração, Campos Obrigatórios, Cargos, Cartão Digital
+    (cadastro), Filiais, Estado Civil, Calendário, Canais de Comunicação,
+    Status de Atendimento, Controle de Cheques, Contas a Pagar/Receber,
+    Lançamentos a Pagar/Receber, relatórios financeiros, DRE, Bancos, Centro de
+    Custo, Contas, Formas de Pagamento, Marca d'água, Pedidos de Compra.
+  - **Secretária**: Atendimentos (lista, Calendário, Canais, Status, relatório),
+    Profissões, Tipo de Cliente, Configuração, Campos Obrigatórios, Cargos,
+    Cartão Digital (cadastro), Filiais, Estado Civil, todo o Financeiro, DRE,
+    Bancos, Centro de Custo, Contas, Formas de Pagamento, Marca d'água,
+    relatórios Veículos Vendidos/Comprados e Pedidos de Venda.
+  - Superadm, Administrador e Desenvolvedor: sem mudança.
+
+**✅ Aprovado e aplicado (2026-10-02)**. Decisões complementares do usuário:
+"sem linha = negado" com as exceções Home e ações do próprio usuário; corrigir
+o N15; o Administrador **edita o próprio perfil**, mas **não desativa
+"Configurações"** dele.
+- `UsersController::editItem`: botão "Ver como este usuário" por
+  `Secure::access_superAdm()` (antes: nome "Suporte Ydeal").
+- `UsersController::turnUser`: com `turnBack` na sessão, só aceita
+  `turnUser/{turnBackId}` (retorno a quem iniciou); sem `turnBack`,
+  `access_superAdm(true)`. A sessão do "Ver como" passa a guardar `turnBackId`.
+  `header.php`: o "Retornar" usa `turnBackId` (antes: id 1 fixo).
+- `SettingsController`: aba Menus só para `access_admin()`; `menus()` e
+  `updateMenu()` com `access_admin(true)`; `updateMenu` só aceita perfis da
+  lista de `getAllUsersProfilesBellow` e recusa, para quem não é Superadm,
+  desativar "Configurações" (menu da rota `settings` ou o pai dele) do próprio
+  perfil. `ajax/Settings/getMenus` e `getMenuAccess`: mesmas regras, resposta
+  JSON "Sem permissão para esta ação.".
+- `Secure::individual_menu_access`: sem linha → libera só `access_admin()`;
+  demais perfis → `home`.
+- `Controller::__construct`: a checagem de menu não roda na rota `home` nem nas
+  ações do próprio usuário em `users` (`isOwnUserAction`: `editItem`,
+  `handleSubmitEditItem`, `digitalCard`, `handleSubmitDigitalCard`,
+  `deleteImageProfileId`, `deleteImageDigitalCardId` com o próprio id, e
+  `turnUser/{turnBackId}` durante o "Ver como").
+- `PurchaseRequestsController::index`: removida a linha
+  `individual_menu_access(true)` (virava menu id 1, inexistente — com a regra
+  nova bloquearia a Secretária, que tem Pedidos de Compra liberado).
+- N15: `MenuAccess::updateProfileMenu` + `setProfileMenuStatus` (abaixo).
+- Docs: `docs/08-autenticacao-permissoes.md` atualizado.
+
+**Testes (2026-10-02)**: harness no scratchpad — sessão de teste em arquivo
+(sem banco) + `php-cgi` chamando o `public/index.php` real, **só rotas de
+leitura**; "antes" = cópia do HEAD extraída com `git archive`.
+- `turnUser/1` pelo endereço: **antes**, Administrador, Vendedor e Gerente Geral
+  **viravam Superadm** (sessão do id 1); **depois**, redirecionados e sessão
+  intacta. Superadm: "ver como" Vendedor ok; durante o "ver como",
+  `turnUser/6` recusado; `turnUser/1` (Retornar) volta ao Superadm.
+- Matriz 7 usuários × 22 telas (154 requisições), antes × depois:
+  Superadm e Administrador **iguais** (só muda o destino do redirect de
+  `users/edit-item/1`, do N14); Gerentes passam a só abrir Home e o próprio
+  perfil; Secretária e Vendedor bloqueados exatamente nas telas fora do menu
+  deles. Nenhum erro PHP novo (os existentes estão no N16).
+- `ajax/Settings`: antes, Vendedor e Secretária liam todas as permissões e o
+  Administrador lia as do Superadm; depois, "Sem permissão". Aba Menus aparece
+  para Superadm e Administrador.
+- N15: lógica antiga × nova com `menu_access` **em memória** (menus lidos do
+  banco): antes, desativar "Financeiro" **liberava** os 13 submenus; depois,
+  todos seguem o pai.
+- **Não executado** (grava no banco): `updateMenu`. Regras conferidas por
+  leitura.
 
 ### ✅ C4 — Upload de arquivo arbitrário → execução remota de código (RCE) — CONCLUÍDO (etapa 1 2026-09-30, etapa 2 2026-10-01)
 
@@ -426,7 +578,7 @@ em `User.php`, `UsersController.php`, `SettingsController.php`,
      ser testado — já falhava antes; XML sem a linha `<?xml ...?>` é visto pelo
      `finfo` como `text/plain` e é recusado.
 
-### C5 — Registro de pagamento de parcela corrompido (tabelas de rateio de comissão inexistentes, sem transação)
+### ✅ C5 — Registro de pagamento de parcela corrompido (tabelas de rateio de comissão inexistentes, sem transação) — CONCLUÍDO 2026-10-02 (rateio removido + transação opção A)
 
 **Fontes**: `AUDITORIA-2-tecnica.md`, achado CRÍTICO #1.
 **Arquivos**: `src/controller/project/BillReceiveInstallmentController.php:564-660`,
@@ -443,6 +595,88 @@ de decidido, a correção técnica em si — envolver a operação numa transaç
 métodos do mesmo arquivo, mas o fluxo de "Registrar Pagamento" precisa ser
 testado exaustivamente (parcela integral, parcela parcial, com e sem
 cheque) antes e depois, por ser um lançamento financeiro real.
+
+**Reavaliação (2026-10-01) — a premissa da auditoria não vale hoje.** A
+auditoria supôs que "toda `bill_receive` nasce de uma venda" na tabela `sales`.
+Não é assim: `sales` é a tabela de **vendas de imóveis** e está **vazia**
+(0 linhas, assim como `products`, `summary_sale`, `summary_involved` e
+`payments_of_sales`); o Pedido de Venda de veículos grava em `sale_requests` e
+nenhum fluxo atual grava em `sales`. Logo, a busca da venda no pagamento
+(`$sale`) sempre volta vazia e **o trecho do rateio nunca roda** — nem o
+`SELECT` em `sales_charge_payment_agreement`, nem a geração de contas a pagar
+de comissão por `summary_sale`/`summary_involved`.
+
+**Em produção (`ERRMODE_EXCEPTION`) — verificado.** O `Model` `Sales` tem um
+`LEFT JOIN construction_properties` (tabela de imóveis que **não existe** no
+banco), mas o query builder só inclui um join quando a consulta usa aquela
+tabela. Executadas as consultas reais (só `SELECT`, via os Models da aplicação,
+com `ERRMODE_EXCEPTION` forçado, script no scratchpad): a busca da venda do
+pagamento, `PaymentsOfSales::checkSaleFromBillReceive` e
+`Sales::getSalesForCustomers` (aba Vendas do cliente) **rodam sem erro** e
+voltam vazias. Portanto: **registrar pagamento de parcela funciona hoje, em
+desenvolvimento e em produção**; o rateio simplesmente não acontece. (Correção:
+na análise de 2026-10-01 eu tinha concluído que em produção a página quebraria
+antes de gravar — conclusão errada, desfeita por este teste.) O risco real
+restante era (1) código morto que quebraria se alguém voltasse a gravar em
+`sales`, e (2) falta de transação.
+
+**Para quem era a comissão do rateio**: no sistema imobiliário, ao receber
+cada parcela, o sistema dividia a comissão entre o vendedor da venda e outros
+cargos cadastrados e criava uma conta a pagar para cada um. **A aba Comissão do
+Pedido de Venda não substitui isso**: ela registra uma **conta a receber**
+(dinheiro que a loja recebe), em nome do cliente do pedido, com o campo
+"Repassador". Nada no fluxo de veículos gera conta a pagar de comissão para
+vendedor; se isso for necessário, é uma feature nova (decisão de negócio
+separada).
+
+**✅ Aplicado (2026-10-01, decisão do usuário: retirar o rateio herdado)** em
+`BillReceiveInstallmentController::handleSubmitPayment`: removidos a busca em
+`Sales`, a cópia dos campos de comissão do vendedor para a parcela nova, o
+`foreach` de `SalesChargePaymentAgreement` →
+`ArrangementPaymentChargesInvoiceReceiveInstallment` e o bloco `if ($sale)`
+que gerava contas a pagar de comissão (vendedor e cargos); removidos os 8 `use`
+que ficaram sem uso. **Comportamento atual não muda** (o trecho nunca rodava).
+Mantidos: a chamada a `PaymentsOfSales::submitStatusOfPaymentFromAnInstallment`
+(também usada em editar, estornar, cancelar e ativar parcela; volta sem fazer
+nada porque `sales` está vazia — limpeza junto com B1), os Models
+`SalesChargePaymentAgreement`/`ArrangementPayment…` e
+`ajax/PaymentAgreementController` (sem chamador na UI — B1). Verificação:
+`php -l` ok, nenhuma referência restante a `$sale`. O método grava no banco e
+não foi executado.
+
+**⚠️ Pendente — transação.** Cada `Model` abre **a sua própria conexão PDO**
+(`Model::__construct`). Uma transação em `$this->model->db` (padrão do
+`handleSubmitReverseInstallment`, no mesmo arquivo) só cobre o que é gravado
+por `$this->model` (parcela nova, parcela paga, `id_check`); cheque
+(`CheckControl`), linha do tempo do cheque e log de saldo do cliente usam
+outras conexões e ficariam fora. Além disso, em desenvolvimento
+(`ERRMODE_WARNING`) erro de gravação não lança exceção — é preciso conferir o
+`->error` de cada gravação e lançar manualmente. Opções:
+- **A** (padrão existente): transação em `$this->model->db` + checagem de
+  `->error` nas gravações da parcela. Protege o principal (parcela dividida pela
+  metade), não o cheque.
+- **B** (estilo novo): no método, fazer os outros Models usarem a mesma conexão
+  (`$m->db = $this->model->db`), cobrindo tudo. É uma forma nova no projeto —
+  precisa de aprovação (regra 2 do CLAUDE.md). Atenção: `CustomerBalanceLog::insertLogPay`
+  (forma de pagamento 9, crédito de fornecedor) abre a **própria** transação e
+  grava o saldo do cliente por outro `Model` (`Customer`); com conexão
+  compartilhada daria "transação já ativa" — teria de ficar fora ou ser adaptado.
+
+**✅ Decisão do usuário (2026-10-02): opção A. Aplicada.**
+`handleSubmitPayment`: `beginTransaction` em `$this->model->db` antes da parcela
+nova; `->error` da parcela nova e da atualização da parcela paga lança
+`PDOException`; `commit` logo depois dessas duas gravações; no `catch`,
+`rollBack` se a transação estiver aberta. Efeito colateral corrigido: antes, se
+a atualização da parcela falhasse, a tela mostrava "Pagamento registrado com
+sucesso" mesmo assim; agora mostra erro e desfaz a parcela nova.
+**Limitação registrada**: cheque (`CheckControl`), linha do tempo do cheque,
+log de saldo do cliente (forma 9) e o vínculo `id_check` da parcela são gravados
+**depois do commit**, fora da transação — se um deles falhar, o pagamento da
+parcela fica gravado sem o cheque/saldo correspondente. Gravá-los antes do
+commit, por outra conexão, também travaria o InnoDB (o cheque referencia a
+parcela bloqueada pela transação). Tabelas confirmadas InnoDB. **Teste**: `php -l`
+ok; telas `bill-receive-installment/edit/1` e `/5` abrem sem erro; o
+"Registrar Pagamento" **não foi executado** (grava no banco).
 
 ### ✅ C6 — Token de redefinição de senha nunca invalidado (tabela errada) — CONCLUÍDO 2026-09-30
 
@@ -538,7 +772,7 @@ erra a senha 3x seguidas por esquecimento normal) — calibrar o limite e o
 tempo de bloqueio com o usuário, e testar o fluxo de "esqueci a senha"
 combinado com o lockout (recuperar senha deveria resetar o contador).
 
-### A5 — Controllers administrativos/financeiros sem checagem de perfil consistente
+### ✅ A5 — Controllers administrativos/financeiros sem checagem de perfil consistente — CONCLUÍDO 2026-10-02
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §5.3 (`BranchController`), §5.4
 (`CostCenterController`). *Ver também grupo M2, mesmo padrão em
@@ -552,6 +786,24 @@ nos métodos que faltam (`BranchController` inteiro; `handleSubmitAddItem`/
 criar/desativar filial e centro de custo — hoje isso nunca foi decidido
 explicitamente no código (a inconsistência dentro do próprio
 `CostCenterController` é sinal disso).
+
+**Decisão do usuário (2026-10-01)**: Filial e Centro de Custo **só
+Administrador e Superadm** (e Desenvolvedor, igual ao Superadm). **Filiais e
+DRE devem aparecer no menu do Administrador** — hoje `Controller::assembleMenu`
+esconde os ids 7 e 59 de todos, exceto Superadm no modo "todas as filiais".
+Estado hoje: `BranchController` não tem **nenhuma** checagem (qualquer perfil
+cadastra, edita, ativa/desativa filial, imagens, cargos, arranjo de pagamento
+pela URL); `CostCenterController` exige admin em listar/editar/clonar, mas não
+em cadastrar/ativar/desativar.
+
+**✅ Aplicado (2026-10-02)**: `BranchController` com `Secure::access_admin(true)`
+no construtor (mesmo padrão do `CountriesController`), cobrindo todas as ações;
+`CostCenterController::handleSubmitAddItem`, `disableItem` e `enableItem` com
+`access_admin(true)`; `Controller::assembleMenu` mostra Filiais (7) e DRE (59)
+para `access_admin()` também dentro de uma filial. `ajax/costCenter`
+(árvore de centros de custo, só leitura) não foi alterado. **Teste**: Administrador
+abre Filiais, Filial 1 e Centro de Custo igual a antes, e agora vê Filiais e DRE
+no menu lateral (antes não via); Vendedor continua sem.
 
 ### ✅ A6 — Recibo financeiro corrompido para cliente PJ/cadastro incompleto — CONCLUÍDO 2026-09-30
 
@@ -643,7 +895,7 @@ Descomentar/adicionar o `exit;` que falta em `BillReceive.php`.
 
 ## MÉDIO
 
-### M1 — Aba "Vendas" do cliente inacessível (Sales↔products) + link de edição sem controller
+### ✅ M1 — Aba "Vendas" do cliente inacessível (Sales↔products) + link de edição sem controller — CONCLUÍDO 2026-10-01 (aba escondida)
 
 **Fontes**: `AUDITORIA-1-dominio.md` achado 1 (principal) +
 `AUDITORIA-2-tecnica.md` achado MÉDIO #9 (mesmo tema, link de edição).
@@ -661,7 +913,17 @@ em outros relatórios que também usam esse Model, não só na aba Vendas.
 Testar todos os usos de `Sales` (não só `getSalesForCustomers`) antes de
 fechar a correção.
 
-### M2 — Demais controllers sem checagem de perfil (Veículos, DRE, Moedas, Atendimento)
+**✅ CONCLUÍDO 2026-10-01 — decisão do usuário: esconder a aba, sem remover
+código.** Na prática a aba já não aparecia: só era montada se
+`getSalesForCustomers()->count != 0`, e `sales` está vazia. Aplicado em
+`CustomerController::navTabs` o mesmo padrão da aba "Fotos" do veículo: a aba
+saiu da navegação (comentário no lugar) e a contagem em `Sales` deixou de ser
+executada a cada aba do cliente. **Mantidos**: o método `sales()`, a rota
+`customer/sales/{id}`, a view e o `Model` `Sales` (o `INNER JOIN products` e o
+`LEFT JOIN construction_properties` continuam lá, sem efeito porque o query
+builder só inclui joins usados — ver C5). `php -l` ok.
+
+### ✅ M2 — Demais controllers sem checagem de perfil (Veículos, DRE, Moedas, Atendimento) — CONCLUÍDO 2026-10-02 (Moedas fica no M12/N17)
 
 **Fontes**: `AUDITORIA-3-seguranca.md` §5.5 (`VehiclesController`), §5.6
 (`ReportDreController`), §5.7 (`ReportAttendanceController`, ver também
@@ -673,6 +935,44 @@ varredura.*
 **Risco da correção**: BAIXO-MÉDIO, mesmo padrão do grupo A5 — mas primeiro
 decidir com o usuário qual perfil deveria acessar cada tela (Compra/Custos
 de veículo, DRE, Moedas, Relatório de Atendimento).
+
+**Decisões do usuário (2026-10-01)**:
+- **DRE**: só Administrador e Superadm, e **visível no menu do Administrador**
+  (ver A5).
+- **Compra/Custos de veículo**: só Administrador e Superadm "por enquanto" —
+  as abas já só aparecem para admin, mas `purchaseVehicles`,
+  `handleSubmitAddPurchase`, `vehicleCosts` e os 5 endpoints
+  `ajax/Vehicles/*Cost*`/`getCustomerById` não checam perfil.
+- **Relatório de Atendimento (B5)**: segue o menu (hoje liberado para
+  Superadm, Administrador e Vendedor); o Sandré ajusta depois pela tela.
+  Depende da proposta "sem linha = negado" do C3.
+- **Moedas**: já decidido no M12 (Onda 4).
+- Mesma lógica ("o servidor segue o que a tela permite", só Admin): excluir
+  anexo de atendimento (sobra do N2), excluir anexo de veículo (N13) e
+  endpoints de leitura de cheques (N10, 3º item).
+
+**✅ Aplicado (2026-10-02)**:
+- `ReportDreController`: `access_admin(true)` no construtor.
+- `VehiclesController`: `access_admin(true)` em `purchaseVehicles`,
+  `handleSubmitAddPurchase`, `vehicleCosts` e `handleDeleteAttachment` (N13).
+- `ajax/VehiclesController`: os 5 métodos (`getCustomerById`, `addCosts`,
+  `getCosts`, `editCostList`, `deleteCost`) são todos da aba Custos — recusa
+  JSON no construtor.
+- `AttendanceController::handleSubmitDeleteAttachment` (sobra do N2):
+  `access_admin(true)` como 1ª instrução.
+- `ajax/CheckControlController` (N10, 3º item): recusa JSON no construtor para
+  quem não é admin (os 7 métodos: as 6 leituras + `addNewInstallment`, que já
+  exigia admin). `getBillReceiveById` continua sem chamador e sem efeito
+  (limpeza no B1).
+- Relatório de Atendimento (B5): sem código — segue o menu pela regra "sem linha
+  = negado" do C3.
+**Teste antes × depois**: Secretária e Vendedor abriam as abas Compra e Custos
+do veículo e liam custos e cheques pelos endpoints; agora são redirecionados ou
+recebem "Sem permissão". Administrador: mesmas telas e respostas de antes.
+**Não executados** (gravam): exclusão de anexo de atendimento e de veículo,
+`handleSubmitAddPurchase`, adicionar/editar/excluir custo, cadastrar e
+ativar/desativar centro de custo — checagem conferida por leitura como 1ª
+instrução (ou no construtor).
 
 ### M3 — XSS de alcance/severidade menor
 
@@ -836,8 +1136,25 @@ deve ser implementada de verdade (criar a tabela `currencies` via migration
 + terminar o CRUD) ou removida por completo (controller, model, rotas
 órfãs). Não é uma correção de bug, é uma decisão de escopo de produto.
 
-**✅ Decisão do usuário (2026-10-01): remover a feature de moedas,
-pós-lançamento.** Levantamento para quando for executar: a tabela
+**✅ Decisão do usuário (2026-10-01, revista no mesmo dia)**: **esconder a
+tela de Moedas do menu e bloquear a rota** (Onda 4). A remoção completa das
+referências fica como **limpeza opcional** pós-lançamento.
+
+**Estado hoje (levantado 2026-10-01)**:
+- Menu: o dump antigo `db/realize_repasse.sql` tem o item **id 74 "Moedas"**
+  (rota `currencies`, `access` 5 = só Superadm, `status` 1, pai 77). No
+  banco local e nos dois seeds de produção esse item **não existe**; em
+  produção, conferir. Esconder = migration com `UPDATE menu SET status = 0
+  WHERE route = 'currencies'` (sem efeito se a linha não existir; rollback
+  `status = 1`), a ser escrita na execução.
+- Rota: `CurrenciesController` **não tem nenhuma checagem de perfil** (só
+  `check_post_method` nos dois `handleSubmit*`); qualquer usuário logado abre
+  `currencies/` e cai no erro da tabela inexistente. Bloquear = todos os
+  métodos públicos redirecionarem para `home` logo na entrada (ex.: no
+  `__construct`, antes de instanciar o model), sem apagar arquivos. Forma
+  exata a definir na execução, seguindo o padrão de redirect do projeto.
+
+**Limpeza opcional — levantamento das referências**: a tabela
 `currencies` e um item de menu para ela não existem no banco local, mas 16
 arquivos citam moeda — além de `CurrenciesController`, `Currencies` (model) e
 `src/view/currencies/`, também **Países** (`CountriesController`, `Countries`
@@ -1293,11 +1610,13 @@ Já aconteciam antes; não têm relação com a whitelist:
   transparência → 133×100, **transparência preservada** (hoje o `resize1`
   grava JPEG dentro do `.png` e perde a transparência; com o Imagine isso se
   resolve junto).
-- **A decidir na execução**: (1) manter o caminho "dimensão exata → `copy()`
-  do arquivo cru" ou recodificar sempre (recodificar descarta metadados e
-  qualquer conteúdo extra embutido na imagem; o custo é perder a cópia
-  idêntica byte a byte); (2) aproveitar para corrigir o `-dp-` → `-dc-` da foto
-  do cartão (item acima).
+- **Decidido para a execução (usuário, 2026-10-01)**: (1) **recodificar
+  sempre** — remover o caminho "dimensão exata → `copy()` do arquivo cru" nas
+  12 telas, para que todo arquivo gravado passe pelo Imagine (descarta
+  metadados e qualquer conteúdo extra embutido na imagem); (2) **corrigir junto
+  o `-dp-` → `-dc-`** na exclusão da foto antiga do cartão
+  (`UsersController::handleSubmitDigitalCard`), para a foto anterior ser
+  apagada de verdade.
 - **Fora desta troca**: `FileUploader::uploadImg`/`uploadImgSingle` usam o
   WideImage do `vendor/` (que funciona no PHP 8) e não têm chamador;
   `UploadFiles.php` é a lib legada do B6. `src/libs/wideImage/` só pode ser
@@ -1306,17 +1625,107 @@ Já aconteciam antes; não têm relação com a whitelist:
   dimensão exata (hoje erro fatal), na dimensão exata, JPG e PNG, e marca
   d'água com PNG transparente.
 
+### ✅ N13 — Excluir anexo de veículo sem checagem de perfil — CONCLUÍDO 2026-10-02
+
+Visto no levantamento de 2026-10-01. A lixeira de anexo
+(`src/view/vehicles/attachments.php`) só aparece para admin
+(`Secure::access_admin()`), mas `VehiclesController::handleDeleteAttachment`
+não checa perfil e é um link GET (`vehicles/handleDeleteAttachment/{veículo}/{anexo}`,
+também em `record-vehicle-history/vehicle.php`): qualquer usuário logado apaga
+anexo pela URL. **Decisão do usuário (2026-10-01)**: só Admin, junto com C3/M2.
+
+### ✅ N14 — Qualquer usuário pode trocar o próprio perfil para Superadm (CRÍTICO) — CONCLUÍDO 2026-10-02
+
+Visto no levantamento de 2026-10-01 (**verificado só por leitura de código**;
+não executado porque grava no banco). O botão "Perfil" do topo abre
+`users/edit-item/{próprio id}`; o formulário tem o campo `id_profile` (a lista
+mostra só perfis de nível igual ou abaixo, via `getAllUsersProfilesBellow`).
+No servidor, `UsersController::handleSubmitEditItem` exige só
+`access_seller` (qualquer perfil) e `User::submitEditForm` passa por
+`Secure::userBranches`, que **permite o próprio usuário** (`creator`), e grava
+`$post['id_profile']` **sem validar**. Alterando o valor enviado (ex.:
+`id_profile=1`), um Vendedor vira Superadm. Mesma família do C3, não listada
+nas auditorias. **Proposta**: no servidor, aceitar só `id_profile` que esteja
+na lista que a tela oferece para quem está editando, e não permitir que o
+usuário altere o **próprio** perfil (exceto Superadm). ⚠️ Confirmar com o
+usuário antes de aplicar.
+
+**✅ Aplicado (2026-10-02), regras do usuário**: (1) só aceita perfis que a tela
+oferece (`getAllUsersProfilesBellow` de quem edita — nunca Desenvolvedor, e
+para o Administrador nunca Superadm); (2) ninguém altera o próprio perfil,
+exceto Superadm; (3) quem não é Superadm não cria, edita, ativa ou desativa
+usuários Superadm/Desenvolvedor (ativar/desativar incluídos como "editar").
+Implementado em `UsersController::profileRuleError()` e chamado em
+`handleSubmitAddItem`, `editItem`, `handleSubmitEditItem`, `disableUser`,
+`enableUser`, antes de qualquer gravação (aviso + redirect). Tipo vazio ou
+ausente no POST é recusado. **Teste**: 22 cenários chamando a regra com sessões
+reais (só leitura) — todos passaram (ex.: Vendedor → `id_profile=1` recusado;
+Secretária mudando o próprio tipo recusado; Administrador → Superadm/Dev
+recusado; Superadm mudando o próprio tipo aceito). Telas "Perfil" de todos os
+perfis abrem como antes. Não executados os envios (gravam). **Limite**: um
+usuário Desenvolvedor (não há nenhum) não conseguiria salvar o próprio cadastro,
+porque a tela nunca oferece o tipo Desenvolvedor.
+
+### ✅ N15 — Tela de permissões inverte submenus ao clicar no menu pai — CONCLUÍDO 2026-10-02
+
+Visto no levantamento de 2026-10-01. `MenuAccess::updateProfileMenu` inverte o
+estado do menu clicado e chama a si mesmo para cada submenu, **invertendo cada
+um individualmente**; submenu sem linha é sempre **inserido como liberado**.
+Desativar um menu pai pode, portanto, **liberar** submenus. Corrigir junto com
+a proposta "sem linha = negado" do C3: o estado do pai deve ser aplicado igual
+em todos os submenus.
+
+**✅ Aplicado (2026-10-02)**: o novo estado é decidido uma vez no menu clicado
+(Ativo → Inativo; Inativo ou sem linha → Ativo) e `setProfileMenuStatus` grava o
+mesmo estado no menu e em todos os descendentes, numa única transação (antes
+uma por menu). Mantido: ativar um submenu cujo pai não tem linha ativa o pai.
+Teste no C3.
+
+### N16 — Avisos PHP já existentes vistos na matriz do C3 (só registrado, Onda 4)
+
+Iguais antes e depois das correções; aparecem em desenvolvimento (em
+produção vão só para o log):
+- `vehicles/editItem` e `vehicles/vehicleCosts`: `Undefined variable $customers`
+  / `$vehicleBrands` + `foreach` em null (`src/view/vehicles/modals.php`).
+- `vehicles/attachments`: `Undefined variable $permission` (`attachments.php`).
+- `report-dre`: `number_format()` recebendo null.
+- `attendance` (listagem): `strtotime()` recebendo null.
+- `sale-requests`: `$formOfPayments` (já no N9).
+- `check-control` (listagem): 10 avisos em `check-control/modals.php`
+  (`$costCenters` indefinida, propriedades lidas de null).
+
+### N17 — 11 rotas sem item de menu (proposta, ⚠️ aguardando aprovação)
+
+Decisão do usuário (2026-10-02): as rotas sem item de menu "passam a exigir
+Admin no servidor; listar antes de aplicar". Levantamento — várias **não podem**
+exigir Admin:
+
+| Rota | O que é | Hoje | Proposta |
+|---|---|---|---|
+| `login` | Tela de login | Pública (não passa pelo `Controller`) | **Não aplicar** — ninguém entraria |
+| `error` | Página de erro/404 | Qualquer logado | **Não aplicar** — é para onde cai endereço errado |
+| `front` | Classe base dos controllers, não é tela | — | Nada |
+| `countries` | Países | Já exige Admin (construtor) | Nada |
+| `currencies` | Moedas (tabela inexistente) | 2 métodos exigem Desenvolvedor, resto aberto | Aplicar Admin no construtor agora (o M12 esconde do menu na Onda 4) |
+| `networks-site` | Redes sociais do site/cartão digital | **Sem checagem**: qualquer logado cadastra, edita, ativa/desativa | Aplicar Admin |
+| `notification` | Notificações | Cada usuário vê as próprias; gerente, as da filial | **Não aplicar** — tiraria as notificações dos demais perfis |
+| `lead`, `lead-config` | Leads (módulo desativado) | Já redirecionam todos para a home | Aplicar Admin (sem efeito prático) ou nada |
+| `lead-redirect` | Distribuição de leads (desativado) | Responde 404 a todos | Nada |
+| `card-pdf` | PDF do cartão digital de um usuário, por id na URL | **Sem login nenhum** (não estende `Controller`): qualquer pessoa na internet baixa o cartão de qualquer usuário trocando o id | ⚠️ Decidir: é para clientes (público)? Senão, exigir login |
+
 ## Resumo de itens ⚠️ BLOQUEADOS (decisão do usuário necessária antes de qualquer código/migration)
 
 | Grupo | Decisão pendente |
 |---|---|
-| C3 | Quem pode usar "Ver como este usuário" e conceder/revogar permissão de tela? |
-| C5 | Criar as tabelas de rateio de comissão de verdade, ou remover a feature? |
+| ~~C3~~ | ✅ Decidido e aplicado 2026-10-02 (com "sem linha = negado" e N15). |
+| ~~C5~~ | ✅ Decidido e aplicado 2026-10-02 (rateio removido + transação opção A). |
 | C7 | Qual o SMTP/e-mail de envio real da Repasse Sandré? |
-| A5/M2 | Quem pode criar/desativar filial, centro de custo, e acessar Compra/Custos de veículo, DRE, Atendimento? |
+| ~~A5/M2~~ | ✅ Decidido e aplicado 2026-10-02 (ver A5 e M2). |
 | A9 | Qual o telefone de suporte e e-mail de contato reais da Repasse Sandré? |
-| M1 | A aba "Vendas" do cliente deveria virar "Veículo" (usando a tabela `vehicles`) ou ser removida? |
-| ~~M12~~ | ✅ Decidido 2026-10-01: remover a feature (pós-lançamento). |
+| ~~M1~~ | ✅ Decidido e aplicado 2026-10-01: aba escondida, código mantido. |
+| ~~N14~~ | ✅ Decidido e aplicado 2026-10-02. |
+| N17 | Aprovar a proposta para as 11 rotas sem item de menu; o `card-pdf` deve ser público? |
+| ~~M12~~ | ✅ Decidido 2026-10-01: esconder do menu e bloquear a rota (Onda 4); remoção completa é limpeza opcional. |
 | ~~B2~~ | ✅ Decidido 2026-10-01: manter documentado, não dropar. |
 
 Nenhuma das decisões ainda pendentes foi presumida neste plano — todas exigem

@@ -37,6 +37,9 @@ class BranchController extends FrontController
         $this->model = new Branch();
         $this->table = 'branch';
         parent::__construct($this->route);
+
+        // A5: filiais só para Superadm, Administrador e Desenvolvedor (todas as ações do controller)
+        Secure::access_admin(true);
     }
 
     private function navTabs($itemId, $active)

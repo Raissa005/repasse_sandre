@@ -273,7 +273,12 @@ class Secure
     public static function individual_menu_access(int $menuId, string $locationController = "home")
     {
         $response = (new MenuAccess)->getWithFiltersAllItems([(object)['columns' => ['id_menu' => (object)['value' => $menuId], 'id_profile' => (object)['value' => $_SESSION['RR']->profile->id]]]])->data;
-        if (empty($response)) return;
+
+        // C3: sem linha em menu_access = liberado só para Superadm, Administrador e Desenvolvedor; para os demais perfis, negado
+        if (empty($response)) {
+            if (self::access_admin()) return;
+            redirect($locationController);
+        }
 
         array_filter($response, function ($item) use ($locationController) {
             if ($item->status == 0) redirect($locationController);

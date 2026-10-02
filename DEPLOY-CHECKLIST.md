@@ -200,9 +200,36 @@ Com um usuário Administrador e, onde indicado, um usuário Vendedor:
 - [ ] Como Vendedor: telas administrativas redirecionam para a home.
 - [ ] Log de erros do PHP/Apache sem erro novo durante o teste.
 
-## 9. Plano de volta
+## 9. Permissões por perfil — antes de liberar os usuários *(Plano: C3)*
 
-Usar se qualquer verificação das seções 7 ou 8 falhar e não der para
+Feito pelo **Sandré (Administrador)**, em **Configurações → Menus**, depois do
+smoke test e **antes** de passar login e senha aos demais usuários.
+
+- [ ] Para cada perfil — **Gerente Geral, Gerente de Filial, Gerente de Vendas,
+      Secretária, Vendedor** — marcar cada tela como **Ativo** ou **Inativo**.
+      Hoje os três perfis de Gerente não têm nenhuma tela configurada.
+- [ ] Lembrar: para esses 5 perfis, tela em **"Padrão do sistema"** (botão
+      azul `?`) fica **bloqueada** — some do menu e, aberta pela URL, volta para a
+      Home. Só fica liberado o que estiver **Ativo**. Um perfil sem nada
+      configurado só acessa a Home e o próprio "Perfil".
+- [ ] **Clientes**: os 5 itens (Comprador, Fornecedor, Vendedor, Colaborador,
+      Todos) usam a mesma tela. Desativar um deles **só o tira do menu** — pela
+      URL o servidor segue o primeiro (Comprador). Para bloquear Clientes de um
+      perfil, desativar o grupo inteiro (ou pelo menos Comprador).
+- [ ] Clicar num menu pai (ex.: "Financeiro") aplica o mesmo estado em todos os
+      submenus dele.
+- [ ] O sistema não deixa o Administrador desativar "Configurações" no próprio
+      perfil (aviso na tela). Os perfis Superadm e Desenvolvedor não aparecem
+      para o Administrador.
+- [ ] Conferir cada perfil entrando com um usuário dele (ou pelo Superadm, com
+      "Ver como este usuário"): o menu mostra só o combinado e uma tela
+      desativada, aberta pela URL, volta para a Home.
+- [ ] Conferir que o botão **"Perfil"** do topo continua abrindo para todos os
+      perfis.
+
+## 10. Plano de volta
+
+Usar se qualquer verificação das seções 7, 8 ou 9 falhar e não der para
 corrigir na hora:
 
 1. Colocar o sistema em manutenção (ou avisar os usuários).

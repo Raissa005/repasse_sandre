@@ -20,6 +20,9 @@ class ReportDreController extends FrontController
 		$this->model = new ReportDre();
         $this->table = '';
 		parent::__construct($this->route);
+
+        // M2: DRE só para Superadm, Administrador e Desenvolvedor
+        Secure::access_admin(true);
 	}
 
 	public function index()

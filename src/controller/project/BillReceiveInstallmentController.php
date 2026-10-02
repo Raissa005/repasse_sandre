@@ -10,9 +10,7 @@ use RR\libs\Pagination;
 use RR\libs\DeleteFile;
 use RR\libs\FileUploader;
 use RR\libs\RecursiveCostCenter;
-use RR\model\User;
 use RR\model\Banks;
-use RR\model\Sales;
 use RR\model\Branch;
 use RR\model\Customer;
 use RR\model\BillsToPay;
@@ -21,12 +19,8 @@ use RR\model\GerenciaPost;
 use RR\model\BankAccounts;
 use RR\model\ModelGenerico;
 use RR\model\FormOfPayment;
-use RR\model\UserPosition;
-use RR\model\BranchUserPosition;
 use RR\model\BillsToPayInstallment;
 use RR\model\BillReceiveInstallment;
-use RR\model\SalesChargePaymentAgreement;
-use RR\model\ArrangementPaymentChargesInvoiceReceiveInstallment;
 use PDOException;
 use RR\libs\ShowPage;
 use RR\libs\TableDefault;
@@ -37,8 +31,6 @@ use RR\model\CostCenter;
 use RR\model\CustomerBalanceLog;
 use RR\model\PaymentsOfSales;
 use RR\model\StandardContract;
-use RR\model\SummaryInvolved;
-use RR\model\SummarySale;
 
 use function RR\Controller\redirect;
 use function RR\controller\view;
@@ -611,13 +603,15 @@ class BillReceiveInstallmentController extends FrontController
                 break;
         }
 
-        $sale = (new Sales)->getWithFiltersAllItems(
-            [(object)['columns' => ['id_bill_receive' => (object)['comparison' => 'EQUAL', 'value' => $installment->id_bill_receive]]]]
-        )->data;
-
-        $sale = !empty($sale) ? $sale[0] : false;
-
+        /**C5 (2026-10-01): removido o rateio de comissão herdado do domínio imobiliário (busca em `sales`, participantes em
+         * `sales_charge_payment_agreement`/`arrangement_payment_charges_invoice_receive_installment` e contas a pagar por
+         * `summary_sale`/`summary_involved`). Nenhum fluxo de veículos grava em `sales`, então esse trecho nunca rodava. */
         try {
+            /**C5: a transação cobre só o que é gravado por $this->model (parcela nova e parcela paga). Cada Model abre a
+             * própria conexão, então cheque, linha do tempo do cheque e saldo do cliente, gravados depois do commit,
+             * ficam fora dela. */
+            $this->model->db->beginTransaction();
+
             switch ($_POST['payment_transaction']) {
                 case '1':
                     /**Nova parcela */
@@ -636,28 +630,8 @@ class BillReceiveInstallmentController extends FrontController
 
                     $installment->value_installment = Util::unmaskMoney($_POST['amount_paid']);
 
-                    if ($sale) {
-                        $arrayPostNewPosition['percentage_commission_seller'] = $installment->percentage_commission_seller;
-                        $arrayPostNewPosition['origin_commission_seller'] = $installment->origin_commission_seller;
-                        $arrayPostNewPosition['id_customer_seller'] = $installment->id_customer_seller;
-                    }
-
                     $responseNewPosition = $this->model->insert($arrayPostNewPosition);
-
-                    if ($sale) {
-                        foreach ((new SalesChargePaymentAgreement)->getWithFiltersAllItems(
-                            [(object)['columns' => ['id_sale' => (object)['comparison' => 'EQUAL', 'value' => $sale->id]]]]
-                        )->data as $position) {
-                            (new ArrangementPaymentChargesInvoiceReceiveInstallment)->insert([
-                                'id_bill_receive_installment' => $responseNewPosition->lastId,
-                                'id_customer' => $position->id_customer,
-                                'id_user_position' => $position->id_user_position,
-                                'origin_commission' => $position->origin_commission,
-                                'percentage_commission' => $position->percentage_commission,
-                                'created_by' => $_SESSION['RR']->user->id,
-                            ]);
-                        }
-                    }
+                    if ($responseNewPosition->error) throw new PDOException('Erro ao gravar a nova parcela.');
 
                     break;
                 case '2':
@@ -672,6 +646,10 @@ class BillReceiveInstallmentController extends FrontController
             }
 
             $response = $this->model->update($arrayPost, 'id', $itemId);
+            if ($response->error) throw new PDOException('Erro ao registrar o pagamento da parcela.');
+
+            $this->model->db->commit();
+
             if (!$response->error) {
                 if (!empty($_POST['checkId'])) {
                     $arrCheck = [
@@ -769,132 +747,6 @@ class BillReceiveInstallmentController extends FrontController
                 (new CustomerBalanceLog)->insertLogPay($installment->id_customer, Util::unmaskMoney($_POST['amount_paid']), "Descontado do saldo do cliente para pagar a parcela #{$installment->number_portion} do lançamento #{$installment->id_bill_receive}");
             }
 
-            if ($sale) {
-                $branch = (new Branch)->getItemById($_SESSION['RR']->branch->current->id);
-                $summarySale = (new SummarySale)->getItemWithFilters([
-                    (object)['columns' => [
-                        'sale_id' => (object)['comparison' => 'EQUAL', 'value' => $sale->id],
-                        'installment_number' => (object)['comparison' => 'EQUAL', 'value' => $installment->number_portion]
-                    ]]
-                ]);
-
-                $summaryInvolved = (new SummaryInvolved)->getWithFiltersAllItems([
-                    (object)['columns' => [
-                        'sale_id' => (object)['comparison' => 'EQUAL', 'value' => $sale->id],
-                        'installment_number' => (object)['comparison' => 'EQUAL', 'value' => $installment->number_portion]
-                    ]]
-                ])->data;
-
-                /**Vendedor */
-                if (!empty($summarySale)) {
-                    $userSeller = (new User)->getItemById($sale->created_by);
-                    $billPay = (new BillsToPay)->getWithFiltersAllItems(
-                        [
-                            (object)[
-                                'columns' => [
-                                    'id_bill_receive' => (object)['comparison' => 'EQUAL', 'value' => $installment->id_bill_receive],
-                                    'id_customer' => (object)['comparison' => 'EQUAL', 'value' => $userSeller->id_customer],
-                                ]
-                            ]
-                        ]
-                    )->data;
-
-                    if (empty($billPay)) {
-                        $user = (new User)->getItemById($sale->created_by);
-
-                        $billPay = (new BillsToPay)->insert([
-                            'id_customer' => $user->id_customer, #vendedor
-                            'id_branch' => $_SESSION['RR']->branch->current->id,
-                            'id_cost_center' => $branch->id_cost_center_commission_seller,
-                            'id_form_of_payment' => $branch->id_form_payment_seller,
-                            'competence' => date('Y-m-d', strtotime($sale->sale_date)),
-                            'description' => "Conta a pagar gerada pelo arranjo de pagamento da comissão\n" .
-                                "Venda: #{$sale->id}\n" .
-                                "Vendedor: {$user->name}",
-                            'created_by' => $_SESSION['RR']->user->id,
-                            'id_bill_receive' => $installment->id_bill_receive,
-                        ]);
-                        $billPay->id = $billPay->lastId;
-                    } else {
-                        $billPay = $billPay[0];
-                    }
-
-                    $numberPortion = (new BillsToPayInstallment)->getLastNumberPortionByBillsToPayId($billPay->id);
-                    $numberPortion = !empty($numberPortion) ? $numberPortion->number_portion : 0;
-                    (new BillsToPayInstallment)->insert([
-                        'id_bills_to_pay' => $billPay->id,
-                        'id_bill_receive_installment' => $itemId,
-                        'id_form_of_payment' => $branch->id_form_payment_seller,
-                        'value_of_installments' => $summarySale->seller_amount,
-                        'due_date' => $summarySale->seller_payment_date ?? date('Y-m-d', strtotime("+{$branch->days_after_seller} days")),
-                        'number_portion' => $summarySale->installment_number,
-                        'description' => ($numberPortion + 1) . "º Parcela gerada pelo arranjo de pagamento da comissão",
-                        'created_by' => $_SESSION['RR']->user->id,
-                    ]);
-                }
-
-                /**Cargos */
-                foreach ($summaryInvolved as $position) {
-                    $billPay = (new BillsToPay)->getWithFiltersAllItems(
-                        [
-                            (object)[
-                                'columns' => [
-                                    'id_bill_receive' => (object)['comparison' => 'EQUAL', 'value' => $installment->id_bill_receive],
-                                    'id_customer' => (object)['comparison' => 'EQUAL', 'value' => $position->customer_id],
-                                ]
-                            ]
-                        ]
-                    )->data;
-
-                    $userPosition = (new UserPosition)->getItemById($position->user_position_id);
-
-                    if (!empty($userPosition)) {
-                        $branchUserPosition = (new BranchUserPosition)->getWithFiltersAllItems([
-                            (object)[
-                                "columns" => [
-                                    "id_branch" => (object)["comparison" => "EQUAL", "value" => $_SESSION['RR']->branch->current->id],
-                                    "id_user_position" => (object)["comparison" => "EQUAL", "value" => $userPosition->id],
-                                ]
-                            ]
-                        ])->data;
-                    }
-
-                    if (empty($billPay)) {
-                        $billPay = (new BillsToPay)->insert([
-                            'id_customer' => $position->customer_id,
-                            'id_branch' => $_SESSION['RR']->branch->current->id,
-                            'id_cost_center' => !empty($branchUserPosition) ? $branchUserPosition[0]->id_cost_center : $position->id_cost_center,
-                            'id_form_of_payment' => !empty($branchUserPosition) ? $branchUserPosition[0]->id_form_payment : $position->id_form_payment,
-                            'competence' => date('Y-m-d', strtotime($sale->sale_date)),
-                            'description' => "Conta a pagar gerada pelo arranjo de pagamento da comissão\n" .
-                                "Venda: #{$sale->id}\n" .
-                                "Cargo: " . (!empty($userPosition) ? $userPosition->name : 'Avulso'),
-                            'id_bill_receive' => $installment->id_bill_receive,
-                            'created_by' => $_SESSION['RR']->user->id,
-                        ]);
-                        $billPay->id = $billPay->lastId;
-                    } else {
-                        $billPay = $billPay[0];
-                    }
-
-                    $numberPortion = (new BillsToPayInstallment)->getLastNumberPortionByBillsToPayId($billPay->id);
-                    $numberPortion = !empty($numberPortion) ? $numberPortion->number_portion : 0;
-
-                    if ($position->amount > 0) {
-                        (new BillsToPayInstallment)->insert([
-                            'id_bills_to_pay' => $billPay->id,
-                            'id_bill_receive_installment' => $itemId,
-                            'id_form_of_payment' => isset($branchUserPosition) && !empty($branchUserPosition) ? $branchUserPosition[0]->id_form_payment : $position->id_form_payment,
-                            'value_of_installments' => $position->amount,
-                            'due_date' => $position->payment_date ?? date('Y-m-d', strtotime("+" . (isset($branchUserPosition) && !empty($branchUserPosition) ? $branchUserPosition[0]->days_after : $branch->days_after_single) . " days")),
-                            'number_portion' => $position->installment_number,
-                            'description' => ($numberPortion + 1) . "º Parcela gerada pelo arranjo de pagamento da comissão",
-                            'created_by' => $_SESSION['RR']->user->id,
-                        ]);
-                    }
-                }
-            }
-
             Toast::successToast('Pagamento registrado com sucesso');
 
             if (isset($responseNewPosition)) {
@@ -904,6 +756,7 @@ class BillReceiveInstallmentController extends FrontController
             header('location:' . URL . $this->route . '/edit/' . $itemId);
             exit;
         } catch (PDOException $error) {
+            if ($this->model->db->inTransaction()) $this->model->db->rollBack();
             Toast::genericError();
             header('location:' . URL . $this->route . '/edit/' . $itemId);
             exit;

@@ -875,6 +875,9 @@ class AttendanceController extends FrontController
 
     public function handleSubmitDeleteAttachment($attachmentId)
     {
+        // Sobra do N2: a lixeira só aparece para admin
+        Secure::access_admin(true);
+
         $attachment = (new ModelGenerico())->getItemById8161($attachmentId, "attendance_attachments");
 
         if (!$attachment) {

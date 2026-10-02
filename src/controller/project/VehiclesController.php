@@ -451,6 +451,9 @@ class VehiclesController extends FrontController
 
     public function handleDeleteAttachment($itemId, $attachmentId)
     {
+        // N13: a lixeira só aparece para admin
+        Secure::access_admin(true);
+
         $response = (new VehicleAttachments)->deleteFile($itemId, $attachmentId);
 
         Toast::checkResponse($response->error, $response->message);
@@ -460,6 +463,8 @@ class VehiclesController extends FrontController
 
     public function purchaseVehicles($itemId)
     {
+        // M2: aba Compra só para admin, igual à navegação
+        Secure::access_admin(true);
         $this->addScript(URL . "js/" . JSVERSION . "/state.js");
 
         $item = (new Vehicles)->getItemById($itemId);
@@ -503,6 +508,8 @@ class VehiclesController extends FrontController
 
     public function handleSubmitAddPurchase($itemId)
     {
+        Secure::access_admin(true);
+
         $commission = str_replace(['R$', ' '], '', $_GET['vehicleCommission']);
         $commission = str_replace('.', '',  $commission);
         $commission = str_replace(',', '.', $commission);
@@ -716,6 +723,8 @@ class VehiclesController extends FrontController
 
     public function vehicleCosts($itemId)
     {
+        // M2: aba Custos só para admin, igual à navegação
+        Secure::access_admin(true);
         $item = (new Vehicles)->getItemById($itemId);
 
         if (!empty($item->plate)) {

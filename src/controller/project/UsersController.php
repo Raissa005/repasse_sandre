@@ -76,6 +76,34 @@ class UsersController extends FrontController
         return $nav_tabs;
     }
 
+    /**
+     * N14: regras de tipo de usuário conferidas no servidor (a tela já limita as opções, mas o POST pode ser alterado).
+     * $target = usuário existente (getUserById) ou null no cadastro; $newProfileId = tipo enviado, ou null quando a
+     * ação não altera o tipo. Devolve a mensagem de recusa, ou null se a ação é permitida.
+     */
+    private function profileRuleError($target, $newProfileId = null): ?string
+    {
+        if (!empty($target) && !Secure::access_superAdm() && $target->access <= 5) {
+            return 'Sem permissão para alterar usuários Superadm ou Desenvolvedor.';
+        }
+
+        if ($newProfileId === null) return null;
+
+        $allowedProfiles = array_map(function ($profile) {
+            return (int) $profile->id;
+        }, $this->model->getAllUsersProfilesBellow($_SESSION['RR']->profile->access));
+
+        if (!in_array((int) $newProfileId, $allowedProfiles, true)) {
+            return 'Tipo de usuário não permitido.';
+        }
+
+        if (!empty($target) && $target->id == $_SESSION['RR']->user->id && (int) $target->id_profile !== (int) $newProfileId && !Secure::access_superAdm()) {
+            return 'Você não pode alterar o próprio tipo de usuário.';
+        }
+
+        return null;
+    }
+
     public function index()
     {
         Secure::access_admin(true);
@@ -128,6 +156,11 @@ class UsersController extends FrontController
         Secure::access_admin(true);
         Secure::check_post_method($this->route);
 
+        if ($profileError = $this->profileRuleError(null, $_POST['id_profile'] ?? '')) {
+            Toast::warningToast($profileError);
+            redirect($this->route . '/addItem');
+        }
+
         $response = $this->model->submitAddForm();
 
         Toast::checkResponse($response->error, $response->message);
@@ -140,13 +173,19 @@ class UsersController extends FrontController
         $this->addScript(URL . "js/" . JSVERSION . "/users.js");
         $item = $this->model->getUserById($itemId);
 
+        if ($profileError = $this->profileRuleError($item)) {
+            Toast::warningToast($profileError);
+            redirect($this->route);
+        }
+
         $content_header = (object)[
             'title' => "{$item->name}",
             'subtitle' => 'Editar',
             'buttons' => []
         ];
 
-        if ($_SESSION['RR']->user->name == "Suporte Ydeal" && $itemId != 1) {
+        // C3: "Ver como este usuário" só para Superadm (antes era pelo nome do usuário)
+        if (Secure::access_superAdm() && $itemId != $_SESSION['RR']->user->id) {
             array_push($content_header->buttons, (object)['text' => 'Ver como este usuário', 'bg' => 'info', 'size' => 'sm', 'href' => URL . $this->route . '/turnUser/' . $itemId]);
         }
 
@@ -247,6 +286,11 @@ class UsersController extends FrontController
         Secure::access_seller(true);
         Secure::check_post_method($this->route);
 
+        if ($profileError = $this->profileRuleError($this->model->getUserById($itemId), $_POST['id_profile'] ?? '')) {
+            Toast::warningToast($profileError);
+            redirect($this->route . "/editItem/" . $itemId);
+        }
+
         if ($sizeError = FileUploader::sizeLimitError($_FILES['profile_picture'] ?? null, FileUploader::MAX_SIZE_IMAGE)) {
             Toast::warningToast($sizeError);
             redirect($this->route . "/editItem/" . $itemId);
@@ -265,7 +309,10 @@ class UsersController extends FrontController
 
     public function turnUser($itemId)
     {
-        if ($_SESSION['RR']->user->turnBack && $_SESSION['RR']->user->name != "Suporte Ydeal") {
+        // C3: durante o "Ver como" a sessão tem o perfil do usuário visto, então o retorno é liberado só para quem iniciou
+        if (!empty($_SESSION['RR']->user->turnBack)) {
+            if ((int) $itemId !== (int) ($_SESSION['RR']->user->turnBackId ?? 0)) redirect('home');
+
             $cache = new FilesystemAdapter();
             $cache->clear();
 
@@ -305,6 +352,8 @@ class UsersController extends FrontController
 
             Toast::successToast('Você retornou às permissões do ' . trim($user->name) . '.');
         } else {
+            Secure::access_superAdm(true);
+
             $cache = new FilesystemAdapter();
             $cache->clear();
 
@@ -318,7 +367,8 @@ class UsersController extends FrontController
                     "profileURL" => $user->profile_capa ?
                         URL . "img/users/{$user->id}/{$user->id}-profile-{$user->profile_cont}.{$user->profile_ext}" :
                         URL . "img/users/default/img-user-default.png",
-                    "turnBack" => true
+                    "turnBack" => true,
+                    "turnBackId" => $_SESSION['RR']->user->id,
                 ],
                 "profile" => (object)[
                     "id" => $user->id_profile,
@@ -514,6 +564,11 @@ class UsersController extends FrontController
     {
         Secure::access_admin(true);
 
+        if ($profileError = $this->profileRuleError($this->model->getUserById($itemId))) {
+            Toast::warningToast($profileError);
+            redirect($this->route);
+        }
+
         try {
             $success = (new ModelGenerico())->disableItem($itemId, $this->table);
         } catch (PDOException $error) {
@@ -528,6 +583,11 @@ class UsersController extends FrontController
     public function enableUser($itemId, $page)
     {
         Secure::access_admin(true);
+
+        if ($profileError = $this->profileRuleError($this->model->getUserById($itemId))) {
+            Toast::warningToast($profileError);
+            redirect($this->route);
+        }
 
         try {
             $success = (new ModelGenerico())->enableItem($itemId, $this->table);

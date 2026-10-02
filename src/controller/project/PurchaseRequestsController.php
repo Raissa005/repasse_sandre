@@ -73,8 +73,6 @@ class PurchaseRequestsController extends FrontController
         $this->page = (new Menu())->getMenuByRoute($this->route);
         Secure::individual_menu_access($this->page->id);
 
-        Secure::individual_menu_access(true);
-
         $contentHeader = (object) [
             'route' => URL . $this->route,
             'title' => 'Pedidos de Compra',

@@ -88,7 +88,6 @@ class CustomerController extends FrontController
             return $type->id_customer_type;
         }, $typeCustomer);
         $menuBillToPay = in_array(2, $typeSelected);
-        $menuSales = (new Sales)->getSalesForCustomers($customerId)->count;
 
         $navTabs = [
             (object)['text' => 'Dados Gerais', 'route' => URL . $this->route . '/edit-item/' . $customerId, 'class' => $_GET['pg1'] === 'edit-item' ? 'active' : '']
@@ -106,9 +105,7 @@ class CustomerController extends FrontController
                 array_push($navTabs, (object)['text' => 'Contas a Pagar', 'route' => URL . $this->route . '/billToPay/' . $customerId, 'class' => $_GET['pg1'] === 'billToPay' ? 'active' : '']);
             }
             array_push($navTabs, (object)['text' => 'Anexos', 'route' => URL . $this->route . '/attachment/' . $customerId, 'class' => $_GET['pg1'] === 'attachment' ? 'active' : '']);
-            if ($menuSales != 0) {
-                array_push($navTabs, (object)['text' => 'Vendas', 'route' => URL . $this->route . '/sales/' . $customerId, 'class' => $_GET['pg1'] === 'sales' ? 'active' : '']);
-            }
+            /**Aba "Vendas" desativada a pedido do usuário (2026-10-01, M1) — lia a tabela `sales` do domínio imobiliário, sempre vazia. Código/rota mantidos, só tirada da navegação. */
             // array_push($navTabs, (object)['text' => Util::maskMoney($credit), 'class' => 'text-bold pull-right ', 'a_class' => ($credit >= 0 ? 'text-blue' : 'text-red')]);
         }
 

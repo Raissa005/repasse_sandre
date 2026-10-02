@@ -30,13 +30,11 @@ class MenuAccess extends Model
 
     public function updateProfileMenu(int $profileId, int $menuId): object
     {
-        $menu = (new Menu)->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['value' => 1], 'id' => (object)['value' => $menuId]]]])->data;
-        array_map(function ($menu) {
-            $subMenus = (new Menu)->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['value' => 1], 'id_menu_parent' => (object)['value' => $menu->id]]]])->data;
-            $menu->subMenus = $subMenus;
-        }, $menu);
-
         $access = $this->getWithFiltersAllItems([(object)['columns' => ['id_profile' => (object)['value' => $profileId], 'id_menu' => (object)['value' => $menuId]]]])->data;
+
+        /**N15: o novo estado é decidido uma vez, no menu clicado (Ativo → Inativo; Inativo ou sem linha → Ativo), e aplicado
+         * igual em todos os submenus. Antes cada submenu era invertido individualmente e submenu sem linha era sempre liberado. */
+        $status = (!empty($access) && $access[0]->status == 1) ? 0 : 1;
 
         $cache = new FilesystemAdapter();
         $cache->clear();
@@ -44,28 +42,9 @@ class MenuAccess extends Model
         try {
             $this->db->beginTransaction();
 
-            if (!empty($access)) {
-                $response = $this->update([
-                    'status' => strval($access[0]->status == 1 ? 0 : 1),
-                ], 'id', $access[0]->id);
-            } else {
-                $response = $this->insert([
-                    'id_menu' => $menuId,
-                    'id_profile' => $profileId,
-                    'status' => 1
-                ]);
-                if ($response->error != true && !is_null($menu[0]->id_menu_parent) && $this->getWithFiltersAllItems([(object)['columns' => ['id_profile' => (object)['value' => $profileId], 'id_menu' => (object)['value' => $menu[0]->id_menu_parent]]]])->count == 0){
-                    $this->insert(['id_menu' => $menu[0]->id_menu_parent, 'id_profile' => $profileId, 'status' => 1]);
-                }
-            }
+            $response = $this->setProfileMenuStatus($profileId, $menuId, $status);
 
             $this->db->commit();
-
-            if (!empty($menu[0]->subMenus)) {
-                foreach ($menu[0]->subMenus as $subMenu) {
-                    Self::updateProfileMenu($profileId, $subMenu->id);
-                }
-            }
 
             return $response;
         } catch (\PDOException $error) {
@@ -76,6 +55,35 @@ class MenuAccess extends Model
             }
             return (object)['error' => true, 'message' => 'Erro ao atualizar o perfil do menu'];
         }
+    }
+
+    /**
+     * Grava o estado do menu para o perfil e repete o mesmo estado em todos os submenus (dentro da transação de quem chama).
+     * Ao ativar um submenu cujo pai não tem linha, o pai também é ativado (comportamento anterior mantido).
+     */
+    private function setProfileMenuStatus(int $profileId, int $menuId, int $status): object
+    {
+        $menu = (new Menu)->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['value' => 1], 'id' => (object)['value' => $menuId]]]])->data;
+        $access = $this->getWithFiltersAllItems([(object)['columns' => ['id_profile' => (object)['value' => $profileId], 'id_menu' => (object)['value' => $menuId]]]])->data;
+
+        if (!empty($access)) {
+            $response = $this->update(['status' => strval($status)], 'id', $access[0]->id);
+        } else {
+            $response = $this->insert(['id_menu' => $menuId, 'id_profile' => $profileId, 'status' => strval($status)]);
+        }
+
+        if ($response->error) throw new \PDOException('Erro ao atualizar o perfil do menu');
+
+        if ($status == 1 && !empty($menu) && !is_null($menu[0]->id_menu_parent) && $this->getWithFiltersAllItems([(object)['columns' => ['id_profile' => (object)['value' => $profileId], 'id_menu' => (object)['value' => $menu[0]->id_menu_parent]]]])->count == 0) {
+            $this->insert(['id_menu' => $menu[0]->id_menu_parent, 'id_profile' => $profileId, 'status' => '1']);
+        }
+
+        $subMenus = (new Menu)->getWithFiltersAllItems([(object)['columns' => ['status' => (object)['value' => 1], 'id_menu_parent' => (object)['value' => $menuId]]]])->data;
+        foreach ($subMenus as $subMenu) {
+            $this->setProfileMenuStatus($profileId, $subMenu->id, $status);
+        }
+
+        return $response;
     }
 
     public function menuAccessByProfile($id_menu){

@@ -106,9 +106,9 @@ use RR\components\MenusComponent;
                                         <a href="<?= URL . "login/logout" ?>" class="btn btn-danger btn-flat"><i class="fas fa-sign-out-alt"></i> Sair</a>
                                     </div>
                                 </li>
-                                <?php if (!empty($_SESSION['RR']->user->turnBack) && $_SESSION['RR']->user->id != 1) { ?>
+                                <?php if (!empty($_SESSION['RR']->user->turnBack) && !empty($_SESSION['RR']->user->turnBackId)) { ?>
                                     <li style="text-align: center" class="user-footer">
-                                        <a href="<?= URL . "users/turnUser/1" ?>" class="btn btn-default btn-flat">Retornar às permissões de suporte</a>
+                                        <a href="<?= URL . "users/turnUser/" . (int) $_SESSION['RR']->user->turnBackId ?>" class="btn btn-default btn-flat">Retornar às permissões de suporte</a>
                                     </li>
                                 <?php } ?>
                             </ul>

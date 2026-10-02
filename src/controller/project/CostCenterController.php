@@ -59,6 +59,7 @@ class CostCenterController extends FrontController
 
     public function handleSubmitAddItem()
     {
+        Secure::access_admin(true);
         Secure::check_post_method($this->route);
 
         $arrPost = array(
@@ -153,6 +154,8 @@ class CostCenterController extends FrontController
 
     public function disableItem($itemId)
     {
+        Secure::access_admin(true);
+
         try {
             $success = $this->model->disableItem($itemId);
         } catch (PDOException $error) {
@@ -167,6 +170,8 @@ class CostCenterController extends FrontController
 
     public function enableItem($itemId)
     {
+        Secure::access_admin(true);
+
         try {
             $success = $this->model->enableItem($itemId);
         } catch (PDOException $error) {

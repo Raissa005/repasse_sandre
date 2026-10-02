@@ -24,6 +24,13 @@ class CheckControlController extends Ajax
         $this->model = new CheckControl;
 
         parent::__construct();
+
+        // N10 (3º item): só é chamado pelas telas de cheques e de pagamento de parcelas, que são só de admin
+        if (!Secure::access_admin()) {
+            $this->error = true;
+            $this->message = 'Sem permissão para esta ação.';
+            $this->sendResponse();
+        }
     }
 
     public function getAccountsById()
